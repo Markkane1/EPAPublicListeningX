@@ -1,0 +1,1 @@
+(AQI OR "air quality" OR pollution OR smog or "clean air") (Lahore or gujranwala OR Pakistan OR Punjab) -Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -india -india's -from:DelhiPollution -from:@ANI -from:@EPCCDpunjab -from:@EPAPunjab lang:en

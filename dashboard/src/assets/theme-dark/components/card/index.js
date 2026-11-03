@@ -1,0 +1,29 @@
+
+import colors from "assets/theme-dark/base/colors";
+import borders from "assets/theme-dark/base/borders";
+import boxShadows from "assets/theme-dark/base/boxShadows";
+
+import rgba from "assets/theme-dark/functions/rgba";
+
+const { black, background } = colors;
+const { borderWidth, borderRadius } = borders;
+const { cardBoxShadow } = boxShadows;
+
+const card = {
+  styleOverrides: {
+    root: {
+      display: "flex",
+      flexDirection: "column",
+      position: "relative",
+      minWidth: 0,
+      wordWrap: "break-word",
+      backgroundColor: background.dark,
+      backgroundClip: "border-box",
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      borderRadius: borderRadius.xl,
+      boxShadow: "0 4px 20px 0 rgba(0, 0, 0, 0.35)",
+    },
+  },
+};
+
+export default card;
