@@ -10,8 +10,11 @@ import GppBadRoundedIcon from '@mui/icons-material/GppBadRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import SwitchAccountRoundedIcon from '@mui/icons-material/SwitchAccountRounded';
 import { useAuth } from '../../context/AuthContext';
+import { useArgonController } from '../../context';
 
 export default function AccessDeniedView({ requiredPermission, moduleName = 'this section' }) {
+  const [controller] = useArgonController();
+  const { darkMode } = controller;
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -38,8 +41,9 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
           borderRadius: '16px',
           boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
           textAlign: 'center',
-          border: '1px solid #fee2e2',
-          background: 'linear-gradient(180deg, #ffffff 0%, #fffbfb 100%)'
+          border: darkMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fee2e2',
+          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          background: darkMode ? '#111c44' : 'linear-gradient(180deg, #ffffff 0%, #fffbfb 100%)'
         }}
       >
         <Box
@@ -65,7 +69,7 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
           sx={{
             fontFamily: '"Open Sans", sans-serif',
             fontWeight: 700,
-            color: '#1e293b',
+            color: darkMode ? '#ffffff' : '#1e293b',
             mb: 1
           }}
         >
@@ -75,7 +79,7 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
         <Typography
           sx={{
             fontSize: '14px',
-            color: '#64748b',
+            color: darkMode ? '#94a3b8' : '#64748b',
             lineHeight: 1.6,
             mb: 2.5
           }}
@@ -87,8 +91,8 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
           sx={{
             p: 2,
             mb: 3,
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
+            backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+            border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             borderRadius: '12px',
             textAlign: 'left'
           }}
@@ -97,7 +101,7 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
             <Typography sx={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
               Active User:
             </Typography>
-            <Typography sx={{ fontSize: '13px', color: '#1e293b', fontWeight: 700 }}>
+            <Typography sx={{ fontSize: '13px', color: darkMode ? '#ffffff' : '#1e293b', fontWeight: 700 }}>
               {user?.fullName || user?.username} (@{user?.username})
             </Typography>
           </Box>

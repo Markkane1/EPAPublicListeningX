@@ -662,7 +662,7 @@
             </div>
             
             <!-- External Post Link Button -->
-            <a href="${p.postUrl}" target="_blank" rel="noopener noreferrer" class="post-link-btn" title="Open live post on X.com">
+            <a href="${escapeHtml(sanitizeUrl(p.postUrl))}" target="_blank" rel="noopener noreferrer" class="post-link-btn" title="Open live post on X.com">
               <span>View on X</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </a>
@@ -1081,7 +1081,12 @@
         let val = p[h];
         if (Array.isArray(val)) val = val.join(" ; ");
         if (val === null || val === undefined) val = "";
-        const strVal = String(val).replace(/"/g, '""');
+        let strVal = String(val);
+        // Neutralize CSV formula injection (CWE-1236)
+        if (/^[\=\+\-\@\t\r]/.test(strVal)) {
+          strVal = "'" + strVal;
+        }
+        strVal = strVal.replace(/"/g, '""');
         return `"${strVal}"`;
       }).join(",");
     });
@@ -1101,6 +1106,15 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function sanitizeUrl(url) {
+    if (!url) return "#";
+    const s = String(url).trim();
+    if (/^(https?:\/\/|\/)/i.test(s)) {
+      return s;
+    }
+    return "#";
   }
 
   function highlightTextEntities(text) {

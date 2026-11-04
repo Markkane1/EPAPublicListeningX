@@ -57,21 +57,7 @@ export async function loginUser({ username, password, turnstileToken }) {
   return data;
 }
 
-export async function signupUser({ username, email, password, fullName, turnstileToken }) {
-  const resp = await fetch(`${API_BASE}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, email, password, fullName, turnstileToken })
-  });
-  const data = await resp.json().catch(() => ({}));
-  if (!resp.ok) {
-    throw new Error(data.error || `Registration failed (HTTP ${resp.status})`);
-  }
-  if (data.token) {
-    setAuthToken(data.token);
-  }
-  return data;
-}
+
 
 export async function logoutUser() {
   try {
@@ -91,6 +77,16 @@ export async function getMe() {
     throw new Error(err.error || `HTTP ${resp.status}`);
   }
   return await resp.json();
+}
+
+export async function getTurnstileSiteKey() {
+  try {
+    const resp = await fetch(`${API_BASE}/auth/turnstile-key`);
+    const data = await resp.json();
+    return data?.siteKey || '';
+  } catch {
+    return '';
+  }
 }
 
 export async function verifyTurnstileToken(token) {
@@ -317,6 +313,8 @@ export async function getNoisePosts(params = {}) {
   if (params.search) query.set('search', params.search);
   if (params.category && params.category !== 'all') query.set('category', params.category);
   if (params.status && params.status !== 'all') query.set('status', params.status);
+  if (params.sortBy) query.set('sortBy', params.sortBy);
+  if (params.sortOrder) query.set('sortOrder', params.sortOrder);
   if (params.limit) query.set('limit', String(params.limit));
   if (params.offset) query.set('offset', String(params.offset));
 

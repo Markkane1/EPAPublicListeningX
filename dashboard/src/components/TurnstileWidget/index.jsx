@@ -3,14 +3,13 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 
-const DEFAULT_SITE_KEY = '1x00000000000000000000AA';
+import { getTurnstileSiteKey } from '../../services/api';
 
 export default function TurnstileWidget({
-  siteKey = DEFAULT_SITE_KEY,
+  siteKey: propSiteKey,
   onVerify,
   onError,
   theme = 'auto',
@@ -18,9 +17,22 @@ export default function TurnstileWidget({
 }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
+  const [siteKey, setSiteKey] = useState(propSiteKey || '');
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [verifiedToken, setVerifiedToken] = useState(null);
   const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    if (propSiteKey) {
+      setSiteKey(propSiteKey);
+      return;
+    }
+    let isMounted = true;
+    getTurnstileSiteKey().then((key) => {
+      if (isMounted && key) setSiteKey(key);
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, [propSiteKey]);
 
   useEffect(() => {
     if (window.turnstile) {
@@ -50,7 +62,7 @@ export default function TurnstileWidget({
   }, []);
 
   useEffect(() => {
-    if (!isScriptLoaded || !containerRef.current || !window.turnstile) return;
+    if (!isScriptLoaded || !containerRef.current || !window.turnstile || !siteKey) return;
 
     try {
       
@@ -63,7 +75,7 @@ export default function TurnstileWidget({
       }
 
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey || DEFAULT_SITE_KEY,
+        sitekey: siteKey,
         theme: theme,
         action: action,
         callback: (token) => {
@@ -94,12 +106,6 @@ export default function TurnstileWidget({
       }
     };
   }, [isScriptLoaded, siteKey, theme, action]);
-
-  const handleManualDemoVerify = () => {
-    const demoToken = 'DEMO_BYPASS';
-    setVerifiedToken(demoToken);
-    if (onVerify) onVerify(demoToken);
-  };
 
   const handleReset = () => {
     setVerifiedToken(null);
@@ -157,23 +163,11 @@ export default function TurnstileWidget({
         </Box>
       )}
 
-      {(loadError || !verifiedToken) && (
-        <Box sx={{ textAlign: 'center', mt: 0.8 }}>
-          {!verifiedToken && (
-            <Button
-              size="small"
-              onClick={handleManualDemoVerify}
-              startIcon={<ShieldRoundedIcon sx={{ fontSize: '14px !important' }} />}
-              sx={{
-                fontSize: '11px',
-                color: '#64748b',
-                textTransform: 'none',
-                '&:hover': { color: '#0284c7', backgroundColor: '#f0f9ff' }
-              }}
-            >
-              Verify with Security Check
-            </Button>
-          )}
+      {loadError && (
+        <Box sx={{ textAlign: 'center', mt: 1 }}>
+          <Typography sx={{ fontSize: '12px', color: '#dc2626' }}>
+            Security check could not load. Please check your network connection or ad-blocker.
+          </Typography>
         </Box>
       )}
     </Box>

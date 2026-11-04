@@ -19,6 +19,7 @@ import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';
 import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import { useArgonController } from 'context';
+import { sanitizeUrl } from '../../utils/security';
 
 function AnalyticsView({ posts }) {
   const [controller] = useArgonController();
@@ -658,7 +659,7 @@ function AnalyticsView({ posts }) {
                   <TableCell sx={{ textAlign: 'center', py: 1.6, borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : undefined }}>
                     <Button
                       component="a"
-                      href={post.postUrl}
+                      href={sanitizeUrl(post.postUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       size="small"

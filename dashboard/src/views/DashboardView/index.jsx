@@ -5,6 +5,7 @@ import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -106,6 +107,19 @@ function DashboardView({
   const duplicatesMerged = auditLog.filter((a) => a.status === 'DUPLICATE_MERGED').length;
   const noiseRemoved = auditLog.filter((a) => a.status === 'REMOVED').length;
   const totalFiltered = duplicatesMerged + noiseRemoved;
+  const totalPipelineProcessed = totalClean + duplicatesMerged + noiseRemoved;
+  const purityPct = totalPipelineProcessed > 0 ? Math.round((totalClean / totalPipelineProcessed) * 100) : 100;
+  const duplicatePct = totalPipelineProcessed > 0 ? ((duplicatesMerged / totalPipelineProcessed) * 100).toFixed(1) : '0';
+  const noisePct = totalPipelineProcessed > 0 ? ((noiseRemoved / totalPipelineProcessed) * 100).toFixed(1) : '0';
+
+  const recentAuditItems = useMemo(() => {
+    if (!auditLog || auditLog.length === 0) return [];
+    const interesting = auditLog.filter((a) => a.status === 'DUPLICATE_MERGED' || a.status === 'REMOVED');
+    if (interesting.length >= 3) {
+      return interesting.slice(0, 3);
+    }
+    return auditLog.slice(0, 3);
+  }, [auditLog]);
 
   const cityCounts = {};
   filteredDashboardPosts.forEach((p) => {
@@ -769,43 +783,214 @@ function DashboardView({
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
               gap: 2,
-              mb: 0,
+              mb: 2,
             }}
           >
-            <Box sx={{ p: 2, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
+            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#2dce89', textTransform: 'uppercase' }}>
                 Valid Posts
               </Typography>
-              <Typography sx={{ fontSize: '24px', fontWeight: 700, color: darkMode ? '#ffffff' : '#344767', my: 0.5 }}>
+              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: darkMode ? '#ffffff' : '#344767', my: 0.3 }}>
                 {totalClean}
               </Typography>
               <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
-                Passed all negative gates & geographic checks
+                Passed all negative gates & checks
               </Typography>
             </Box>
 
-            <Box sx={{ p: 2, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
+            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#fb6340', textTransform: 'uppercase' }}>
                 Duplicates Merged
               </Typography>
-              <Typography sx={{ fontSize: '24px', fontWeight: 700, color: darkMode ? '#ffffff' : '#344767', my: 0.5 }}>
+              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: darkMode ? '#ffffff' : '#344767', my: 0.3 }}>
                 {duplicatesMerged}
               </Typography>
               <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
-                Consolidated media & metrics into parent post
+                Consolidated into parent post
               </Typography>
             </Box>
 
-            <Box sx={{ p: 2, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
+            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#f5365c', textTransform: 'uppercase' }}>
                 Excluded Noise
               </Typography>
-              <Typography sx={{ fontSize: '24px', fontWeight: 700, color: darkMode ? '#ffffff' : '#344767', my: 0.5 }}>
+              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: darkMode ? '#ffffff' : '#344767', my: 0.3 }}>
                 {noiseRemoved}
               </Typography>
               <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
-                Delhi/India politics, cricket, Gadani ships, etc.
+                Irrelevant chatter & external regions
               </Typography>
+            </Box>
+          </Box>
+
+          {/* Pipeline Data Purity Rate Gauge */}
+          <Box
+            sx={{
+              p: 1.8,
+              borderRadius: '12px',
+              backgroundColor: darkMode ? '#0b1437' : '#f8f9fa',
+              border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: darkMode ? '#e2e8f0' : '#344767' }}>
+                  Pipeline Data Purity Rate:
+                </Typography>
+                <Chip
+                  label={`${purityPct}% Purity Yield`}
+                  size="small"
+                  sx={{
+                    height: '22px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    backgroundColor: darkMode ? 'rgba(45, 206, 137, 0.2)' : '#e6f8f0',
+                    color: '#2dce89',
+                    border: '1px solid #bbf7d0',
+                  }}
+                />
+              </Box>
+              <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#8392ab', fontWeight: 600 }}>
+                {totalPipelineProcessed} Records Evaluated
+              </Typography>
+            </Box>
+
+            {/* Segmented Pipeline Bar */}
+            <Box
+              sx={{
+                width: '100%',
+                height: '7px',
+                borderRadius: '3.5px',
+                backgroundColor: darkMode ? '#1a223f' : '#e9ecef',
+                display: 'flex',
+                overflow: 'hidden',
+                mb: 1,
+              }}
+            >
+              <Box sx={{ width: `${purityPct}%`, backgroundColor: '#2dce89' }} title={`Clean: ${purityPct}%`} />
+              <Box sx={{ width: `${duplicatePct}%`, backgroundColor: '#fb6340' }} title={`Merged: ${duplicatePct}%`} />
+              <Box sx={{ width: `${noisePct}%`, backgroundColor: '#f5365c' }} title={`Excluded: ${noisePct}%`} />
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.2, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2dce89' }} />
+                <Typography sx={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
+                  Verified Clean ({purityPct}%)
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#fb6340' }} />
+                <Typography sx={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
+                  Merged Duplicates ({duplicatePct}%)
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f5365c' }} />
+                <Typography sx={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
+                  Excluded Noise ({noisePct}%)
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Recent Automated Provenance Audit Stream */}
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography sx={{ fontSize: '11px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#8392ab', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                Recent Provenance Audit Decisions:
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => onNavigate('audit')}
+                sx={{
+                  p: 0,
+                  minWidth: 0,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  color: darkMode ? '#38bdf8' : '#1171ef',
+                  '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+                }}
+              >
+                Inspect audit trail →
+              </Button>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+              {recentAuditItems.map((item, idx) => {
+                const isMerged = item.status === 'DUPLICATE_MERGED';
+                const isRemoved = item.status === 'REMOVED';
+
+                return (
+                  <Box
+                    key={item.id || idx}
+                    onClick={() => onNavigate('audit')}
+                    sx={{
+                      p: 1,
+                      px: 1.4,
+                      borderRadius: '10px',
+                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 1.5,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      '&:hover': {
+                        backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                        borderColor: isMerged ? '#fed7aa' : isRemoved ? '#fecaca' : '#bbf7d0',
+                        transform: 'translateX(2px)',
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
+                      <Chip
+                        label={isMerged ? 'MERGED' : isRemoved ? 'EXCLUDED' : 'VERIFIED'}
+                        size="small"
+                        sx={{
+                          height: '20px',
+                          fontSize: '9.5px',
+                          fontWeight: 800,
+                          backgroundColor: isMerged
+                            ? darkMode ? 'rgba(251, 99, 64, 0.2)' : '#fff7ed'
+                            : isRemoved
+                            ? darkMode ? 'rgba(245, 54, 92, 0.2)' : '#fef2f2'
+                            : darkMode ? 'rgba(45, 206, 137, 0.2)' : '#f0fdf4',
+                          color: isMerged ? '#ea580c' : isRemoved ? '#e11d48' : '#16a34a',
+                          border: `1px solid ${isMerged ? '#fed7aa' : isRemoved ? '#fecdd3' : '#bbf7d0'}`,
+                          flexShrink: 0,
+                        }}
+                      />
+
+                      <Typography
+                        noWrap
+                        sx={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: darkMode ? '#e2e8f0' : '#334155',
+                          flex: 1,
+                        }}
+                      >
+                        {item.reason || item.text || 'Automated deterministic pipeline decision'}
+                      </Typography>
+                    </Box>
+
+                    <Typography
+                      sx={{
+                        fontSize: '11px',
+                        fontFamily: 'monospace',
+                        color: darkMode ? '#94a3b8' : '#64748b',
+                        flexShrink: 0,
+                      }}
+                    >
+                      @{item.author || 'system'}
+                    </Typography>
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
 
@@ -839,8 +1024,8 @@ function DashboardView({
               </Typography>
               <Box
                 sx={{
-                  backgroundColor: darkMode ? 'rgba(99, 102, 241, 0.2)' : '#e0e7ff',
-                  color: darkMode ? '#a5b4fc' : '#4338ca',
+                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.2)' : 'rgba(94, 114, 228, 0.1)',
+                  color: darkMode ? '#b3c5ff' : '#5e72e4',
                   px: 1.2,
                   py: 0.3,
                   borderRadius: '6px',

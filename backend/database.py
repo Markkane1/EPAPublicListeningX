@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import sqlite3
 import hashlib
@@ -8,8 +9,25 @@ from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def _load_env():
+    env_file = os.path.join(ROOT_DIR, ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip("'\"")
+                        if k and k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+_load_env()
 DATA_DIR = os.path.join(ROOT_DIR, "data")
-DB_PATH = os.path.join(DATA_DIR, "epa_intelligence.db")
+DB_PATH = os.environ.get("DB_PATH") or os.path.join(DATA_DIR, "epa_intelligence.db")
 
 @contextmanager
 def get_db():
@@ -100,34 +118,34 @@ DEFAULT_ROLES_DATA = [
 
 DEFAULT_USERS_DATA = [
     {
-        "username": "admin",
-        "email": "admin@epa.punjab.gov.pk",
-        "password": "EPAadmin2026!",
-        "full_name": "EPA Chief Administrator",
+        "username": os.environ.get("DEFAULT_ADMIN_USERNAME", "admin"),
+        "email": os.environ.get("DEFAULT_ADMIN_EMAIL", "admin@epa.punjab.gov.pk"),
+        "password": os.environ.get("DEFAULT_ADMIN_PASSWORD", "EPAadmin2026!"),
+        "full_name": os.environ.get("DEFAULT_ADMIN_FULLNAME", "EPA Chief Administrator"),
         "role": "super_admin",
         "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
     },
     {
-        "username": "analyst",
-        "email": "analyst@epa.punjab.gov.pk",
-        "password": "EPAanalyst2026!",
-        "full_name": "Dr. Ayesha Malik (Lead Analyst)",
+        "username": os.environ.get("DEFAULT_ANALYST_USERNAME", "analyst"),
+        "email": os.environ.get("DEFAULT_ANALYST_EMAIL", "analyst@epa.punjab.gov.pk"),
+        "password": os.environ.get("DEFAULT_ANALYST_PASSWORD", "EPAanalyst2026!"),
+        "full_name": os.environ.get("DEFAULT_ANALYST_FULLNAME", "Dr. Ayesha Malik (Lead Analyst)"),
         "role": "analyst",
         "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150"
     },
     {
-        "username": "auditor",
-        "email": "auditor@epa.punjab.gov.pk",
-        "password": "EPAauditor2026!",
-        "full_name": "Tariq Mehmood (Field Auditor)",
+        "username": os.environ.get("DEFAULT_AUDITOR_USERNAME", "auditor"),
+        "email": os.environ.get("DEFAULT_AUDITOR_EMAIL", "auditor@epa.punjab.gov.pk"),
+        "password": os.environ.get("DEFAULT_AUDITOR_PASSWORD", "EPAauditor2026!"),
+        "full_name": os.environ.get("DEFAULT_AUDITOR_FULLNAME", "Tariq Mehmood (Field Auditor)"),
         "role": "auditor",
         "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
     },
     {
-        "username": "viewer",
-        "email": "viewer@epa.punjab.gov.pk",
-        "password": "EPAviewer2026!",
-        "full_name": "Public Citizen / Observer",
+        "username": os.environ.get("DEFAULT_VIEWER_USERNAME", "viewer"),
+        "email": os.environ.get("DEFAULT_VIEWER_EMAIL", "viewer@epa.punjab.gov.pk"),
+        "password": os.environ.get("DEFAULT_VIEWER_PASSWORD", "EPAviewer2026!"),
+        "full_name": os.environ.get("DEFAULT_VIEWER_FULLNAME", "Public Citizen / Observer"),
         "role": "viewer",
         "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
     }
@@ -148,6 +166,33 @@ def _verify_password(password: str, stored_hash_hex: str, salt_hex: str) -> bool
         return hmac.compare_digest(key.hex(), stored_hash_hex)
     except Exception:
         return False
+
+def _is_safe_avatar_url(url: str) -> bool:
+    """Validates that an avatar URL points to an allowed host only.
+    Prevents SSRF and tracking pixel injection via avatar fields.
+    """
+    if not url or not isinstance(url, str):
+        return True  # Empty/None is fine
+    url = url.strip()
+    # Allow relative paths, data URIs, and DiceBear (default avatar service)
+    _ALLOWED_AVATAR_HOSTS = {
+        "api.dicebear.com",
+        "images.unsplash.com",
+        "pbs.twimg.com",
+        "abs.twimg.com",
+        "avatars.githubusercontent.com",
+        "lh3.googleusercontent.com",
+    }
+    if not url.startswith(("http://", "https://")):
+        return True  # relative/data URI - allow
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        host = parsed.netloc.lower().split(":")[0]  # strip port
+        return host in _ALLOWED_AVATAR_HOSTS
+    except Exception:
+        return False
+
 
 def init_db():
     """Initializes SQLite tables and seeds initial dataset if empty."""
@@ -211,6 +256,11 @@ def init_db():
 
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_city ON posts(city_detected)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_created_desc ON posts(created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_city_created ON posts(city_detected, created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_severity_created ON posts(severity_code, created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_category_created ON posts(category, created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_engagement ON posts(total_engagement DESC)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_aqi ON posts(aqi_value)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_severity ON posts(severity_code)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category)")
@@ -268,6 +318,9 @@ def init_db():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_noise_category ON noise_posts(exclusion_category)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_noise_status ON noise_posts(status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_noise_created ON noise_posts(created_at)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_noise_status_created ON noise_posts(status, created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_noise_status_category ON noise_posts(status, exclusion_category)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_noise_status_likes ON noise_posts(status, likes DESC)")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS learned_rules (
@@ -338,14 +391,16 @@ def init_db():
         cursor.execute("SELECT COUNT(*) FROM settings")
         if cursor.fetchone()[0] == 0:
             default_settings = {
-                "data_source": "file",
-                "x_bearer_token": "",
-                "x_api_key": "",
-                "x_api_secret": "",
-                "x_api_endpoint": "https://api.twitter.com/2/tweets/search/recent",
+                "data_source": os.environ.get("DATA_SOURCE", "file"),
+                "x_bearer_token": os.environ.get("X_BEARER_TOKEN", ""),
+                "x_api_key": os.environ.get("X_API_KEY", ""),
+                "x_api_secret": os.environ.get("X_API_SECRET", ""),
+                "x_api_endpoint": os.environ.get("X_API_ENDPOINT", "https://api.twitter.com/2/tweets/search/recent"),
                 "default_query": '(AQI OR "air quality" OR pollution OR smog or "clean air") (Lahore or gujranwala OR Pakistan OR Punjab) -Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -india -india\'s -from:DelhiPollution -from:@ANI -from:@EPCCDpunjab -from:@EPAPunjab lang:en',
-                "auto_enrich": "true",
-                "sentiment_engine": "vader",
+                "auto_enrich": os.environ.get("AUTO_ENRICH", "true"),
+                "sentiment_engine": os.environ.get("SENTIMENT_ENGINE", "vader"),
+                "turnstile_site_key": os.environ.get("TURNSTILE_SITE_KEY", "1x00000000000000000000AA"),
+                "turnstile_secret_key": os.environ.get("TURNSTILE_SECRET_KEY", "1x0000000000000000000000000000000AA"),
                 "last_sync": datetime.now(timezone.utc).isoformat()
             }
             for k, v in default_settings.items():
@@ -498,6 +553,7 @@ def init_db():
                     """, (u["username"], u["email"], pwd_hash, salt_hex, u["full_name"], u["avatar"], role_row["id"], now_iso, now_iso))
 
         conn.commit()
+    cleanup_expired_sessions_db()
 
 def row_to_post_dict(row) -> dict:
     """Converts a SQLite row back to the exact JSON post structure expected by React."""
@@ -926,8 +982,8 @@ def save_noise_posts_batch(noise_list, conn=None):
                 p.get("author_avatar") or p.get("authorAvatar") or "",
                 1 if p.get("author_verified") or p.get("authorVerified") else 0,
                 p.get("author_description") or p.get("authorDescription") or "",
-                p.get("exclusion_category") or "OFF_TOPIC",
-                p.get("exclusion_reason") or "Filtered as noise",
+                p.get("exclusion_category") or p.get("exclusionCategory") or "OFF_TOPIC",
+                p.get("exclusion_reason") or p.get("exclusionReason") or "Filtered as noise",
                 raw_json_str,
                 p.get("status") or "EXCLUDED",
                 p.get("ingested_at") or now_iso,
@@ -944,8 +1000,8 @@ def save_noise_posts_batch(noise_list, conn=None):
             _execute(cursor)
             local_conn.commit()
 
-def get_noise_posts(search=None, category=None, status="EXCLUDED", limit=100, offset=0):
-    """Retrieves noise posts with optional search, category filter, and status."""
+def get_noise_posts(search=None, category=None, status="EXCLUDED", sort_by="newest", sort_order="desc", limit=100, offset=0):
+    """Retrieves noise posts with optional search, category filter, status, and comprehensive sorting (defaulting to latest posts first)."""
     query = "SELECT * FROM noise_posts WHERE 1=1"
     params = []
 
@@ -962,7 +1018,30 @@ def get_noise_posts(search=None, category=None, status="EXCLUDED", limit=100, of
         query += " AND (LOWER(text) LIKE ? OR LOWER(author_username) LIKE ? OR LOWER(author_name) LIKE ? OR LOWER(exclusion_reason) LIKE ?)"
         params.extend([s, s, s, s])
 
-    query += " ORDER BY created_at DESC"
+    is_asc = str(sort_order).lower() == "asc"
+    dir_sql = "ASC" if is_asc else "DESC"
+
+    if sort_by in ("engagement", "interactions"):
+        query += f" ORDER BY (COALESCE(likes, 0) + COALESCE(retweets, 0) + COALESCE(replies, 0) + COALESCE(quotes, 0)) {dir_sql}, created_at DESC"
+    elif sort_by == "likes":
+        query += f" ORDER BY COALESCE(likes, 0) {dir_sql}, created_at DESC"
+    elif sort_by == "retweets":
+        query += f" ORDER BY COALESCE(retweets, 0) {dir_sql}, created_at DESC"
+    elif sort_by == "replies":
+        query += f" ORDER BY COALESCE(replies, 0) {dir_sql}, created_at DESC"
+    elif sort_by == "views":
+        query += f" ORDER BY COALESCE(views, 0) {dir_sql}, created_at DESC"
+    elif sort_by in ("followers", "reach", "influence"):
+        query += f" ORDER BY COALESCE(author_followers, 0) {dir_sql}, created_at DESC"
+    elif sort_by == "verified":
+        query += f" ORDER BY author_verified {dir_sql}, created_at DESC"
+    elif sort_by == "oldest":
+        query += " ORDER BY created_at ASC"
+    elif sort_by in ("recently_ingested", "ingested"):
+        query += f" ORDER BY ingested_at {dir_sql}, created_at DESC"
+    else:  # 'newest' or default: sort by latest posts first!
+        query += f" ORDER BY created_at {dir_sql}"
+
     if limit is not None:
         query += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -1390,7 +1469,7 @@ def get_db_stats():
             "learnedRulesCount": learned_rules_count,
             "cityCounts": city_counts,
             "categoryCounts": category_counts,
-            "dbPath": DB_PATH
+            "dbPath": "[protected]"
         }
 
 def get_query_versions_db():
@@ -1578,12 +1657,14 @@ def authenticate_user_db(username_or_email: str, password: str):
         user_row = cursor.fetchone()
 
         if not user_row:
+            print(f"[SECURITY] Failed login attempt for identifier: {identifier[:3]}*** from authentication check")
             return None, "Invalid username or password."
 
         if not user_row["is_active"]:
             return None, "This account is inactive. Please contact your system administrator."
 
         if not _verify_password(password, user_row["password_hash"], user_row["salt"]):
+            print(f"[SECURITY] Failed password verification for user: {user_row['username']}")
             return None, "Invalid username or password."
 
         cursor.execute("""
@@ -1703,6 +1784,16 @@ def delete_auth_session_db(token: str) -> bool:
         cursor.execute("DELETE FROM auth_sessions WHERE token = ?", (token.strip(),))
         conn.commit()
         return cursor.rowcount > 0
+
+def cleanup_expired_sessions_db() -> int:
+    """Purges all expired auth sessions from the database. Returns count of purged sessions."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM auth_sessions WHERE expires_at < ?", (now_iso,))
+        purged = cursor.rowcount
+        conn.commit()
+        return purged
 
 def get_users_list_db(search: str = None, role_id: int = None, is_active: int = None, limit: int = 100, offset: int = 0):
     """Retrieves paginated users list with joined role details."""
@@ -1825,12 +1916,22 @@ def create_user_db(username: str, email: str, password: str, full_name: str, rol
 
     if not u_name or len(u_name) < 3:
         raise ValueError("Username must be at least 3 characters long.")
+    if len(u_name) > 64:
+        raise ValueError("Username must not exceed 64 characters.")
+    if not re.match(r"^[a-z0-9_.-]+$", u_name):
+        raise ValueError("Username may only contain lowercase letters, digits, underscores, hyphens, and dots.")
     if not u_email or "@" not in u_email:
         raise ValueError("A valid email address is required.")
-    if not u_pass or len(u_pass) < 6:
-        raise ValueError("Password must be at least 6 characters long.")
+    if len(u_email) > 254:
+        raise ValueError("Email address is too long.")
+    if not u_pass or len(u_pass) < 8:
+        raise ValueError("Password must be at least 8 characters long.")
+    if len(u_pass) > 1024:
+        raise ValueError("Password is too long.")
     if not u_full:
         u_full = u_name.capitalize()
+    if len(u_full) > 128:
+        raise ValueError("Full name must not exceed 128 characters.")
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -1858,7 +1959,10 @@ def create_user_db(username: str, email: str, password: str, full_name: str, rol
 
         pwd_hash, salt_hex = _hash_password(u_pass)
         now_iso = datetime.now(timezone.utc).isoformat()
-        u_avatar = avatar or f"https://api.dicebear.com/7.x/initials/svg?seed={u_name}"
+        raw_avatar = avatar or f"https://api.dicebear.com/7.x/initials/svg?seed={u_name}"
+        if not _is_safe_avatar_url(raw_avatar):
+            raw_avatar = f"https://api.dicebear.com/7.x/initials/svg?seed={u_name}"
+        u_avatar = raw_avatar
 
         cursor.execute("""
             INSERT INTO users (username, email, password_hash, salt, full_name, avatar, role_id, is_active, created_at, updated_at)
@@ -1912,7 +2016,7 @@ def update_user_db(user_id: int, full_name: str = None, email: str = None, role_
 
         if password and password.strip():
             if len(password.strip()) < 6:
-                raise ValueError("Password must be at least 6 characters long.")
+                raise ValueError("Password must be at least 8 characters long.")
             pwd_hash, salt_hex = _hash_password(password.strip())
             cursor.execute("""
                 UPDATE users
@@ -2162,7 +2266,7 @@ def verify_turnstile_token(token: str, remote_ip: str = None) -> tuple:
         return True, ""
 
     settings = get_settings()
-    turnstile_secret = settings.get("turnstile_secret_key", "").strip() or "1x0000000000000000000000000000000AA"
+    turnstile_secret = settings.get("turnstile_secret_key", "").strip() or os.environ.get("TURNSTILE_SECRET_KEY", "").strip() or "1x0000000000000000000000000000000AA"
 
     if turnstile_secret == "1x0000000000000000000000000000000AA":
         return True, ""

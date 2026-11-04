@@ -18,6 +18,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import ListSubheader from '@mui/material/ListSubheader';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Chip from '@mui/material/Chip';
@@ -32,8 +33,14 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import { sanitizeUrl } from '../../utils/security';
 
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
+import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
+import SwapVertRoundedIcon from '@mui/icons-material/SwapVertRounded';
+import NorthRoundedIcon from '@mui/icons-material/NorthRounded';
+import SouthRoundedIcon from '@mui/icons-material/SouthRounded';
 import CleaningServicesRoundedIcon from '@mui/icons-material/CleaningServicesRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
@@ -166,27 +173,27 @@ function getCategoryBadge(cat) {
 }
 
 function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExcludeClick }) {
+  const [controller] = useArgonController();
+  const { darkMode } = controller || {};
   const [isExpanded, setIsExpanded] = useState(false);
   const [failedImages, setFailedImages] = useState({});
 
-  const {
-    id,
-    authorName,
-    authorUsername,
-    authorVerified,
-    authorAvatar,
-    authorFollowers,
-    createdAt,
-    text = '',
-    postUrl,
-    exclusionCategory,
-    exclusionReason,
-    mediaUrls = [],
-    likes = 0,
-    retweets = 0,
-    replies = 0,
-    views = 0,
-  } = post;
+  const id = post.id || post.clean_id;
+  const authorName = post.authorName || post.author_name;
+  const authorUsername = post.authorUsername || post.author_username;
+  const authorVerified = post.authorVerified ?? post.author_verified;
+  const authorAvatar = post.authorAvatar || post.author_avatar;
+  const authorFollowers = post.authorFollowers ?? post.author_followers;
+  const createdAt = post.createdAt || post.created_at;
+  const text = post.text || '';
+  const postUrl = post.postUrl || post.post_url;
+  const exclusionCategory = post.exclusionCategory || post.exclusion_category;
+  const exclusionReason = post.exclusionReason || post.exclusion_reason;
+  const mediaUrls = post.mediaUrls || post.media_urls || [];
+  const likes = post.likes || 0;
+  const retweets = post.retweets || 0;
+  const replies = post.replies || 0;
+  const views = post.views || 0;
 
   const initials = (authorName || authorUsername || 'U').slice(0, 1).toUpperCase();
   const isLongText = text.length > 180;
@@ -199,9 +206,9 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
     <Card
       sx={{
         borderRadius: '16px',
-        border: '1px solid #edf2f7',
-        backgroundColor: '#ffffff',
-        boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
+        border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
+        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+        boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -209,7 +216,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
         overflow: 'hidden',
         '&:hover': {
           transform: 'translateY(-3px)',
-          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.08)',
+          boxShadow: darkMode ? '0 16px 36px rgba(0, 0, 0, 0.5)' : '0 12px 28px rgba(0, 0, 0, 0.08)',
         },
       }}
     >
@@ -269,7 +276,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                     fontFamily: '"Open Sans", sans-serif',
                     fontWeight: 700,
                     fontSize: '14px',
-                    color: '#1e293b',
+                    color: darkMode ? '#ffffff' : '#1e293b',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -294,7 +301,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                   sx={{
                     fontFamily: '"Open Sans", sans-serif',
                     fontSize: '11.5px',
-                    color: '#8392ab',
+                    color: darkMode ? '#94a3b8' : '#8392ab',
                     fontWeight: 500,
                     whiteSpace: 'nowrap',
                   }}
@@ -306,7 +313,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                     sx={{
                       fontFamily: '"Open Sans", sans-serif',
                       fontSize: '11.5px',
-                      color: '#adb5bd',
+                      color: darkMode ? '#64748b' : '#adb5bd',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -318,7 +325,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                     sx={{
                       fontFamily: '"Open Sans", sans-serif',
                       fontSize: '11.5px',
-                      color: '#adb5bd',
+                      color: darkMode ? '#64748b' : '#adb5bd',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -332,7 +339,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
           {postUrl ? (
             <Button
               component="a"
-              href={postUrl}
+              href={sanitizeUrl(postUrl)}
               target="_blank"
               rel="noopener noreferrer"
               variant="outlined"
@@ -343,8 +350,8 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 fontFamily: '"Open Sans", sans-serif',
                 fontSize: '11px',
                 fontWeight: 600,
-                color: '#5e72e4',
-                borderColor: '#cbd5e1',
+                color: darkMode ? '#a5b4fc' : '#5e72e4',
+                borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
                 borderRadius: '6px',
                 px: 1.2,
                 py: 0.3,
@@ -353,7 +360,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 whiteSpace: 'nowrap',
                 '&:hover': {
                   borderColor: '#5e72e4',
-                  backgroundColor: 'rgba(94, 114, 228, 0.05)',
+                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.05)',
                 },
               }}
             >
@@ -423,7 +430,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
             sx={{
               fontFamily: '"Open Sans", sans-serif',
               fontSize: '13.5px',
-              color: '#334155',
+              color: darkMode ? '#cbd5e1' : '#334155',
               lineHeight: 1.55,
               wordBreak: 'break-word',
               ...(!isExpanded && {
@@ -447,7 +454,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 mt: 0.3,
                 fontSize: '12px',
                 fontWeight: 700,
-                color: '#5e72e4',
+                color: darkMode ? '#a5b4fc' : '#5e72e4',
                 cursor: 'pointer',
                 userSelect: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -703,8 +710,8 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
             mb: 1.5,
             p: 1.4,
             borderRadius: '10px',
-            backgroundColor: '#fff7ed',
-            border: '1px dashed #fedec0',
+            backgroundColor: darkMode ? 'rgba(234, 88, 12, 0.15)' : '#fff7ed',
+            border: darkMode ? '1px dashed rgba(234, 88, 12, 0.4)' : '1px dashed #fedec0',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
@@ -713,7 +720,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
               sx={{
                 fontSize: '11px',
                 fontWeight: 700,
-                color: '#c2410c',
+                color: darkMode ? '#fdba74' : '#c2410c',
                 textTransform: 'uppercase',
                 letterSpacing: '0.4px',
               }}
@@ -721,7 +728,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
               Exclusion Diagnostic:
             </Typography>
           </Box>
-          <Typography sx={{ fontSize: '12px', color: '#7c2d12', lineHeight: 1.45, fontWeight: 500 }}>
+          <Typography sx={{ fontSize: '12px', color: darkMode ? '#fdba74' : '#7c2d12', lineHeight: 1.45, fontWeight: 500 }}>
             {exclusionReason || 'Filtered by automated data cleaning pipeline.'}
           </Typography>
         </Box>
@@ -729,8 +736,8 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
 
       <Box
         sx={{
-          borderTop: '1px solid #edf2f7',
-          backgroundColor: '#f8fafc',
+          borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
+          backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
           px: { xs: 2, sm: 2.5 },
           py: 1.2,
           display: 'flex',
@@ -744,29 +751,29 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2.2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <FavoriteRoundedIcon sx={{ color: '#f5365c', fontSize: '15px' }} />
-            <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#344767' }}>
+            <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: darkMode ? '#ffffff' : '#344767' }}>
               {formatMetric(likes)}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <RepeatRoundedIcon sx={{ color: '#2dce89', fontSize: '15px' }} />
-            <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#344767' }}>
+            <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: darkMode ? '#ffffff' : '#344767' }}>
               {formatMetric(retweets)}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <ChatBubbleOutlineRoundedIcon sx={{ color: '#11cdef', fontSize: '15px' }} />
-            <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#344767' }}>
+            <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: darkMode ? '#ffffff' : '#344767' }}>
               {formatMetric(replies)}
             </Typography>
           </Box>
 
           {views > 0 && (
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: '5px' }}>
-              <VisibilityRoundedIcon sx={{ color: '#8392ab', fontSize: '15px' }} />
-              <Typography sx={{ fontSize: '12.5px', fontWeight: 500, color: '#8392ab' }}>
+              <VisibilityRoundedIcon sx={{ color: darkMode ? '#94a3b8' : '#8392ab', fontSize: '15px' }} />
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 500, color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 {formatMetric(views)}
               </Typography>
             </Box>
@@ -851,12 +858,39 @@ NoisePostCard.propTypes = {
   onExcludeClick: PropTypes.func,
 };
 
+
+export const NOISE_SORT_OPTIONS = [
+  { id: 'newest', label: 'Latest / Most Recent', short: 'Latest', group: 'Recency & Timeline' },
+  { id: 'oldest', label: 'Oldest First', short: 'Oldest', group: 'Recency & Timeline' },
+  { id: 'recently_ingested', label: 'Recently Ingested / Scraped', short: 'Recent Scraped', group: 'Recency & Timeline' },
+
+  { id: 'engagement', label: 'Most Interactions (Total)', short: 'Most Interactions', group: 'Interactions & Virality' },
+  { id: 'likes', label: 'Most Likes / Hearted', short: 'Most Likes', group: 'Interactions & Virality' },
+  { id: 'retweets', label: 'Most Reposts / Retweets', short: 'Most Retweets', group: 'Interactions & Virality' },
+  { id: 'replies', label: 'Most Discussion / Replies', short: 'Most Replies', group: 'Interactions & Virality' },
+  { id: 'views', label: 'Most Impressions / Views', short: 'Most Views', group: 'Interactions & Virality' },
+
+  { id: 'followers', label: 'Top Author Reach (Followers)', short: 'Top Reach', group: 'Author & Influence' },
+  { id: 'verified', label: 'Verified Accounts First', short: 'Verified First', group: 'Author & Influence' },
+
+  { id: 'media_count', label: 'Most Media Attachments (Photos/Videos)', short: 'Photo Evidence', group: 'Media & Proof' },
+];
+
+export const NOISE_QUICK_SORTS = [
+  { id: 'newest', label: 'Latest', icon: '🕒' },
+  { id: 'engagement', label: 'Most Interactions', icon: '🔥' },
+  { id: 'replies', label: 'Most Discussion', icon: '💬' },
+  { id: 'likes', label: 'Most Likes', icon: '❤️' },
+  { id: 'followers', label: 'Top Reach', icon: '👥' },
+  { id: 'media_count', label: 'Photo Evidence', icon: '📸' },
+];
+
 function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcluded, onImageClick }) {
   const [controller] = useArgonController();
-  const { miniSidenav } = controller || {};
+  const { miniSidenav, darkMode } = controller || {};
 
   const [activeTab, setActiveTab] = useState(0); 
-  const [noisePostsList, setNoisePostsList] = useState([]);
+  const [noisePostsList, setNoisePostsList] = useState(propNoisePosts);
   const [restoredPostsList, setRestoredPostsList] = useState([]);
   const [learnedRulesList, setLearnedRulesList] = useState([]);
   const [noiseStats, setNoiseStats] = useState({
@@ -868,8 +902,15 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
   });
 
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [filters, setFilters] = useState({
+    search: '',
+    category: 'all',
+    media: 'all',
+    verified: 'all',
+    date: 'all',
+    sortBy: 'newest',
+    sortOrder: 'desc',
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 12;
 
@@ -897,8 +938,8 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
     setLoading(true);
     try {
       const [excluded, restored, rules, stats] = await Promise.all([
-        getNoisePosts({ status: 'EXCLUDED', limit: 250 }).catch(() => []),
-        getNoisePosts({ status: 'RESTORED', limit: 100 }).catch(() => []),
+        getNoisePosts({ status: 'EXCLUDED', limit: 250, sortBy: 'newest', sortOrder: 'desc' }).catch(() => []),
+        getNoisePosts({ status: 'RESTORED', limit: 100, sortBy: 'newest', sortOrder: 'desc' }).catch(() => []),
         getLearnedRules().catch(() => []),
         getNoiseStats().catch(() => ({
           totalNoise: 0,
@@ -957,23 +998,206 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
     }
   }, [propNoisePosts]);
 
+  const { availableCategories, availableDates } = useMemo(() => {
+    const list = activeTab === 2 ? restoredPostsList : noisePostsList;
+    const catMap = {};
+    const dateMap = {};
+
+    list.forEach((p) => {
+      const cat = p.exclusionCategory || p.exclusion_category || 'OFF_TOPIC';
+      catMap[cat] = (catMap[cat] || 0) + 1;
+
+      const dateStr = p.createdAt || p.created_at;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          const key = d.toISOString().slice(0, 10);
+          dateMap[key] = (dateMap[key] || 0) + 1;
+        }
+      }
+    });
+
+    const categories = Object.entries(catMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id, count]) => ({ id, count }));
+
+    const dates = Object.entries(dateMap)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([date, count]) => ({ date, count }));
+
+    return { availableCategories: categories, availableDates: dates };
+  }, [noisePostsList, restoredPostsList, activeTab]);
+
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+    setCurrentPage(1);
+  };
+
+  const handleToggleSortOrder = () => {
+    setFilters((prev) => ({
+      ...prev,
+      sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc',
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      category: 'all',
+      media: 'all',
+      verified: 'all',
+      date: 'all',
+      sortBy: 'newest',
+      sortOrder: 'desc',
+    });
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters =
+    Boolean(filters.search) ||
+    filters.category !== 'all' ||
+    filters.media !== 'all' ||
+    filters.verified !== 'all' ||
+    filters.date !== 'all' ||
+    filters.sortBy !== 'newest' ||
+    filters.sortOrder !== 'desc';
+
   const filteredNoisePosts = useMemo(() => {
     const list = activeTab === 2 ? restoredPostsList : noisePostsList;
-    return list.filter((p) => {
-      if (selectedCategory !== 'all' && p.exclusionCategory !== selectedCategory) {
-        return false;
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+    let result = [...list];
+
+    // 1. Keyword search (post text, author username, author display name, exclusion reason)
+    if (filters.search && filters.search.trim()) {
+      const q = filters.search.toLowerCase().trim();
+      result = result.filter((p) => {
         const textMatch = (p.text || '').toLowerCase().includes(q);
-        const authorMatch = (p.authorUsername || '').toLowerCase().includes(q);
-        const nameMatch = (p.authorName || '').toLowerCase().includes(q);
-        const reasonMatch = (p.exclusionReason || '').toLowerCase().includes(q);
-        if (!textMatch && !authorMatch && !nameMatch && !reasonMatch) return false;
+        const authorMatch = (p.authorUsername || p.author_username || '').toLowerCase().includes(q);
+        const nameMatch = (p.authorName || p.author_name || '').toLowerCase().includes(q);
+        const reasonMatch = (p.exclusionReason || p.exclusion_reason || '').toLowerCase().includes(q);
+        return textMatch || authorMatch || nameMatch || reasonMatch;
+      });
+    }
+
+    // 2. Exclusion category filter
+    if (filters.category !== 'all') {
+      result = result.filter((p) => {
+        const cat = p.exclusionCategory || p.exclusion_category;
+        return cat === filters.category;
+      });
+    }
+
+    // 3. Media filter
+    if (filters.media === 'media') {
+      result = result.filter((p) => {
+        const urls = p.mediaUrls || p.media_urls || [];
+        return Array.isArray(urls) && urls.length > 0;
+      });
+    } else if (filters.media === 'text') {
+      result = result.filter((p) => {
+        const urls = p.mediaUrls || p.media_urls || [];
+        return !Array.isArray(urls) || urls.length === 0;
+      });
+    }
+
+    // 4. Verified author filter
+    if (filters.verified === 'verified') {
+      result = result.filter((p) => Boolean(p.authorVerified ?? p.author_verified));
+    } else if (filters.verified === 'unverified') {
+      result = result.filter((p) => !Boolean(p.authorVerified ?? p.author_verified));
+    }
+
+    // 5. Calendar date filter
+    if (filters.date !== 'all') {
+      result = result.filter((p) => {
+        const dateStr = p.createdAt || p.created_at;
+        if (!dateStr) return false;
+        const d = new Date(dateStr);
+        return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === filters.date;
+      });
+    }
+
+    // 6. Comprehensive sorting (Defaults to latest posts first)
+    const mult = filters.sortOrder === 'asc' ? -1 : 1;
+
+    result.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'newest': {
+          const timeA = new Date(a.createdAt || a.created_at || a.ingestedAt || a.ingested_at || 0).getTime() || 0;
+          const timeB = new Date(b.createdAt || b.created_at || b.ingestedAt || b.ingested_at || 0).getTime() || 0;
+          if (timeA !== timeB) return mult * (timeB - timeA);
+          return mult * String(b.id || '').localeCompare(String(a.id || ''));
+        }
+        case 'oldest': {
+          const timeA = new Date(a.createdAt || a.created_at || a.ingestedAt || a.ingested_at || 0).getTime() || 0;
+          const timeB = new Date(b.createdAt || b.created_at || b.ingestedAt || b.ingested_at || 0).getTime() || 0;
+          if (timeA !== timeB) return mult * (timeA - timeB);
+          return mult * String(a.id || '').localeCompare(String(b.id || ''));
+        }
+        case 'recently_ingested': {
+          const timeA = new Date(a.ingestedAt || a.ingested_at || a.createdAt || a.created_at || 0).getTime() || 0;
+          const timeB = new Date(b.ingestedAt || b.ingested_at || b.createdAt || b.created_at || 0).getTime() || 0;
+          if (timeA !== timeB) return mult * (timeB - timeA);
+          return mult * String(b.id || '').localeCompare(String(a.id || ''));
+        }
+        case 'engagement': {
+          const aEng = (parseInt(a.likes, 10) || 0) + (parseInt(a.retweets, 10) || 0) + (parseInt(a.replies, 10) || 0) + (parseInt(a.quotes, 10) || 0);
+          const bEng = (parseInt(b.likes, 10) || 0) + (parseInt(b.retweets, 10) || 0) + (parseInt(b.replies, 10) || 0) + (parseInt(b.quotes, 10) || 0);
+          if (aEng !== bEng) return mult * (bEng - aEng);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'likes': {
+          const aL = parseInt(a.likes, 10) || 0;
+          const bL = parseInt(b.likes, 10) || 0;
+          if (aL !== bL) return mult * (bL - aL);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'retweets': {
+          const aR = parseInt(a.retweets, 10) || 0;
+          const bR = parseInt(b.retweets, 10) || 0;
+          if (aR !== bR) return mult * (bR - aR);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'replies': {
+          const aRep = parseInt(a.replies, 10) || 0;
+          const bRep = parseInt(b.replies, 10) || 0;
+          if (aRep !== bRep) return mult * (bRep - aRep);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'views': {
+          const aV = parseInt(a.views, 10) || 0;
+          const bV = parseInt(b.views, 10) || 0;
+          if (aV !== bV) return mult * (bV - aV);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'followers': {
+          const aF = parseInt(a.authorFollowers || a.author_followers, 10) || 0;
+          const bF = parseInt(b.authorFollowers || b.author_followers, 10) || 0;
+          if (aF !== bF) return mult * (bF - aF);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'verified': {
+          const aV = (a.authorVerified || a.author_verified) ? 1 : 0;
+          const bV = (b.authorVerified || b.author_verified) ? 1 : 0;
+          if (aV !== bV) return mult * (bV - aV);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        case 'media_count': {
+          const aM = (a.mediaUrls || a.media_urls || []).length;
+          const bM = (b.mediaUrls || b.media_urls || []).length;
+          if (aM !== bM) return mult * (bM - aM);
+          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
+        }
+        default: {
+          const timeA = new Date(a.createdAt || a.created_at || 0).getTime() || 0;
+          const timeB = new Date(b.createdAt || b.created_at || 0).getTime() || 0;
+          return mult * (timeB - timeA);
+        }
       }
-      return true;
     });
-  }, [noisePostsList, restoredPostsList, activeTab, selectedCategory, searchQuery]);
+
+    return result;
+  }, [noisePostsList, restoredPostsList, activeTab, filters]);
 
   const totalPages = Math.ceil(filteredNoisePosts.length / postsPerPage) || 1;
   const paginatedPosts = filteredNoisePosts.slice(
@@ -987,16 +1211,21 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
     setCustomRuleValue('');
 
     try {
+      const postCat = post.exclusionCategory || post.exclusion_category;
+      const postRsn = post.exclusionReason || post.exclusion_reason;
+      const postAuthor = post.authorUsername || post.author_username;
+      const postId = post.id || post.clean_id;
+
       let candidates = await extractNoiseCandidates({
-        postId: post.id,
+        postId,
         text: post.text,
-        author: post.authorUsername,
-        category: post.exclusionCategory,
-        reason: post.exclusionReason,
+        author: postAuthor,
+        category: postCat,
+        reason: postRsn,
       });
 
       if (!candidates || candidates.length === 0) {
-        candidates = extractLearningCandidates(post, post.exclusionCategory, post.exclusionReason);
+        candidates = extractLearningCandidates(post, postCat, postRsn);
       }
 
       setCandidateRules(candidates);
@@ -1239,7 +1468,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 sx={{
                   fontFamily: '"Open Sans", sans-serif',
                   fontWeight: 700,
-                  color: '#1e293b',
+                  color: darkMode ? '#ffffff' : '#1e293b',
                   fontSize: { xs: '20px', md: '24px' },
                   lineHeight: 1.2,
                 }}
@@ -1247,7 +1476,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 Noise Ingestion & Learning Engine
               </Typography>
               <Typography
-                sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: '13.5px', color: '#67748e', mt: 0.3 }}
+                sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: '13.5px', color: darkMode ? '#94a3b8' : '#67748e', mt: 0.3 }}
               >
                 Review filtered noise, manually salvage relevant posts, and teach the system through explainable rule induction (No AI).
               </Typography>
@@ -1266,11 +1495,11 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '13px',
-              color: '#5e72e4',
-              borderColor: '#d2d6da',
+              color: darkMode ? '#a5b4fc' : '#5e72e4',
+              borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#d2d6da',
               '&:hover': {
                 borderColor: '#5e72e4',
-                backgroundColor: 'rgba(94, 114, 228, 0.05)',
+                backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.05)',
               },
             }}
           >
@@ -1362,13 +1591,14 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
       <Card
         sx={{
           borderRadius: '16px',
-          border: '1px solid #edf2f7',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
+          backgroundColor: darkMode ? '#111c44' : '#ffffff',
           mb: 3,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+          boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0,0,0,0.04)',
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 2, sm: 3 }, pt: 1.5 }}>
+        <Box sx={{ borderBottom: 1, borderColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'divider', px: { xs: 2, sm: 3 }, pt: 1.5 }}>
           <Tabs
             value={activeTab}
             onChange={(e, v) => {
@@ -1383,9 +1613,9 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 fontWeight: 600,
                 fontSize: '14px',
                 minHeight: '48px',
-                color: '#67748e',
+                color: darkMode ? '#94a3b8' : '#67748e',
                 '&.Mui-selected': {
-                  color: '#5e72e4',
+                  color: darkMode ? '#ffffff' : '#5e72e4',
                   fontWeight: 700,
                 },
               },
@@ -1412,76 +1642,460 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
               iconPosition="start"
             />
           </Tabs>
-        </Box>
-
-        {(activeTab === 0 || activeTab === 2) && (
+        </Box>        {(activeTab === 0 || activeTab === 2) && (
           <Box
             sx={{
               p: { xs: 2, sm: 2.5 },
-              display: 'flex',
-              gap: 2,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#f8fafc',
+              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
             }}
           >
-            <OutlinedInput
-              placeholder="Search noise posts by keyword, author, or reason..."
-              size="small"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              startAdornment={
-                <InputAdornment position="start">
-                  <SearchRoundedIcon sx={{ color: '#8392ab', fontSize: 20 }} />
-                </InputAdornment>
-              }
+            {/* Top Grid: Search and Filter Dropdowns */}
+            <Box
               sx={{
-                flexGrow: 1,
-                maxWidth: { xs: '100%', sm: 420 },
-                borderRadius: '8px',
-                fontSize: '13.5px',
-                backgroundColor: '#fff',
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: '2fr repeat(4, 1fr)',
+                },
+                gap: 1.5,
+                alignItems: 'center',
+                mb: 2,
               }}
-            />
-
-            <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
-              <FormControl size="small" sx={{ minWidth: 220 }}>
-                <InputLabel sx={{ fontSize: '13px' }}>Exclusion Category</InputLabel>
-                <Select
-                  value={selectedCategory}
-                  label="Exclusion Category"
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setCurrentPage(1);
+            >
+              {/* Keyword Search Input with Clear Button */}
+              <Box sx={{ gridColumn: { xs: '1', sm: 'span 2', md: 'span 1' } }}>
+                <OutlinedInput
+                  placeholder="Search noise posts by keyword, author, or reason..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <SearchRoundedIcon sx={{ color: darkMode ? '#94a3b8' : '#8392ab', fontSize: '19px' }} />
+                    </InputAdornment>
+                  }
+                  endAdornment={
+                    filters.search ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleFilterChange('search', '')}
+                          edge="end"
+                          sx={{ p: 0.5, color: '#94a3b8', '&:hover': { color: darkMode ? '#ffffff' : '#475569' } }}
+                        >
+                          <ClearRoundedIcon sx={{ fontSize: '16px' }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null
+                  }
+                  size="small"
+                  fullWidth
+                  sx={{
+                    fontFamily: '"Open Sans", sans-serif',
+                    fontSize: '13px',
+                    borderRadius: '8px',
+                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    color: darkMode ? '#ffffff' : '#1e293b',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
+                    '& input': { color: darkMode ? '#ffffff' : 'inherit' },
                   }}
-                  sx={{ borderRadius: '8px', fontSize: '13px', backgroundColor: '#fff' }}
+                />
+              </Box>
+
+              {/* Exclusion Category Filter */}
+              <FormControl fullWidth size="small">
+                <InputLabel id="noise-cat-label" sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : undefined }}>
+                  Exclusion Category
+                </InputLabel>
+                <Select
+                  labelId="noise-cat-label"
+                  value={filters.category}
+                  label="Exclusion Category"
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        color: darkMode ? '#ffffff' : 'inherit',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+                      },
+                    },
+                  }}
+                  sx={{
+                    fontSize: '13px',
+                    borderRadius: '8px',
+                    fontFamily: '"Open Sans", sans-serif',
+                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    color: darkMode ? '#ffffff' : '#344767',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
+                    '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
+                  }}
                 >
-                  <MenuItem value="all">All Exclusion Categories</MenuItem>
-                  <MenuItem value="OFF_TOPIC">Off-Topic Noise</MenuItem>
-                  <MenuItem value="NO_AIR_QUALITY_RELEVANCE">No AQ Relevance</MenuItem>
-                  <MenuItem value="NO_GEOGRAPHIC_RELEVANCE">No Geo Relevance</MenuItem>
-                  <MenuItem value="EXCLUDED_INDIAN_CONTEXT">Indian Domestic</MenuItem>
-                  <MenuItem value="EXCLUDED_ACCOUNT">Excluded Account</MenuItem>
+                  <MenuItem value="all">
+                    All Categories ({activeTab === 2 ? restoredPostsList.length : noisePostsList.length})
+                  </MenuItem>
+                  {availableCategories.map((c) => {
+                    const badge = getCategoryBadge(c.id);
+                    const label = badge ? badge.props.children : c.id;
+                    return (
+                      <MenuItem key={c.id} value={c.id}>
+                        {label} ({c.count})
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
 
+              {/* Media Attachments Filter */}
+              <FormControl fullWidth size="small">
+                <InputLabel id="noise-media-label" sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : undefined }}>
+                  Media Filter
+                </InputLabel>
+                <Select
+                  labelId="noise-media-label"
+                  value={filters.media}
+                  label="Media Filter"
+                  onChange={(e) => handleFilterChange('media', e.target.value)}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        color: darkMode ? '#ffffff' : 'inherit',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+                      },
+                    },
+                  }}
+                  sx={{
+                    fontSize: '13px',
+                    borderRadius: '8px',
+                    fontFamily: '"Open Sans", sans-serif',
+                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    color: darkMode ? '#ffffff' : '#344767',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
+                    '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
+                  }}
+                >
+                  <MenuItem value="all">All Attachments</MenuItem>
+                  <MenuItem value="media">Photo / Video Evidence</MenuItem>
+                  <MenuItem value="text">Text Only (No Media)</MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* Verified Author Filter */}
+              <FormControl fullWidth size="small">
+                <InputLabel id="noise-verified-label" sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : undefined }}>
+                  Author Account
+                </InputLabel>
+                <Select
+                  labelId="noise-verified-label"
+                  value={filters.verified}
+                  label="Author Account"
+                  onChange={(e) => handleFilterChange('verified', e.target.value)}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        color: darkMode ? '#ffffff' : 'inherit',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+                      },
+                    },
+                  }}
+                  sx={{
+                    fontSize: '13px',
+                    borderRadius: '8px',
+                    fontFamily: '"Open Sans", sans-serif',
+                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    color: darkMode ? '#ffffff' : '#344767',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
+                    '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
+                  }}
+                >
+                  <MenuItem value="all">All Accounts</MenuItem>
+                  <MenuItem value="verified">Verified Accounts Only</MenuItem>
+                  <MenuItem value="unverified">Standard Accounts Only</MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* Date Filter */}
+              <FormControl fullWidth size="small">
+                <InputLabel id="noise-date-label" sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : undefined }}>
+                  Date Filter
+                </InputLabel>
+                <Select
+                  labelId="noise-date-label"
+                  value={filters.date}
+                  label="Date Filter"
+                  onChange={(e) => handleFilterChange('date', e.target.value)}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        color: darkMode ? '#ffffff' : 'inherit',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+                      },
+                    },
+                  }}
+                  sx={{
+                    fontSize: '13px',
+                    borderRadius: '8px',
+                    fontFamily: '"Open Sans", sans-serif',
+                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    color: darkMode ? '#ffffff' : '#344767',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
+                    '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
+                  }}
+                >
+                  <MenuItem value="all">All Dates</MenuItem>
+                  {availableDates.map((item) => {
+                    const [y, m, d] = item.date.split('-');
+                    const dateObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+                    const label = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    return (
+                      <MenuItem key={item.date} value={item.date}>
+                        {label} ({item.count})
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* Bottom Row: Quick Sort Chips, Comprehensive Sort Dropdown, Direction Toggle, Reset, Count */}
+            <Box
+              sx={{
+                backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                borderRadius: '12px',
+                p: { xs: 1.5, sm: 1.8 },
+                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                justifyContent: 'space-between',
+                alignItems: { xs: 'stretch', md: 'center' },
+                gap: 1.5,
+              }}
+            >
+              {/* Quick Sort Chips */}
               <Box
                 sx={{
-                  px: 1.5,
-                  py: 0.6,
-                  borderRadius: '8px',
-                  backgroundColor: '#edf2f7',
-                  color: '#475569',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 0.8,
+                  minWidth: 0,
+                  flex: 1,
                 }}
               >
-                Showing {filteredNoisePosts.length} posts
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mr: 0.3, flexShrink: 0 }}>
+                  <SwapVertRoundedIcon sx={{ color: '#5e72e4', fontSize: '18px' }} />
+                  <Typography
+                    sx={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: darkMode ? '#cbd5e1' : '#475569',
+                      fontFamily: '"Open Sans", sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.6px',
+                    }}
+                  >
+                    Quick Sort:
+                  </Typography>
+                </Box>
+
+                {NOISE_QUICK_SORTS.map((qs) => {
+                  const isActive = filters.sortBy === qs.id;
+                  return (
+                    <Button
+                      key={qs.id}
+                      size="small"
+                      variant={isActive ? 'contained' : 'outlined'}
+                      onClick={() => handleFilterChange('sortBy', qs.id)}
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '11.5px',
+                        fontWeight: isActive ? 700 : 500,
+                        fontFamily: '"Open Sans", sans-serif',
+                        borderRadius: '6px',
+                        px: 1.1,
+                        py: 0.3,
+                        minWidth: 'auto',
+                        background: isActive
+                          ? 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)'
+                          : darkMode
+                          ? 'rgba(255, 255, 255, 0.04)'
+                          : '#ffffff',
+                        color: isActive ? '#ffffff' : darkMode ? '#94a3b8' : '#64748b',
+                        borderColor: isActive
+                          ? 'transparent'
+                          : darkMode
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : '#e2e8f0',
+                        boxShadow: isActive ? '0 2px 6px rgba(94, 114, 228, 0.35)' : 'none',
+                        '&:hover': {
+                          background: isActive
+                            ? 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)'
+                            : darkMode
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : '#f1f5f9',
+                          borderColor: isActive ? 'transparent' : '#cbd5e1',
+                        },
+                      }}
+                    >
+                      <Box component="span" sx={{ mr: 0.4 }}>
+                        {qs.icon}
+                      </Box>
+                      {qs.label}
+                    </Button>
+                  );
+                })}
+              </Box>
+
+              {/* Right Controls: Sort Dropdown, Direction Toggle, Reset, Count */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.2,
+                  flexShrink: 0,
+                  justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                }}
+              >
+                {/* Full Sort Dropdown */}
+                <FormControl size="small" sx={{ minWidth: 210 }}>
+                  <Select
+                    value={filters.sortBy}
+                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                          color: darkMode ? '#ffffff' : 'inherit',
+                          maxHeight: 380,
+                        },
+                      },
+                    }}
+                    sx={{
+                      fontSize: '12.5px',
+                      borderRadius: '8px',
+                      fontFamily: '"Open Sans", sans-serif',
+                      fontWeight: 600,
+                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      color: darkMode ? '#ffffff' : '#344767',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
+                      '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
+                    }}
+                  >
+                    {['Recency & Timeline', 'Interactions & Virality', 'Author & Influence', 'Media & Proof'].map((group) => {
+                      const groupOptions = NOISE_SORT_OPTIONS.filter((o) => o.group === group);
+                      if (groupOptions.length === 0) return null;
+                      return [
+                        <ListSubheader
+                          key={group}
+                          sx={{
+                            backgroundColor: darkMode ? '#0b1437' : '#f1f5f9',
+                            color: darkMode ? '#a5b4fc' : '#5e72e4',
+                            fontWeight: 700,
+                            fontSize: '11px',
+                            lineHeight: '28px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                          }}
+                        >
+                          {group}
+                        </ListSubheader>,
+                        ...groupOptions.map((opt) => (
+                          <MenuItem key={opt.id} value={opt.id} sx={{ fontSize: '12.5px', py: 0.8 }}>
+                            {opt.label}
+                          </MenuItem>
+                        )),
+                      ];
+                    })}
+                  </Select>
+                </FormControl>
+
+                {/* Sort Order Direction Toggle Button */}
+                <Tooltip title={filters.sortOrder === 'asc' ? 'Ascending Order (Lowest / Oldest first)' : 'Descending Order (Highest / Latest first)'}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleToggleSortOrder}
+                    sx={{
+                      minWidth: '38px',
+                      width: '38px',
+                      height: '38px',
+                      p: 0,
+                      borderRadius: '8px',
+                      borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+                      color: '#5e72e4',
+                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      '&:hover': {
+                        borderColor: '#5e72e4',
+                        backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.08)',
+                      },
+                    }}
+                  >
+                    {filters.sortOrder === 'asc' ? (
+                      <NorthRoundedIcon sx={{ fontSize: '18px' }} />
+                    ) : (
+                      <SouthRoundedIcon sx={{ fontSize: '18px' }} />
+                    )}
+                  </Button>
+                </Tooltip>
+
+                {/* Reset Filters Button */}
+                {hasActiveFilters && (
+                  <Tooltip title="Reset all filters and restore default sort (Latest posts)">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={handleResetFilters}
+                      startIcon={<RestartAltRoundedIcon sx={{ fontSize: '16px' }} />}
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        fontFamily: '"Open Sans", sans-serif',
+                        borderRadius: '8px',
+                        borderColor: '#f5365c',
+                        color: '#f5365c',
+                        backgroundColor: darkMode ? 'rgba(245, 54, 92, 0.08)' : 'rgba(245, 54, 92, 0.04)',
+                        '&:hover': {
+                          borderColor: '#f5365c',
+                          backgroundColor: darkMode ? 'rgba(245, 54, 92, 0.18)' : 'rgba(245, 54, 92, 0.1)',
+                        },
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  </Tooltip>
+                )}
+
+                {/* Result Count Indicator */}
+                <Box
+                  sx={{
+                    px: 1.3,
+                    py: 0.6,
+                    borderRadius: '8px',
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : '#edf2f7',
+                    color: darkMode ? '#cbd5e1' : '#475569',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography component="span" sx={{ fontSize: '12px', fontWeight: 700, color: '#5e72e4' }}>
+                    {filteredNoisePosts.length}
+                  </Typography>
+                  <Typography component="span" sx={{ fontSize: '12px', color: darkMode ? '#94a3b8' : '#64748b' }}>
+                    / {activeTab === 2 ? restoredPostsList.length : noisePostsList.length} posts
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -1490,7 +2104,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
 
       {(activeTab === 0 || activeTab === 2) && (
         <>
-          {loading ? (
+          {loading && (activeTab === 2 ? restoredPostsList.length === 0 : noisePostsList.length === 0) ? (
             <Box display="flex" justifyContent="center" alignItems="center" py={8}>
               <CircularProgress size={36} sx={{ color: '#5e72e4' }} />
             </Box>
@@ -1501,9 +2115,9 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 textAlign: 'center',
                 my: 3,
                 borderRadius: '16px',
-                backgroundColor: '#fff',
-                border: '1px solid #edf2f7',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                backgroundColor: darkMode ? '#111c44' : '#fff',
+                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
+                boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.04)',
               }}
             >
               <Box
@@ -1511,7 +2125,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                   width: 64,
                   height: 64,
                   borderRadius: '50%',
-                  backgroundColor: '#f8fafc',
+                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1519,20 +2133,20 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                   mb: 2,
                 }}
               >
-                <CleaningServicesRoundedIcon sx={{ fontSize: 32, color: '#8392ab' }} />
+                <CleaningServicesRoundedIcon sx={{ fontSize: 32, color: darkMode ? '#5e72e4' : '#8392ab' }} />
               </Box>
               <Typography
                 sx={{
                   fontFamily: '"Open Sans", sans-serif',
                   fontWeight: 700,
                   fontSize: '18px',
-                  color: '#344767',
+                  color: darkMode ? '#ffffff' : '#344767',
                   mb: 1,
                 }}
               >
                 {activeTab === 0 ? 'No Excluded Noise Posts Found' : 'No Restored Posts Found'}
               </Typography>
-              <Typography sx={{ fontSize: '13px', color: '#8392ab' }}>
+              <Typography sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 {activeTab === 0
                   ? 'No posts match your current search query or exclusion category filter.'
                   : 'Posts that you mark relevant and salvage from the Noise Feed will appear here.'}
@@ -1592,16 +2206,17 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
           sx={{
             p: 3,
             borderRadius: '16px',
-            border: '1px solid #edf2f7',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
+            boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.05)',
           }}
         >
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2.5}>
             <Box>
-              <Typography variant="h6" fontWeight="bold" color="#1e293b">
+              <Typography variant="h6" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#1e293b' }}>
                 Active Deterministic Rule Learning Ledger
               </Typography>
-              <Typography sx={{ fontSize: '13px', color: '#67748e', mt: 0.3 }}>
+              <Typography sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#67748e', mt: 0.3 }}>
                 These explainable heuristic rules were induced from operator curation. They are applied immediately across all future ingestion runs without AI.
               </Typography>
             </Box>
@@ -1615,7 +2230,11 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 textTransform: 'none',
                 fontWeight: 600,
                 color: '#5e72e4',
-                borderColor: '#cbd5e1',
+                borderColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1',
+                '&:hover': {
+                  borderColor: '#5e72e4',
+                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.1)' : undefined,
+                },
               }}
             >
               + Add Rule Manually
@@ -1624,31 +2243,31 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
 
           {learnedRulesList.length === 0 ? (
             <Box textAlign="center" py={6}>
-              <PsychologyAltRoundedIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 1.5 }} />
-              <Typography variant="h6" fontWeight="bold" color="text">
+              <PsychologyAltRoundedIcon sx={{ fontSize: 48, color: darkMode ? '#475569' : '#cbd5e1', mb: 1.5 }} />
+              <Typography variant="h6" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#344767' }}>
                 No learned rules yet
               </Typography>
-              <Typography variant="caption" color="text">
+              <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 Whenever you mark an excluded post as relevant in the Noise Feed, the system will synthesize rules here.
               </Typography>
             </Box>
           ) : (
-            <TableContainer sx={{ border: '1px solid #edf2f7', borderRadius: '10px' }}>
+            <TableContainer sx={{ border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7', borderRadius: '10px' }}>
               <Table size="small">
-                <TableHead sx={{ backgroundColor: '#f8fafc' }}>
+                <TableHead sx={{ backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '12px' }}>RULE TYPE</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '12px' }}>LEARNED VALUE / PATTERN</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '12px' }}>SOURCE / REASON</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '12px' }}>HIT COUNT</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '12px' }}>STATUS</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', textAlign: 'right' }}>ACTIONS</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>RULE TYPE</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>LEARNED VALUE / PATTERN</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>SOURCE / REASON</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>HIT COUNT</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>STATUS</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '12px', textAlign: 'right', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>ACTIONS</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {learnedRulesList.map((rule) => (
-                    <TableRow key={rule.id} hover>
-                      <TableCell>
+                    <TableRow key={rule.id} hover sx={{ '&:hover': { backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.03) !important' : undefined } }}>
+                      <TableCell sx={{ borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
                         <Chip
                           label={
                             rule.ruleType === 'author_whitelist'
@@ -1667,33 +2286,33 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                             fontWeight: 700,
                             backgroundColor:
                               rule.ruleType === 'author_whitelist'
-                                ? '#e6f8f0'
+                                ? (darkMode ? 'rgba(45, 206, 137, 0.2)' : '#e6f8f0')
                                 : rule.ruleType === 'aq_keyword'
-                                ? '#e0f2fe'
+                                ? (darkMode ? 'rgba(2, 132, 199, 0.2)' : '#e0f2fe')
                                 : rule.ruleType === 'geo_keyword'
-                                ? '#f3e8ff'
-                                : '#fef3e2',
+                                ? (darkMode ? 'rgba(130, 94, 228, 0.2)' : '#f3e8ff')
+                                : (darkMode ? 'rgba(251, 99, 64, 0.2)' : '#fef3e2'),
                             color:
                               rule.ruleType === 'author_whitelist'
                                 ? '#2dce89'
                                 : rule.ruleType === 'aq_keyword'
-                                ? '#0284c7'
+                                ? '#38bdf8'
                                 : rule.ruleType === 'geo_keyword'
-                                ? '#825ee4'
+                                ? '#a78bfa'
                                 : '#fb6340',
                           }}
                         />
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '13px' }}>
+                      <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '13px', color: darkMode ? '#ffffff' : '#1e293b', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
                         {rule.ruleType === 'author_whitelist' ? `@${rule.ruleValue}` : rule.ruleValue}
                       </TableCell>
-                      <TableCell sx={{ fontSize: '12.5px', color: '#64748b' }}>
+                      <TableCell sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
                         {rule.description || 'Learned from user activity'}
                       </TableCell>
-                      <TableCell sx={{ fontSize: '13px', fontWeight: 600 }}>
+                      <TableCell sx={{ fontSize: '13px', fontWeight: 600, color: darkMode ? '#ffffff' : '#1e293b', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
                         {rule.hitCount || 0} salvaged
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
                         <FormControlLabel
                           control={
                             <Switch
@@ -1708,7 +2327,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                               sx={{
                                 fontSize: '12px',
                                 fontWeight: 600,
-                                color: rule.isActive ? '#2dce89' : '#8392ab',
+                                color: rule.isActive ? '#2dce89' : (darkMode ? '#64748b' : '#8392ab'),
                               }}
                             >
                               {rule.isActive ? 'Active' : 'Disabled'}
@@ -1716,7 +2335,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                           }
                         />
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>
+                      <TableCell sx={{ textAlign: 'right', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
                         <Tooltip title="Delete Rule">
                           <IconButton
                             size="small"
@@ -1741,7 +2360,15 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         onClose={() => !isRestoring && setRestoreModalOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            p: 1,
+            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+            color: darkMode ? '#ffffff' : 'inherit',
+          },
+        }}
       >
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box display="flex" alignItems="center" gap={1.2}>
@@ -1750,7 +2377,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 width: 38,
                 height: 38,
                 borderRadius: '50%',
-                backgroundColor: '#e6f8f0',
+                backgroundColor: darkMode ? 'rgba(45, 206, 137, 0.2)' : '#e6f8f0',
                 color: '#2dce89',
                 display: 'flex',
                 alignItems: 'center',
@@ -1760,20 +2387,20 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
               <AutoAwesomeRoundedIcon sx={{ fontSize: 20 }} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant="h6" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#1e293b' }}>
                 Restore Post & Teach Rule Engine
               </Typography>
-              <Typography variant="caption" color="text">
+              <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 Explainable Deterministic Active Feedback (Zero AI)
               </Typography>
             </Box>
           </Box>
-          <IconButton size="small" onClick={() => setRestoreModalOpen(false)} disabled={isRestoring}>
+          <IconButton size="small" onClick={() => setRestoreModalOpen(false)} disabled={isRestoring} sx={{ color: darkMode ? '#94a3b8' : '#64748b' }}>
             <CloseRoundedIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent dividers sx={{ p: 2.5 }}>
+        <DialogContent dividers sx={{ p: 2.5, borderColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : undefined }}>
           {selectedPost && (
             <>
               
@@ -1781,23 +2408,23 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 sx={{
                   p: 2,
                   borderRadius: '12px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                   mb: 2.5,
                 }}
               >
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                   <Box display="flex" alignItems="center" gap={1}>
-                    <Typography sx={{ fontWeight: 700, fontSize: '13.5px' }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: '13.5px', color: darkMode ? '#ffffff' : '#1e293b' }}>
                       {selectedPost.authorName || selectedPost.authorUsername}
                     </Typography>
-                    <Typography sx={{ fontSize: '12.5px', color: '#8392ab' }}>
+                    <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
                       @{selectedPost.authorUsername}
                     </Typography>
                   </Box>
                   {getCategoryBadge(selectedPost.exclusionCategory)}
                 </Box>
-                <Typography sx={{ fontSize: '13px', color: '#334155', fontStyle: 'italic', mb: 1 }}>
+                <Typography sx={{ fontSize: '13px', color: darkMode ? '#cbd5e1' : '#334155', fontStyle: 'italic', mb: 1 }}>
                   &quot;{selectedPost.text}&quot;
                 </Typography>
                 <Typography sx={{ fontSize: '11.5px', color: '#f5365c', fontWeight: 600 }}>
@@ -1805,10 +2432,10 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 </Typography>
               </Box>
 
-              <Typography variant="subtitle2" fontWeight="bold" color="#1e293b" mb={0.5}>
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#1e293b', mb: 0.5 }}>
                 What should the system learn from this action?
               </Typography>
-              <Typography variant="caption" color="text" sx={{ display: 'block', mb: 1.5 }}>
+              <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#8392ab', display: 'block', mb: 1.5 }}>
                 Select the heuristic rules to activate. These will automatically permit similar posts in future scrapes without AI:
               </Typography>
 
@@ -1821,8 +2448,10 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                       p: 1.2,
                       px: 2,
                       borderRadius: '8px',
-                      borderColor: selectedRuleIndices.has(idx) ? '#5e72e4' : '#e2e8f0',
-                      backgroundColor: selectedRuleIndices.has(idx) ? 'rgba(94, 114, 228, 0.04)' : '#fff',
+                      borderColor: selectedRuleIndices.has(idx) ? '#5e72e4' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
+                      backgroundColor: selectedRuleIndices.has(idx)
+                        ? (darkMode ? 'rgba(94, 114, 228, 0.16)' : 'rgba(94, 114, 228, 0.04)')
+                        : (darkMode ? '#0b1437' : '#fff'),
                       cursor: 'pointer',
                     }}
                     onClick={() => handleToggleCandidate(idx)}
@@ -1838,10 +2467,10 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                       }
                       label={
                         <Box>
-                          <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                          <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
                             {cand.label}
                           </Typography>
-                          <Typography sx={{ fontSize: '11.5px', color: '#64748b' }}>
+                          <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
                             {cand.description}
                           </Typography>
                         </Box>
@@ -1856,11 +2485,11 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 sx={{
                   p: 1.5,
                   borderRadius: '10px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px dashed #cbd5e1',
+                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  border: darkMode ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #cbd5e1',
                 }}
               >
-                <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#475569', mb: 1 }}>
+                <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#cbd5e1' : '#475569', mb: 1 }}>
                   + Add Custom Rule for This Post:
                 </Typography>
                 <Grid container spacing={1.5} alignItems="center">
@@ -1869,7 +2498,17 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                       <Select
                         value={customRuleType}
                         onChange={(e) => setCustomRuleType(e.target.value)}
-                        sx={{ fontSize: '12px', backgroundColor: '#fff' }}
+                        sx={{
+                          fontSize: '12px',
+                          backgroundColor: darkMode ? '#111c44' : '#fff',
+                          color: darkMode ? '#ffffff' : '#1e293b',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
+                          },
+                          '& .MuiSvgIcon-root': {
+                            color: darkMode ? '#94a3b8' : undefined,
+                          },
+                        }}
                       >
                         <MenuItem value="aq_keyword">Air Quality Term</MenuItem>
                         <MenuItem value="geo_keyword">Punjab Locality</MenuItem>
@@ -1885,7 +2524,14 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                       placeholder="e.g. dhund, Muridke, cricket+smog..."
                       value={customRuleValue}
                       onChange={(e) => setCustomRuleValue(e.target.value)}
-                      sx={{ fontSize: '12px', backgroundColor: '#fff' }}
+                      sx={{
+                        fontSize: '12px',
+                        backgroundColor: darkMode ? '#111c44' : '#fff',
+                        color: darkMode ? '#ffffff' : '#1e293b',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={2}>
@@ -1894,7 +2540,14 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                       size="small"
                       fullWidth
                       onClick={handleAddCustomCandidate}
-                      sx={{ height: '38px', textTransform: 'none', fontWeight: 600, fontSize: '12px' }}
+                      sx={{
+                        height: '38px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        fontSize: '12px',
+                        color: darkMode ? '#ffffff' : undefined,
+                        borderColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : undefined,
+                      }}
                     >
                       Add
                     </Button>
@@ -1906,7 +2559,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         </DialogContent>
 
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setRestoreModalOpen(false)} disabled={isRestoring} sx={{ textTransform: 'none' }}>
+          <Button onClick={() => setRestoreModalOpen(false)} disabled={isRestoring} sx={{ textTransform: 'none', color: darkMode ? '#94a3b8' : undefined }}>
             Cancel
           </Button>
           <Button
@@ -1932,7 +2585,15 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         onClose={() => !isExcluding && setExcludeModalOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            p: 1,
+            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+            color: darkMode ? '#ffffff' : 'inherit',
+          },
+        }}
       >
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box display="flex" alignItems="center" gap={1.2}>
@@ -1941,7 +2602,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 width: 38,
                 height: 38,
                 borderRadius: '50%',
-                backgroundColor: '#fee2e2',
+                backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
                 color: '#ef4444',
                 display: 'flex',
                 alignItems: 'center',
@@ -1951,46 +2612,57 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
               <DeleteOutlineRoundedIcon sx={{ fontSize: 20 }} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight="bold">
+              <Typography variant="h6" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#1e293b' }}>
                 Exclude Restored Post
               </Typography>
-              <Typography variant="caption" color="text">
+              <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 Revert post from verified feed back to noise pool
               </Typography>
             </Box>
           </Box>
-          <IconButton size="small" onClick={() => setExcludeModalOpen(false)} disabled={isExcluding}>
+          <IconButton size="small" onClick={() => setExcludeModalOpen(false)} disabled={isExcluding} sx={{ color: darkMode ? '#94a3b8' : '#64748b' }}>
             <CloseRoundedIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent dividers sx={{ p: 2.5 }}>
+        <DialogContent dividers sx={{ p: 2.5, borderColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : undefined }}>
           {postToExclude && (
             <Box display="flex" flexDirection="column" gap={2}>
               
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                  <Typography sx={{ fontWeight: 700, fontSize: '13px' }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: '13px', color: darkMode ? '#ffffff' : '#1e293b' }}>
                     {postToExclude.authorName || postToExclude.authorUsername} (@{postToExclude.authorUsername})
                   </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#8392ab' }}>
+                  <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
                     ID: {postToExclude.id}
                   </Typography>
                 </Box>
-                <Typography sx={{ fontSize: '12.5px', color: '#475569', fontStyle: 'italic' }}>
+                <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#cbd5e1' : '#475569', fontStyle: 'italic' }}>
                   &quot;{postToExclude.text}&quot;
                 </Typography>
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', mb: 0.8 }}>
+                <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.8 }}>
                   Select Exclusion Reason:
                 </Typography>
                 <FormControl fullWidth size="small">
                   <Select
                     value={excludeReason}
                     onChange={(e) => setExcludeReason(e.target.value)}
-                    sx={{ fontSize: '13px', backgroundColor: '#fff', borderRadius: '8px' }}
+                    sx={{
+                      fontSize: '13px',
+                      backgroundColor: darkMode ? '#0b1437' : '#fff',
+                      color: darkMode ? '#ffffff' : '#1e293b',
+                      borderRadius: '8px',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
+                      },
+                      '& .MuiSvgIcon-root': {
+                        color: darkMode ? '#94a3b8' : undefined,
+                      },
+                    }}
                   >
                     <MenuItem value="Re-evaluated as off-topic noise">Re-evaluated as off-topic noise</MenuItem>
                     <MenuItem value="No authentic air quality relevance">No authentic air quality relevance</MenuItem>
@@ -2006,8 +2678,10 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 sx={{
                   p: 1.5,
                   borderRadius: '10px',
-                  borderColor: revokeRulesChecked ? '#ef4444' : '#e2e8f0',
-                  backgroundColor: revokeRulesChecked ? '#fff1f2' : '#fff',
+                  borderColor: revokeRulesChecked ? '#ef4444' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
+                  backgroundColor: revokeRulesChecked
+                    ? (darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fff1f2')
+                    : (darkMode ? '#0b1437' : '#fff'),
                   cursor: 'pointer',
                 }}
                 onClick={() => setRevokeRulesChecked(!revokeRulesChecked)}
@@ -2023,10 +2697,10 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                   }
                   label={
                     <Box>
-                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#991b1b' }}>
+                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#fca5a5' : '#991b1b' }}>
                         Revoke Associated Learned Rules
                       </Typography>
-                      <Typography sx={{ fontSize: '11.5px', color: '#64748b' }}>
+                      <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
                         Automatically deletes or deactivates any whitelist or keyword rules induced when this post was restored.
                       </Typography>
                     </Box>
@@ -2039,7 +2713,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         </DialogContent>
 
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setExcludeModalOpen(false)} disabled={isExcluding} sx={{ textTransform: 'none' }}>
+          <Button onClick={() => setExcludeModalOpen(false)} disabled={isExcluding} sx={{ textTransform: 'none', color: darkMode ? '#94a3b8' : undefined }}>
             Cancel
           </Button>
           <Button
@@ -2065,25 +2739,43 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         onClose={() => setManualRuleModalOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            p: 1,
+            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+            color: darkMode ? '#ffffff' : 'inherit',
+          },
+        }}
       >
         <DialogTitle sx={{ m: 0, p: 2 }}>
-          <Typography variant="h6" fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#1e293b' }}>
             Add Non-AI Learned Rule
           </Typography>
-          <Typography variant="caption" color="text">
+          <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#8392ab' }}>
             Directly insert a heuristic rule into the filtering engine
           </Typography>
         </DialogTitle>
 
-        <DialogContent dividers sx={{ p: 2.5 }}>
+        <DialogContent dividers sx={{ p: 2.5, borderColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : undefined }}>
           <Box display="flex" flexDirection="column" gap={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>Rule Type</InputLabel>
+              <InputLabel sx={{ color: darkMode ? '#94a3b8' : undefined }}>Rule Type</InputLabel>
               <Select
                 value={newManualType}
                 label="Rule Type"
                 onChange={(e) => setNewManualType(e.target.value)}
+                sx={{
+                  backgroundColor: darkMode ? '#0b1437' : '#fff',
+                  color: darkMode ? '#ffffff' : '#1e293b',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: darkMode ? '#94a3b8' : undefined,
+                  },
+                }}
               >
                 <MenuItem value="aq_keyword">Air Quality Keyword (Positive Lexicon)</MenuItem>
                 <MenuItem value="geo_keyword">Punjab Locality (Target Geography)</MenuItem>
@@ -2094,7 +2786,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
             </FormControl>
 
             <Box>
-              <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#475569', mb: 0.5 }}>
+              <Typography sx={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#475569', mb: 0.5 }}>
                 Rule Pattern / Value:
               </Typography>
               <OutlinedInput
@@ -2111,11 +2803,18 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 }
                 value={newManualValue}
                 onChange={(e) => setNewManualValue(e.target.value)}
+                sx={{
+                  backgroundColor: darkMode ? '#0b1437' : '#fff',
+                  color: darkMode ? '#ffffff' : '#1e293b',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
+                  },
+                }}
               />
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#475569', mb: 0.5 }}>
+              <Typography sx={{ fontSize: '12px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#475569', mb: 0.5 }}>
                 Description (Optional):
               </Typography>
               <OutlinedInput
@@ -2124,13 +2823,20 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 placeholder="Reason or notes for this rule..."
                 value={newManualDesc}
                 onChange={(e) => setNewManualDesc(e.target.value)}
+                sx={{
+                  backgroundColor: darkMode ? '#0b1437' : '#fff',
+                  color: darkMode ? '#ffffff' : '#1e293b',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
+                  },
+                }}
               />
             </Box>
           </Box>
         </DialogContent>
 
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setManualRuleModalOpen(false)} sx={{ textTransform: 'none' }}>
+          <Button onClick={() => setManualRuleModalOpen(false)} sx={{ textTransform: 'none', color: darkMode ? '#94a3b8' : undefined }}>
             Cancel
           </Button>
           <Button

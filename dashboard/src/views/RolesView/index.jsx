@@ -18,7 +18,6 @@ import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
 import Fade from '@mui/material/Fade';
 
-// Icons
 import AddModeratorRoundedIcon from '@mui/icons-material/AddModeratorRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
@@ -37,7 +36,6 @@ import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import ContentPasteGoRoundedIcon from '@mui/icons-material/ContentPasteGoRounded';
 
-// Module Icons matching the app navigation
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import FormatListBulletedRoundedIcon from '@mui/icons-material/FormatListBulletedRounded';
 import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
@@ -49,99 +47,94 @@ import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
 import { getRoles, createRole, updateRole, deleteRole, getPermissions } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useArgonController } from '../../context';
 
-// Module metadata & design definitions
 const MODULE_CONFIG = {
   'Dashboard': {
     icon: DashboardRoundedIcon,
-    color: '#5e72e4',
-    bg: '#eff6ff',
-    border: '#bfdbfe',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'AQI metrics, executive KPIs, smog alerts & live stream summary'
   },
   'Posts Feed': {
     icon: FormatListBulletedRoundedIcon,
-    color: '#0ea5e9',
-    bg: '#f0f9ff',
-    border: '#bae6fd',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'Real-time air intelligence feed, search, batch ingest & export'
   },
   'Analytics': {
     icon: BarChartRoundedIcon,
-    color: '#825ee4',
-    bg: '#f5f3ff',
-    border: '#ddd6fe',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'District breakdowns, temporal pollution trends & viral telemetry'
   },
   'Deduplication Audit': {
     icon: FactCheckRoundedIcon,
-    color: '#fb6340',
-    bg: '#fff7ed',
-    border: '#fed7aa',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'Duplicate merges, content similarity hashes & provenance logs'
   },
   'Noise & Learning Engine': {
     icon: CleaningServicesRoundedIcon,
-    color: '#2dce89',
-    bg: '#f0fdf4',
-    border: '#bbf7d0',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'Spam exclusion, noise pool review & deterministic rule engine'
   },
   'User Management': {
     icon: PeopleAltRoundedIcon,
-    color: '#344767',
+    color: '#475569',
     bg: '#f8fafc',
     border: '#e2e8f0',
     desc: 'Operator credentials, clearances & account provisioning'
   },
   'Role Management': {
     icon: AdminPanelSettingsRoundedIcon,
-    color: '#7928ca',
-    bg: '#faf5ff',
-    border: '#e9d5ff',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'RBAC policies, granular capabilities & clearance boundaries'
   },
   'System Settings': {
     icon: TuneRoundedIcon,
-    color: '#f5365c',
-    bg: '#fff1f2',
-    border: '#fecdd3',
+    color: '#475569',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
     desc: 'X API keys, sentiment algorithms & SQLite storage health'
   }
 };
 
-// Distinct role visual identities
 const ROLE_THEMES = {
   super_admin: {
-    color: '#7928ca',
-    gradient: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
-    bg: '#faf5ff',
-    border: '#e9d5ff',
-    badgeBg: '#f3e8ff',
-    badgeColor: '#7e22ce',
+    color: '#0f172a',
+    bg: '#f8fafc',
+    border: '#cbd5e1',
+    badgeBg: '#f1f5f9',
+    badgeColor: '#0f172a',
     icon: ShieldRoundedIcon
   },
   analyst: {
-    color: '#1171ef',
-    gradient: 'linear-gradient(135deg, #1171ef 0%, #11cdef 100%)',
-    bg: '#f0f9ff',
-    border: '#bae6fd',
-    badgeBg: '#e0f2fe',
+    color: '#0369a1',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
+    badgeBg: '#f0f9ff',
     badgeColor: '#0369a1',
     icon: BarChartRoundedIcon
   },
   auditor: {
-    color: '#fb6340',
-    gradient: 'linear-gradient(135deg, #fb6340 0%, #fbb140 100%)',
-    bg: '#fff7ed',
-    border: '#fed7aa',
-    badgeBg: '#ffedd5',
-    badgeColor: '#c2410c',
+    color: '#334155',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
+    badgeBg: '#f1f5f9',
+    badgeColor: '#334155',
     icon: FactCheckRoundedIcon
   },
   viewer: {
     color: '#64748b',
-    gradient: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
     bg: '#f8fafc',
     border: '#e2e8f0',
     badgeBg: '#f1f5f9',
@@ -149,12 +142,11 @@ const ROLE_THEMES = {
     icon: SecurityRoundedIcon
   },
   custom: {
-    color: '#2dce89',
-    gradient: 'linear-gradient(135deg, #2dce89 0%, #2dcecc 100%)',
-    bg: '#f0fdf4',
-    border: '#bbf7d0',
-    badgeBg: '#dcfce7',
-    badgeColor: '#15803d',
+    color: '#059669',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
+    badgeBg: '#ecfdf5',
+    badgeColor: '#047857',
     icon: AddModeratorRoundedIcon
   }
 };
@@ -164,23 +156,22 @@ function getRoleTheme(roleName) {
 }
 
 export default function RolesView() {
+  const [controller] = useArgonController();
+  const { darkMode } = controller;
   const { hasPermission } = useAuth();
 
   const [roles, setRoles] = useState([]);
   const [permissionsData, setPermissionsData] = useState({ permissions: [], byModule: {} });
   const [loading, setLoading] = useState(true);
 
-  // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'system', 'custom'
 
-  // Modal States
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [activeRole, setActiveRole] = useState(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: '',
     displayName: '',
@@ -192,7 +183,6 @@ export default function RolesView() {
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', severity: 'success' });
 
-  // Modal internal navigation & permission search
   const [activeModuleTab, setActiveModuleTab] = useState('ALL');
   const [permissionSearch, setPermissionSearch] = useState('');
   const [copiedSlug, setCopiedSlug] = useState('');
@@ -226,7 +216,6 @@ export default function RolesView() {
     loadData();
   }, []);
 
-  // Filtered Roles
   const filteredRoles = useMemo(() => {
     return roles.filter((r) => {
       const q = searchQuery.toLowerCase().trim();
@@ -243,7 +232,6 @@ export default function RolesView() {
     });
   }, [roles, searchQuery, typeFilter]);
 
-  // Overall Statistics
   const totalOperatorsCount = useMemo(() => {
     return roles.reduce((sum, r) => sum + (r.userCount || 0), 0);
   }, [roles]);
@@ -252,7 +240,6 @@ export default function RolesView() {
     return permissionsData.permissions ? permissionsData.permissions.length : 20;
   }, [permissionsData]);
 
-  // Open Config Modal for Existing Role
   const handleOpenEdit = (role) => {
     setFormError('');
     setActiveRole(role);
@@ -270,12 +257,10 @@ export default function RolesView() {
     setConfigModalOpen(true);
   };
 
-  // Open Modal for New Custom Role
   const handleOpenCreate = () => {
     setFormError('');
     setActiveRole(null);
     setIsCreatingNew(true);
-    // Pre-populate with standard viewer permissions as safe baseline
     const viewerRole = roles.find((r) => r.name === 'viewer');
     const defaultPerms = viewerRole && viewerRole.permissions ? viewerRole.permissions.map((p) => p.id) : [];
     setFormData({
@@ -290,13 +275,11 @@ export default function RolesView() {
     setConfigModalOpen(true);
   };
 
-  // Open Delete Modal
   const handleOpenDelete = (role) => {
     setActiveRole(role);
     setDeleteModalOpen(true);
   };
 
-  // Copy slug helper
   const handleCopySlug = (slug, e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(slug);
@@ -304,7 +287,6 @@ export default function RolesView() {
     setTimeout(() => setCopiedSlug(''), 2000);
   };
 
-  // Permission toggles
   const handleTogglePermission = (permId) => {
     setFormData((prev) => {
       const exists = prev.permissionIds.includes(permId);
@@ -315,7 +297,6 @@ export default function RolesView() {
     });
   };
 
-  // Module Bulk Toggle
   const handleToggleModuleAll = (moduleName) => {
     const modulePerms = permissionsData.byModule[moduleName] || [];
     const moduleIds = modulePerms.map((p) => p.id);
@@ -333,7 +314,6 @@ export default function RolesView() {
     });
   };
 
-  // Global Bulk Actions
   const handleSelectAllGlobal = () => {
     const allIds = permissionsData.permissions.map((p) => p.id);
     setFormData((prev) => ({ ...prev, permissionIds: allIds }));
@@ -347,7 +327,6 @@ export default function RolesView() {
     setFormData((prev) => ({ ...prev, permissionIds: [...originalPermissionIds] }));
   };
 
-  // Submit Modal Handler (Create or Update)
   const handleSaveModal = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setFormError('');
@@ -418,7 +397,6 @@ export default function RolesView() {
     }
   };
 
-  // Compute permission coverage for modal & cards
   const getModuleCoverage = (moduleName, currentPermIds) => {
     const modulePerms = permissionsData.byModule[moduleName] || [];
     if (!modulePerms.length) return { granted: 0, total: 0, status: 'none' };
@@ -431,8 +409,7 @@ export default function RolesView() {
 
   return (
     <Box sx={{ width: '100%', pb: 5 }}>
-      {/* Toast Notification Banner */}
-      {toast.show && (
+{toast.show && (
         <Fade in={toast.show}>
           <Alert
             severity={toast.severity}
@@ -449,15 +426,13 @@ export default function RolesView() {
           </Alert>
         </Fade>
       )}
-
-      {/* Top Executive Header Bar */}
-      <Card
+<Card
         sx={{
           p: { xs: 2.5, md: 3 },
           mb: 3,
           borderRadius: '16px',
           boxShadow: '0 8px 26px rgba(0,0,0,0.04)',
-          border: '1px solid #f1f5f9',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           alignItems: { xs: 'flex-start', md: 'center' },
@@ -471,12 +446,13 @@ export default function RolesView() {
               width: 52,
               height: 52,
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
+              backgroundColor: '#eef2ff',
+              border: '1px solid #c7d2fe',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 6px 18px rgba(121, 40, 202, 0.3)',
+              color: '#5e72e4',
+              boxShadow: 'none',
               flexShrink: 0
             }}
           >
@@ -489,7 +465,7 @@ export default function RolesView() {
                 sx={{
                   fontFamily: '"Open Sans", sans-serif',
                   fontWeight: 800,
-                  color: '#1e293b',
+                  color: darkMode ? '#ffffff' : '#1e293b',
                   letterSpacing: '-0.3px',
                   fontSize: { xs: '20px', md: '22px' }
                 }}
@@ -500,8 +476,8 @@ export default function RolesView() {
                 label={`${roles.length} Defined Roles`}
                 size="small"
                 sx={{
-                  backgroundColor: '#f3e8ff',
-                  color: '#7e22ce',
+                  backgroundColor: '#f1f5f9',
+                  color: '#334155',
                   fontWeight: 700,
                   fontSize: '11px',
                   borderRadius: '8px',
@@ -535,20 +511,19 @@ export default function RolesView() {
               onClick={handleOpenCreate}
               startIcon={<AddModeratorRoundedIcon sx={{ fontSize: '19px !important' }} />}
               sx={{
-                background: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
+                backgroundColor: '#5e72e4',
                 color: '#ffffff',
-                borderRadius: '10px',
+                borderRadius: '8px',
                 textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '13.5px',
-                px: 2.8,
-                py: 1.1,
-                boxShadow: '0 4px 16px rgba(121, 40, 202, 0.35)',
-                transition: 'all 0.2s ease',
+                fontWeight: 600,
+                fontSize: '13px',
+                px: 2.5,
+                py: 0.9,
+                boxShadow: 'none',
+                transition: 'all 0.15s ease',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #651bb0 0%, #e00070 100%)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 6px 20px rgba(121, 40, 202, 0.45)'
+                  backgroundColor: '#4b5fcc',
+                  boxShadow: 'none'
                 }
               }}
             >
@@ -557,9 +532,7 @@ export default function RolesView() {
           )}
         </Box>
       </Card>
-
-      {/* Security KPI Summary Strip */}
-      <Box
+<Box
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' },
@@ -567,15 +540,15 @@ export default function RolesView() {
           mb: 3
         }}
       >
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#f3e8ff',
-                color: '#7e22ce',
+                backgroundColor: '#f1f5f9',
+                  color: '#334155',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -587,7 +560,7 @@ export default function RolesView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Defined Access Roles
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                 {roles.length}{' '}
                 <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
                   ({roles.filter((r) => r.isSystem).length} System / {roles.filter((r) => !r.isSystem).length} Custom)
@@ -597,15 +570,16 @@ export default function RolesView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#e0f2fe',
-                color: '#0284c7',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -617,7 +591,7 @@ export default function RolesView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Governed Operators
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                 {totalOperatorsCount}{' '}
                 <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#059669' }}>
                   Active Accounts
@@ -627,15 +601,16 @@ export default function RolesView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#f0fdf4',
-                color: '#16a34a',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -647,7 +622,7 @@ export default function RolesView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Granular Permissions
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                 {totalPermissionsCount}{' '}
                 <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
                   Rules (8 Modules)
@@ -657,15 +632,16 @@ export default function RolesView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#fff7ed',
-                color: '#ea580c',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -677,7 +653,7 @@ export default function RolesView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Clearance Matrix
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                 Strict Isolation{' '}
                 <Typography component="span" sx={{ fontSize: '11.5px', fontWeight: 600, color: '#0284c7' }}>
                   Verified
@@ -687,14 +663,12 @@ export default function RolesView() {
           </Box>
         </Card>
       </Box>
-
-      {/* Control Filter Bar */}
-      <Card
+<Card
         sx={{
           p: 2,
           mb: 3,
           borderRadius: '14px',
-          border: '1px solid #f1f5f9',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
           boxShadow: '0 4px 18px rgba(0,0,0,0.02)',
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
@@ -723,7 +697,7 @@ export default function RolesView() {
                   </IconButton>
                 </InputAdornment>
               ),
-              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: '#f8fafc' }
+              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }
             }}
           />
         </Box>
@@ -763,11 +737,9 @@ export default function RolesView() {
           })}
         </Box>
       </Card>
-
-      {/* Main Roles Grid */}
-      {loading ? (
+{loading ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <CircularProgress size={40} sx={{ color: '#7928ca', mb: 2 }} />
+          <CircularProgress size={40} sx={{ color: '#5e72e4', mb: 2 }} />
           <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#64748b' }}>
             Loading roles and permission clearance registry...
           </Typography>
@@ -825,30 +797,23 @@ export default function RolesView() {
                   }
                 }}
               >
-                {/* Top Accent Strip */}
-                <Box
-                  sx={{
-                    height: '5px',
-                    width: '100%',
-                    background: theme.gradient
-                  }}
-                />
+{/* Clean top border - no rainbow stripe */}
 
                 <Box sx={{ p: 3 }}>
-                  {/* Card Header: Icon, Titles, Badges, Quick Actions */}
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+<Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
                       <Box
                         sx={{
                           width: 48,
                           height: 48,
                           borderRadius: '14px',
-                          background: theme.gradient,
-                          color: '#ffffff',
+                          backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                          border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                          color: '#5e72e4',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: `0 4px 14px ${theme.color}40`,
+                          boxShadow: 'none',
                           flexShrink: 0
                         }}
                       >
@@ -856,7 +821,7 @@ export default function RolesView() {
                       </Box>
                       <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <Typography sx={{ fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>
+                          <Typography sx={{ fontSize: '17px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                             {r.displayName}
                           </Typography>
                           {isSuperAdmin && (
@@ -912,7 +877,7 @@ export default function RolesView() {
                                 height: '20px',
                                 fontSize: '10.5px',
                                 fontWeight: 700,
-                                backgroundColor: '#f8fafc',
+                                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                                 color: '#64748b',
                                 border: '1px solid #e2e8f0'
                               }}
@@ -934,9 +899,7 @@ export default function RolesView() {
                         </Box>
                       </Box>
                     </Box>
-
-                    {/* Quick action buttons */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       {canEdit && (
                         <Tooltip title="Configure role permissions" arrow>
                           <IconButton
@@ -944,7 +907,7 @@ export default function RolesView() {
                             onClick={() => handleOpenEdit(r)}
                             sx={{
                               color: '#64748b',
-                              backgroundColor: '#f8fafc',
+                              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                               border: '1px solid #e2e8f0',
                               '&:hover': { color: '#5e72e4', backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }
                             }}
@@ -963,7 +926,7 @@ export default function RolesView() {
                               onClick={() => handleOpenDelete(r)}
                               sx={{
                                 color: '#94a3b8',
-                                backgroundColor: '#f8fafc',
+                                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                                 border: '1px solid #e2e8f0',
                                 '&:hover': { color: '#ef4444', backgroundColor: '#fef2f2', borderColor: '#fecaca' },
                                 '&.Mui-disabled': { opacity: 0.4 }
@@ -976,9 +939,7 @@ export default function RolesView() {
                       )}
                     </Box>
                   </Box>
-
-                  {/* Role Description */}
-                  <Typography
+<Typography
                     sx={{
                       fontSize: '13px',
                       color: '#475569',
@@ -989,14 +950,12 @@ export default function RolesView() {
                   >
                     {r.description || 'Standard role configuration for agency operations.'}
                   </Typography>
-
-                  {/* Stats Strip with Progress Bar */}
-                  <Box
+<Box
                     sx={{
                       p: 1.8,
                       borderRadius: '12px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid #f1f5f9',
+                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
                       mb: 2.5
                     }}
                   >
@@ -1027,15 +986,13 @@ export default function RolesView() {
                         borderRadius: 3,
                         backgroundColor: '#e2e8f0',
                         '& .MuiLinearProgress-bar': {
-                          background: theme.gradient,
+                          backgroundColor: '#5e72e4',
                           borderRadius: 3
                         }
                       }}
                     />
                   </Box>
-
-                  {/* Module Access Clearance Heatmap */}
-                  <Box sx={{ mb: 1 }}>
+<Box sx={{ mb: 1 }}>
                     <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', mb: 1 }}>
                       Module Operational Clearances:
                     </Typography>
@@ -1059,16 +1016,16 @@ export default function RolesView() {
                         let statusText = 'Locked';
 
                         if (coverage.status === 'full') {
-                          badgeBg = '#f0fdf4';
-                          badgeBorder = '#bbf7d0';
-                          badgeTextColor = '#166534';
-                          iconColor = '#16a34a';
+                          badgeBg = darkMode ? '#0b1437' : '#f8fafc';
+                          badgeBorder = darkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0';
+                          badgeTextColor = '#059669';
+                          iconColor = '#059669';
                           statusText = 'Full';
                         } else if (coverage.status === 'partial') {
-                          badgeBg = '#fff7ed';
-                          badgeBorder = '#fed7aa';
-                          badgeTextColor = '#c2410c';
-                          iconColor = '#ea580c';
+                          badgeBg = darkMode ? '#0b1437' : '#f8fafc';
+                          badgeBorder = darkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0';
+                          badgeTextColor = '#475569';
+                          iconColor = '#475569';
                           statusText = `${coverage.granted}/${coverage.total}`;
                         }
 
@@ -1122,14 +1079,12 @@ export default function RolesView() {
                     </Box>
                   </Box>
                 </Box>
-
-                {/* Card Action Footer */}
-                {canEdit && (
+{canEdit && (
                   <Box
                     sx={{
                       p: 2,
                       px: 3,
-                      backgroundColor: '#f8fafc',
+                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                       borderTop: '1px solid #f1f5f9',
                       display: 'flex',
                       alignItems: 'center',
@@ -1154,13 +1109,14 @@ export default function RolesView() {
                         borderRadius: '8px',
                         px: 2,
                         py: 0.6,
-                        backgroundColor: '#ffffff',
+                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        color: darkMode ? '#ffffff' : '#334155',
                         boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
                         transition: 'all 0.2s ease',
                         '&:hover': {
                           borderColor: theme.color,
                           color: theme.color,
-                          backgroundColor: '#ffffff',
+                          backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : '#ffffff',
                           boxShadow: `0 4px 12px ${theme.color}25`
                         }
                       }}
@@ -1174,9 +1130,7 @@ export default function RolesView() {
           })}
         </Box>
       )}
-
-      {/* OVERHAULED CONFIGURE ROLE MODAL */}
-      <Dialog
+<Dialog
         open={configModalOpen}
         onClose={() => !actionLoading && setConfigModalOpen(false)}
         maxWidth="lg"
@@ -1192,12 +1146,9 @@ export default function RolesView() {
           }
         }}
       >
-        {/* Modal Header Banner */}
-        <Box
+<Box
           sx={{
-            background: isCreatingNew
-              ? 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)'
-              : getRoleTheme(activeRole?.name).gradient,
+            backgroundColor: '#0f172a',
             p: 3,
             color: '#ffffff',
             position: 'relative'
@@ -1278,9 +1229,7 @@ export default function RolesView() {
               <CloseRoundedIcon sx={{ fontSize: '20px' }} />
             </IconButton>
           </Box>
-
-          {/* Quick Metrics & Batch Actions Bar in Header */}
-          <Box
+<Box
             sx={{
               mt: 2.5,
               pt: 2,
@@ -1361,9 +1310,7 @@ export default function RolesView() {
             </Box>
           </Box>
         </Box>
-
-        {/* Modal Form Body */}
-        <DialogContent
+<DialogContent
           sx={{
             p: 0,
             display: 'flex',
@@ -1379,13 +1326,11 @@ export default function RolesView() {
               </Alert>
             </Box>
           )}
-
-          {/* Role Metadata Row (Display Name, Slug, Description) */}
-          <Box
+<Box
             sx={{
               p: 2.5,
-              backgroundColor: '#f8fafc',
-              borderBottom: '1px solid #e2e8f0',
+              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
               display: 'flex',
               flexDirection: 'column',
               gap: 2
@@ -1402,7 +1347,7 @@ export default function RolesView() {
                   placeholder="e.g. Regional Field Officer"
                   value={formData.displayName}
                   onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                  InputProps={{ sx: { borderRadius: '8px', backgroundColor: '#ffffff', fontSize: '13px' } }}
+                  InputProps={{ sx: { borderRadius: '8px', backgroundColor: darkMode ? '#0b1437' : '#ffffff', color: darkMode ? '#ffffff' : '#1e293b', fontSize: '13px', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } } }}
                 />
               </Box>
 
@@ -1437,17 +1382,24 @@ export default function RolesView() {
                 fullWidth
                 size="small"
                 multiline
-                rows={1.8}
+                rows={2}
                 placeholder="Describe role responsibilities, access parameters, and operational tier..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                InputProps={{ sx: { borderRadius: '8px', backgroundColor: '#ffffff', fontSize: '13px' } }}
+                InputProps={{
+                  sx: {
+                    borderRadius: '8px',
+                    backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                    color: darkMode ? '#ffffff' : '#1e293b',
+                    fontSize: '13px',
+                    '& textarea': { resize: 'none' },
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined }
+                  }
+                }}
               />
             </Box>
           </Box>
-
-          {/* TWO-PANE PERMISSION CONFIGURATION WORKSPACE */}
-          <Box
+<Box
             sx={{
               display: 'flex',
               flex: 1,
@@ -1456,26 +1408,31 @@ export default function RolesView() {
               flexDirection: { xs: 'column', md: 'row' }
             }}
           >
-            {/* Left Column: Modules Navigation (280px) */}
             <Box
               sx={{
                 width: { xs: '100%', md: 280 },
-                borderRight: '1px solid #e2e8f0',
-                borderBottom: { xs: '1px solid #e2e8f0', md: 'none' },
-                backgroundColor: '#ffffff',
-                overflowY: 'auto',
-                p: 1.5,
-                flexShrink: 0
+                display: 'flex',
+                flexDirection: { xs: 'row', md: 'column' },
+                overflowX: { xs: 'auto', md: 'hidden' },
+                overflowY: { xs: 'hidden', md: 'auto' },
+                borderRight: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : { xs: 'none', md: '1px solid #e2e8f0' },
+                borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : { xs: '1px solid #e2e8f0', md: 'none' },
+                backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                p: { xs: 1, md: 1.5 },
+                gap: { xs: 1, md: 0 },
+                flexShrink: 0,
+                '&::-webkit-scrollbar': { height: '4px', width: '4px' },
+                '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: '4px' }
               }}
             >
-              <Box sx={{ px: 1, py: 0.8, mb: 1 }}>
+              <Box sx={{ px: 1, py: 0.8, mb: { xs: 0, md: 1 }, display: { xs: 'none', md: 'block' } }}>
                 <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                   Module Domains
                 </Typography>
               </Box>
-
-              {/* All Modules Tab */}
-              <Box
+<Box
+                id="module-tab-ALL"
+                data-testid="module-tab-ALL"
                 onClick={() => setActiveModuleTab('ALL')}
                 sx={{
                   display: 'flex',
@@ -1484,7 +1441,9 @@ export default function RolesView() {
                   p: 1.2,
                   px: 1.5,
                   borderRadius: '10px',
-                  mb: 0.8,
+                  mb: { xs: 0, md: 0.8 },
+                  flexShrink: 0,
+                  minWidth: { xs: 'max-content', md: 'auto' },
                   cursor: 'pointer',
                   backgroundColor: activeModuleTab === 'ALL' ? '#f1f5f9' : 'transparent',
                   border: activeModuleTab === 'ALL' ? '1px solid #cbd5e1' : '1px solid transparent',
@@ -1494,7 +1453,7 @@ export default function RolesView() {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                   <SecurityRoundedIcon sx={{ fontSize: '18px', color: activeModuleTab === 'ALL' ? '#1e293b' : '#64748b' }} />
-                  <Typography sx={{ fontSize: '13px', fontWeight: activeModuleTab === 'ALL' ? 800 : 600, color: '#1e293b' }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: activeModuleTab === 'ALL' ? 800 : 600, color: darkMode ? '#ffffff' : '#1e293b' }}>
                     All Permissions
                   </Typography>
                 </Box>
@@ -1510,9 +1469,7 @@ export default function RolesView() {
                   }}
                 />
               </Box>
-
-              {/* Each Individual Module Tab */}
-              {Object.entries(permissionsData.byModule).map(([modName, perms]) => {
+{Object.entries(permissionsData.byModule).map(([modName, perms]) => {
                 const conf = MODULE_CONFIG[modName] || { icon: RuleRoundedIcon, color: '#5e72e4' };
                 const ModIcon = conf.icon;
                 const moduleIds = perms.map((p) => p.id);
@@ -1524,6 +1481,8 @@ export default function RolesView() {
                 return (
                   <Box
                     key={modName}
+                    id={`module-tab-${modName.replace(/\s+/g, '-')}`}
+                    data-testid={`module-tab-${modName}`}
                     onClick={() => setActiveModuleTab(modName)}
                     sx={{
                       display: 'flex',
@@ -1532,7 +1491,10 @@ export default function RolesView() {
                       p: 1.1,
                       px: 1.4,
                       borderRadius: '10px',
-                      mb: 0.6,
+                      mb: { xs: 0, md: 0.6 },
+                      flexShrink: 0,
+                      minWidth: { xs: 'max-content', md: 'auto' },
+                      gap: { xs: 1, md: 0 },
                       cursor: 'pointer',
                       backgroundColor: isSelected ? conf.bg : 'transparent',
                       border: isSelected ? `1px solid ${conf.border || '#cbd5e1'}` : '1px solid transparent',
@@ -1571,9 +1533,7 @@ export default function RolesView() {
                 );
               })}
             </Box>
-
-            {/* Right Column: Interactive Permission Tiles */}
-            <Box
+<Box
               sx={{
                 flex: 1,
                 overflowY: 'auto',
@@ -1581,8 +1541,7 @@ export default function RolesView() {
                 backgroundColor: '#fbfcfd'
               }}
             >
-              {/* Permission Quick Filter Search */}
-              <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+<Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -1602,20 +1561,17 @@ export default function RolesView() {
                         </IconButton>
                       </InputAdornment>
                     ),
-                    sx: { borderRadius: '10px', fontSize: '12.5px', backgroundColor: '#ffffff' }
+                    sx: { borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#0b1437' : '#ffffff', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
                   }}
                 />
               </Box>
-
-              {/* Render Selected Module Content */}
-              {Object.entries(permissionsData.byModule)
+{Object.entries(permissionsData.byModule)
                 .filter(([modName]) => activeModuleTab === 'ALL' || activeModuleTab === modName)
                 .map(([modName, perms]) => {
                   const conf = MODULE_CONFIG[modName] || { icon: RuleRoundedIcon, color: '#5e72e4' };
                   const ModIcon = conf.icon;
                   const moduleIds = perms.map((p) => p.id);
 
-                  // Filter permissions by search query if present
                   const filteredPerms = perms.filter((p) => {
                     const q = permissionSearch.toLowerCase().trim();
                     if (!q) return true;
@@ -1633,8 +1589,7 @@ export default function RolesView() {
 
                   return (
                     <Box key={modName} sx={{ mb: 3 }}>
-                      {/* Module Header Bar */}
-                      <Box
+<Box
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1642,8 +1597,8 @@ export default function RolesView() {
                           p: 1.4,
                           px: 2,
                           borderRadius: '12px',
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e2e8f0',
+                          backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                           mb: 1.5
                         }}
@@ -1651,7 +1606,7 @@ export default function RolesView() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                           <ModIcon sx={{ fontSize: '20px', color: conf.color }} />
                           <Box>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>
+                            <Typography sx={{ fontSize: '14px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                               {modName}
                             </Typography>
                             <Typography sx={{ fontSize: '11px', color: '#64748b' }}>
@@ -1696,9 +1651,7 @@ export default function RolesView() {
                           </Button>
                         </Box>
                       </Box>
-
-                      {/* Permission Tiles Grid */}
-                      <Box
+<Box
                         sx={{
                           display: 'grid',
                           gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' },
@@ -1716,16 +1669,16 @@ export default function RolesView() {
                               sx={{
                                 p: 1.8,
                                 borderRadius: '12px',
-                                border: isChecked ? '1px solid #7928ca' : '1px solid #e2e8f0',
-                                backgroundColor: isChecked ? '#fbf8ff' : '#ffffff',
-                                boxShadow: isChecked ? '0 4px 14px rgba(121, 40, 202, 0.08)' : '0 2px 6px rgba(0,0,0,0.02)',
+                                                                backgroundColor: isChecked ? (darkMode ? 'rgba(94, 114, 228, 0.15)' : '#f8faff') : (darkMode ? '#0b1437' : '#ffffff'),
+                                border: isChecked ? (darkMode ? '1px solid #825ee4' : '1px solid #5e72e4') : (darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0'),
+                                boxShadow: 'none',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'flex-start',
                                 gap: 1.5,
                                 transition: 'all 0.18s ease',
                                 '&:hover': {
-                                  borderColor: isChecked ? '#7928ca' : '#cbd5e1',
+                                  borderColor: isChecked ? '#5e72e4' : '#cbd5e1',
                                   transform: 'translateY(-1px)',
                                   boxShadow: '0 6px 16px rgba(0,0,0,0.05)'
                                 }
@@ -1734,12 +1687,13 @@ export default function RolesView() {
                               <Checkbox
                                 size="small"
                                 checked={isChecked}
+                                onClick={(e) => e.stopPropagation()}
                                 onChange={() => handleTogglePermission(p.id)}
                                 sx={{
                                   p: 0,
                                   mt: 0.2,
                                   color: '#cbd5e1',
-                                  '&.Mui-checked': { color: '#7928ca' }
+                                  '&.Mui-checked': { color: '#5e72e4' }
                                 }}
                               />
 
@@ -1749,7 +1703,7 @@ export default function RolesView() {
                                     sx={{
                                       fontSize: '13px',
                                       fontWeight: isChecked ? 800 : 700,
-                                      color: isChecked ? '#1e293b' : '#334155'
+                                      color: isChecked ? (darkMode ? '#ffffff' : '#1e293b') : (darkMode ? '#cbd5e1' : '#334155')
                                     }}
                                   >
                                     {p.name}
@@ -1785,8 +1739,8 @@ export default function RolesView() {
                                     fontSize: '10px',
                                     fontFamily: 'monospace',
                                     fontWeight: 600,
-                                    backgroundColor: isChecked ? '#f3e8ff' : '#f1f5f9',
-                                    color: isChecked ? '#7e22ce' : '#64748b'
+                                    backgroundColor: isChecked ? '#eef2ff' : '#f1f5f9',
+                                    color: isChecked ? '#5e72e4' : '#64748b'
                                   }}
                                 />
                               </Box>
@@ -1800,14 +1754,12 @@ export default function RolesView() {
             </Box>
           </Box>
         </DialogContent>
-
-        {/* Modal Action Footer */}
-        <DialogActions
+<DialogActions
           sx={{
             p: 2.2,
             px: 3,
-            backgroundColor: '#ffffff',
-            borderTop: '1px solid #e2e8f0',
+            backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+            borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -1816,7 +1768,7 @@ export default function RolesView() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
               Permissions Selected:{' '}
-              <Box component="span" sx={{ fontWeight: 800, color: '#7928ca' }}>
+              <Box component="span" sx={{ fontWeight: 800, color: '#5e72e4' }}>
                 {formData.permissionIds.length} of {totalPermissionsCount}
               </Box>
             </Typography>
@@ -1845,17 +1797,18 @@ export default function RolesView() {
               onClick={handleSaveModal}
               disabled={actionLoading}
               sx={{
-                background: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
+                backgroundColor: '#5e72e4',
                 color: '#ffffff',
                 textTransform: 'none',
-                fontWeight: 800,
-                fontSize: '13.5px',
-                borderRadius: '10px',
-                px: 3.5,
-                py: 1,
-                boxShadow: '0 4px 14px rgba(121, 40, 202, 0.35)',
+                fontWeight: 600,
+                fontSize: '13px',
+                borderRadius: '8px',
+                px: 3,
+                py: 0.9,
+                boxShadow: 'none',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #651bb0 0%, #e00070 100%)'
+                  backgroundColor: '#4b5fcc',
+                  boxShadow: 'none'
                 }
               }}
             >
@@ -1870,14 +1823,12 @@ export default function RolesView() {
           </Box>
         </DialogActions>
       </Dialog>
-
-      {/* DELETE CUSTOM ROLE CONFIRMATION DIALOG */}
-      <Dialog
+<Dialog
         open={deleteModalOpen}
         onClose={() => !actionLoading && setDeleteModalOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}
+        PaperProps={{ sx: { borderRadius: '18px', backgroundColor: darkMode ? '#111c44' : '#ffffff', border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none', color: darkMode ? '#ffffff' : 'inherit', p: 1 } }}
       >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 1 }}>
           <WarningAmberRoundedIcon sx={{ color: '#ef4444' }} />

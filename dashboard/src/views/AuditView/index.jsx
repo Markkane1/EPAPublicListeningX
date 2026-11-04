@@ -16,11 +16,13 @@ import Pagination from '@mui/material/Pagination';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Tooltip from '@mui/material/Tooltip';
 import InputAdornment from '@mui/material/InputAdornment';
+import Chip from '@mui/material/Chip';
 
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import { useArgonController } from 'context';
+import { sanitizeUrl } from '../../utils/security';
 
 function getStatusBadge(status, darkMode = false) {
   if (status === 'KEPT') {
@@ -177,17 +179,30 @@ function AuditView({ auditLog }) {
           <Tabs
             value={tabIndex}
             onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
               minHeight: '40px',
+              maxWidth: '100%',
+              '& .MuiTabs-scroller': {
+                overflowX: 'auto !important',
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#5e72e4',
+                height: '3px',
+                borderRadius: '3px',
+              },
               '& .MuiTab-root': {
                 minHeight: '40px',
-                fontSize: '13px',
+                fontSize: { xs: '12px', sm: '13px' },
                 fontWeight: 700,
                 textTransform: 'none',
                 fontFamily: '"Open Sans", sans-serif',
-                color: darkMode ? '#94a3b8' : undefined,
+                color: darkMode ? '#94a3b8' : '#64748b',
+                px: { xs: 1.5, sm: 2 },
                 '&.Mui-selected': {
-                  color: darkMode ? '#ffffff' : undefined,
+                  color: darkMode ? '#ffffff' : '#5e72e4',
                 },
               },
             }}
@@ -227,7 +242,8 @@ function AuditView({ auditLog }) {
           </Box>
         </Box>
 
-        <TableContainer sx={{ overflowX: 'auto' }}>
+        {/* Desktop Table View */}
+        <TableContainer sx={{ overflowX: 'auto', display: { xs: 'none', md: 'block' } }}>
           <Table sx={{ minWidth: 950, width: '100%', tableLayout: 'fixed' }}>
             <colgroup>
               <col style={{ width: '50px' }} />
@@ -306,7 +322,7 @@ function AuditView({ auditLog }) {
                       {postUrl ? (
                         <Button
                           component="a"
-                          href={postUrl}
+                          href={sanitizeUrl(postUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           size="small"
@@ -324,6 +340,104 @@ function AuditView({ auditLog }) {
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Mobile Adaptive Cards View (< md) */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
+          {paginatedLogs.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#64748b' }}>
+                No audit records found matching your filter criteria.
+              </Typography>
+            </Box>
+          ) : (
+            paginatedLogs.map((log, index) => {
+              const globalIdx = (currentPage - 1) * itemsPerPage + index + 1;
+              const postUrl = log.id ? `https://x.com/${log.author}/status/${log.id}` : null;
+
+              return (
+                <Box
+                  key={`mobile-${log.id || 'item'}-${globalIdx}`}
+                  sx={{
+                    p: 2,
+                    borderRadius: '12px',
+                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.2
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ fontSize: '11px', fontWeight: 700, color: darkMode ? '#64748b' : '#8392ab' }}>
+                        #{globalIdx}
+                      </Typography>
+                      {getStatusBadge(log.status, darkMode)}
+                      <Chip
+                        label={log.category || 'GENERAL'}
+                        size="small"
+                        sx={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          height: '22px',
+                          backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0',
+                          color: darkMode ? '#cbd5e1' : '#475569'
+                        }}
+                      />
+                    </Box>
+                    {postUrl && (
+                      <Button
+                        component="a"
+                        href={sanitizeUrl(postUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        sx={{
+                          minWidth: '44px',
+                          minHeight: '44px',
+                          p: 0,
+                          color: '#5e72e4'
+                        }}
+                      >
+                        <LaunchRoundedIcon sx={{ fontSize: '18px' }} />
+                      </Button>
+                    )}
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#5e72e4' }}>
+                      @{log.author || 'unknown'}
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography sx={{ fontSize: '11px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', mb: 0.3 }}>
+                      Rationale:
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#334155', fontWeight: 500 }}>
+                      {log.reason}
+                    </Typography>
+                  </Box>
+
+                  {log.text && (
+                    <Box
+                      sx={{
+                        p: 1.2,
+                        borderRadius: '8px',
+                        backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7'
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#64748b', lineHeight: 1.45 }}>
+                        "{log.text}"
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              );
+            })
+          )}
+        </Box>
 
         {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>

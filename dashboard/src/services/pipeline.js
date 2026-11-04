@@ -335,10 +335,13 @@ export function enrichPost(p) {
   const views = parseInt(p.views, 10) || 0;
   const totalEngagement = likes + (retweets * 2) + (replies * 2) + (quotes * 2);
 
+  const rawUrl = p.postUrl || (p.authorUsername && p.id ? `https://x.com/${p.authorUsername}/status/${p.id}` : '');
+  const cleanPostUrl = (typeof rawUrl === 'string' && /^https?:\/\//i.test(rawUrl.trim())) ? rawUrl.trim() : '';
+
   return {
     ...p,
     clean_id: String(p.id || ''),
-    postUrl: p.postUrl || `https://x.com/${p.authorUsername}/status/${p.id}`,
+    postUrl: cleanPostUrl,
     aqi_value: aqiVal,
     severity,
     severity_code: severityCode,
@@ -430,9 +433,9 @@ export function processRawPosts(rawPosts, existingPosts = [], learnedRules = nul
         index: idx,
         id: pid,
         author: handle,
-        status: "REMOVED",
+        status: "DUPLICATE_MERGED",
         category: "DUPLICATE_ID",
-        reason: `Duplicate post ID ${pid} (already indexed)`,
+        reason: `Duplicate post ID ${pid} (already indexed in verified dataset)`,
         text
       });
       return;
@@ -588,6 +591,10 @@ export function processRawPosts(rawPosts, existingPosts = [], learnedRules = nul
     });
   });
 
+  const exactDuplicates = auditLog.filter((a) => a.category === 'DUPLICATE_ID').length;
+  const semanticDuplicates = auditLog.filter((a) => a.category === 'SEMANTIC_DUPLICATE').length;
+  const totalDuplicates = exactDuplicates + semanticDuplicates;
+
   return {
     cleanPosts: validPosts,
     newlyAddedPosts,
@@ -597,7 +604,9 @@ export function processRawPosts(rawPosts, existingPosts = [], learnedRules = nul
       totalIngested: rawPosts.length,
       newCleanCount: newlyAddedPosts.length,
       totalCleanCount: validPosts.length,
-      duplicatesMerged: auditLog.filter(a => a.status === 'DUPLICATE_MERGED').length,
+      exactDuplicates,
+      semanticDuplicates,
+      duplicatesMerged: totalDuplicates,
       removedCount: noisePosts.length
     }
   };

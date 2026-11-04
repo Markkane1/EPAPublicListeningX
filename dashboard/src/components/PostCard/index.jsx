@@ -23,6 +23,7 @@ import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
 import PlayCircleOutlineRoundedIcon from '@mui/icons-material/PlayCircleOutlineRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import { isVideoUrl } from '../../utils/media';
+import { sanitizeUrl } from '../../utils/security';
 
 function formatDate(isoStr) {
   if (!isoStr) return '';
@@ -98,7 +99,7 @@ function renderFormattedText(text) {
       return (
         <a
           key={index}
-          href={part}
+          href={sanitizeUrl(part)}
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: '#5e72e4', textDecoration: 'underline', wordBreak: 'break-all' }}
@@ -304,7 +305,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
             {postUrl && (
               <Button
                 component="a"
-                href={postUrl}
+                href={sanitizeUrl(postUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 variant="outlined"

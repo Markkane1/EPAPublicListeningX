@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -28,7 +29,6 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Fade from '@mui/material/Fade';
 
-// Icons
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import PersonAddRoundedIcon from '@mui/icons-material/PersonAddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -53,48 +53,43 @@ import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
 
 import { getUsers, createUser, updateUser, deleteUser, getRoles } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useArgonController } from '../../context';
 
-// Distinct Role Styling Palette
 const ROLE_BADGES = {
   super_admin: {
     label: 'Super Administrator',
-    gradient: 'linear-gradient(135deg, #7928ca 0%, #ff0080 100%)',
-    color: '#ffffff',
-    bg: '#faf5ff',
-    border: '#e9d5ff',
-    chipColor: '#7e22ce'
+    color: '#0f172a',
+    bg: '#f1f5f9',
+    border: '#cbd5e1',
+    chipColor: '#0f172a'
   },
   analyst: {
     label: 'Environmental Analyst',
-    gradient: 'linear-gradient(135deg, #1171ef 0%, #11cdef 100%)',
-    color: '#ffffff',
+    color: '#0369a1',
     bg: '#f0f9ff',
     border: '#bae6fd',
     chipColor: '#0369a1'
   },
   auditor: {
     label: 'Data Operator & Auditor',
-    gradient: 'linear-gradient(135deg, #fb6340 0%, #fbb140 100%)',
-    color: '#ffffff',
-    bg: '#fff7ed',
-    border: '#fed7aa',
-    chipColor: '#c2410c'
+    color: '#334155',
+    bg: '#f8fafc',
+    border: '#e2e8f0',
+    chipColor: '#334155'
   },
   viewer: {
     label: 'Read-Only Viewer',
-    gradient: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
-    color: '#ffffff',
+    color: '#64748b',
     bg: '#f8fafc',
     border: '#e2e8f0',
     chipColor: '#475569'
   },
   custom: {
     label: 'Custom Role',
-    gradient: 'linear-gradient(135deg, #2dce89 0%, #2dcecc 100%)',
-    color: '#ffffff',
-    bg: '#f0fdf4',
-    border: '#bbf7d0',
-    chipColor: '#15803d'
+    color: '#047857',
+    bg: '#ecfdf5',
+    border: '#a7f3d0',
+    chipColor: '#047857'
   }
 };
 
@@ -103,6 +98,8 @@ function getRoleStyle(roleName) {
 }
 
 export default function UsersView() {
+  const [controller] = useArgonController();
+  const { darkMode } = controller;
   const { user: currentUser, hasPermission } = useAuth();
 
   const [users, setUsers] = useState([]);
@@ -110,18 +107,15 @@ export default function UsersView() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [activeUser, setActiveUser] = useState(null);
 
-  // Form
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
@@ -186,7 +180,6 @@ export default function UsersView() {
     return () => clearTimeout(timer);
   }, [fetchUsers]);
 
-  // Derived stats
   const activeCount = useMemo(() => {
     return users.filter((u) => u.isActive).length;
   }, [users]);
@@ -199,7 +192,6 @@ export default function UsersView() {
     return users.filter((u) => u.role?.name === 'analyst' || u.role?.name === 'auditor').length;
   }, [users]);
 
-  // Modal Handlers
   const handleOpenCreate = () => {
     setFormError('');
     setShowPassword(false);
@@ -346,8 +338,7 @@ export default function UsersView() {
 
   return (
     <Box sx={{ width: '100%', pb: 5 }}>
-      {/* Toast Notification Banner */}
-      {toast.show && (
+{toast.show && (
         <Fade in={toast.show}>
           <Alert
             severity={toast.severity}
@@ -364,15 +355,13 @@ export default function UsersView() {
           </Alert>
         </Fade>
       )}
-
-      {/* Top Executive Header Bar */}
-      <Card
+<Card
         sx={{
           p: { xs: 2.5, md: 3 },
           mb: 3,
           borderRadius: '16px',
           boxShadow: '0 8px 26px rgba(0,0,0,0.04)',
-          border: '1px solid #f1f5f9',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           alignItems: { xs: 'flex-start', md: 'center' },
@@ -386,12 +375,13 @@ export default function UsersView() {
               width: 52,
               height: 52,
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, #5e72e4 0%, #825ee4 100%)',
+              backgroundColor: '#eef2ff',
+              border: '1px solid #c7d2fe',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 6px 18px rgba(94, 114, 228, 0.3)',
+              color: '#5e72e4',
+              boxShadow: 'none',
               flexShrink: 0
             }}
           >
@@ -404,7 +394,7 @@ export default function UsersView() {
                 sx={{
                   fontFamily: '"Open Sans", sans-serif',
                   fontWeight: 800,
-                  color: '#1e293b',
+                  color: darkMode ? '#ffffff' : '#1e293b',
                   letterSpacing: '-0.3px',
                   fontSize: { xs: '20px', md: '22px' }
                 }}
@@ -450,20 +440,19 @@ export default function UsersView() {
               onClick={handleOpenCreate}
               startIcon={<PersonAddRoundedIcon sx={{ fontSize: '19px !important' }} />}
               sx={{
-                background: 'linear-gradient(135deg, #5e72e4 0%, #825ee4 100%)',
+                backgroundColor: '#5e72e4',
                 color: '#ffffff',
-                borderRadius: '10px',
+                borderRadius: '8px',
                 textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '13.5px',
-                px: 2.8,
-                py: 1.1,
-                boxShadow: '0 4px 16px rgba(94, 114, 228, 0.35)',
-                transition: 'all 0.2s ease',
+                fontWeight: 600,
+                fontSize: '13px',
+                px: 2.5,
+                py: 0.9,
+                boxShadow: 'none',
+                transition: 'all 0.15s ease',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #4b5fcc 0%, #6f4ecc 100%)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 6px 20px rgba(94, 114, 228, 0.45)'
+                  backgroundColor: '#4b5fcc',
+                  boxShadow: 'none'
                 }
               }}
             >
@@ -472,9 +461,7 @@ export default function UsersView() {
           )}
         </Box>
       </Card>
-
-      {/* KPI Stats Strip */}
-      <Box
+<Box
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' },
@@ -482,15 +469,16 @@ export default function UsersView() {
           mb: 3
         }}
       >
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#e0f2fe',
-                color: '#0284c7',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -502,8 +490,8 @@ export default function UsersView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Total Accounts
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
-                {totalCount}{' '}
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                {loading ? <Skeleton variant="text" width={42} height={32} sx={{ display: 'inline-block' }} /> : totalCount}{' '}
                 <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
                   Registered
                 </Typography>
@@ -512,15 +500,16 @@ export default function UsersView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#f0fdf4',
-                color: '#16a34a',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -533,7 +522,7 @@ export default function UsersView() {
                 Active Accounts
               </Typography>
               <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#16a34a' }}>
-                {activeCount}{' '}
+                {loading ? <Skeleton variant="text" width={42} height={32} sx={{ display: 'inline-block' }} /> : activeCount}{' '}
                 <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
                   ({totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 100}%)
                 </Typography>
@@ -542,15 +531,16 @@ export default function UsersView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#f3e8ff',
-                color: '#7e22ce',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -562,9 +552,9 @@ export default function UsersView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Chief Administrators
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
-                {superAdminCount}{' '}
-                <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#7e22ce' }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                {loading ? <Skeleton variant="text" width={32} height={32} sx={{ display: 'inline-block' }} /> : superAdminCount}{' '}
+                <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
                   Apex Authority
                 </Typography>
               </Typography>
@@ -572,15 +562,16 @@ export default function UsersView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
                 borderRadius: '12px',
-                backgroundColor: '#fff7ed',
-                color: '#ea580c',
+                backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
+                color: '#5e72e4',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -592,7 +583,7 @@ export default function UsersView() {
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Analysts & Auditors
               </Typography>
-              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                 {operationalCount}{' '}
                 <Typography component="span" sx={{ fontSize: '12px', fontWeight: 600, color: '#ea580c' }}>
                   Operational Staff
@@ -602,14 +593,12 @@ export default function UsersView() {
           </Box>
         </Card>
       </Box>
-
-      {/* Sleek Horizontal Control Filter Bar */}
-      <Card
+<Card
         sx={{
           p: 2,
           mb: 3,
           borderRadius: '14px',
-          border: '1px solid #f1f5f9',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
           boxShadow: '0 4px 18px rgba(0,0,0,0.02)',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
@@ -638,7 +627,7 @@ export default function UsersView() {
                   </IconButton>
                 </InputAdornment>
               ),
-              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: '#f8fafc' }
+              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }
             }}
           />
         </Box>
@@ -653,7 +642,7 @@ export default function UsersView() {
               <Select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: '#f8fafc' }}
+                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}
               >
                 <MenuItem value="all">All Roles ({roles.length})</MenuItem>
                 {roles.map((r) => (
@@ -673,7 +662,7 @@ export default function UsersView() {
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: '#f8fafc' }}
+                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}
               >
                 <MenuItem value="all">All Status</MenuItem>
                 <MenuItem value="1">Active Only</MenuItem>
@@ -693,9 +682,7 @@ export default function UsersView() {
           )}
         </Box>
       </Card>
-
-      {/* Main Users Directory Table */}
-      <Card
+<Card
         sx={{
           borderRadius: '16px',
           boxShadow: '0 8px 28px rgba(0,0,0,0.04)',
@@ -703,9 +690,9 @@ export default function UsersView() {
           overflow: 'hidden'
         }}
       >
-        <TableContainer>
+        <TableContainer sx={{ overflowX: 'auto', display: { xs: 'none', md: 'block' } }}>
           <Table sx={{ minWidth: 780 }}>
-            <TableHead sx={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <TableHead sx={{ backgroundColor: darkMode ? '#0b1437' : '#f8fafc', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
               <TableRow>
                 <TableCell sx={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', py: 1.8 }}>
                   Operator Identity
@@ -761,12 +748,11 @@ export default function UsersView() {
                       key={u.id}
                       hover
                       sx={{
-                        '&:hover': { backgroundColor: '#f8fafc' },
+                        '&:hover': { backgroundColor: darkMode ? '#0b1437' : '#f8fafc' },
                         transition: 'background-color 0.15s ease'
                       }}
                     >
-                      {/* Operator Identity */}
-                      <TableCell sx={{ py: 1.6 }}>
+<TableCell sx={{ py: 1.6 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.6 }}>
                           <Avatar
                             src={u.avatar}
@@ -786,7 +772,7 @@ export default function UsersView() {
                           </Avatar>
                           <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography sx={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                              <Typography sx={{ fontSize: '13.5px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
                                 {u.fullName || u.username}
                               </Typography>
                               {isCurrent && (
@@ -810,9 +796,7 @@ export default function UsersView() {
                           </Box>
                         </Box>
                       </TableCell>
-
-                      {/* Official Email */}
-                      <TableCell sx={{ py: 1.6 }}>
+<TableCell sx={{ py: 1.6 }}>
                         <Tooltip title="Click to copy email address" arrow>
                           <Box
                             onClick={(e) => handleCopyEmail(u.email, e)}
@@ -836,27 +820,24 @@ export default function UsersView() {
                           </Box>
                         </Tooltip>
                       </TableCell>
-
-                      {/* Assigned Role */}
-                      <TableCell sx={{ py: 1.6 }}>
+<TableCell sx={{ py: 1.6 }}>
                         <Chip
                           icon={<ShieldRoundedIcon sx={{ fontSize: '14px !important', color: `${roleStyle.color} !important` }} />}
                           label={u.role?.displayName || u.role?.name}
                           size="small"
                           sx={{
-                            background: roleStyle.gradient,
-                            color: roleStyle.color,
-                            fontWeight: 800,
+                            backgroundColor: roleStyle.bg,
+                            border: `1px solid ${roleStyle.border}`,
+                            color: roleStyle.chipColor,
+                            fontWeight: 700,
                             fontSize: '11px',
-                            borderRadius: '8px',
-                            height: '25px',
-                            boxShadow: isSuperAdmin ? '0 2px 8px rgba(121, 40, 202, 0.25)' : 'none'
+                            borderRadius: '6px',
+                            height: '24px',
+                            boxShadow: 'none'
                           }}
                         />
                       </TableCell>
-
-                      {/* Account Status */}
-                      <TableCell sx={{ py: 1.6 }}>
+<TableCell sx={{ py: 1.6 }}>
                         <Tooltip title={canEdit ? 'Click to toggle active status' : ''} arrow>
                           <Chip
                             icon={
@@ -889,16 +870,12 @@ export default function UsersView() {
                           />
                         </Tooltip>
                       </TableCell>
-
-                      {/* Created Date */}
-                      <TableCell sx={{ py: 1.6 }}>
+<TableCell sx={{ py: 1.6 }}>
                         <Typography sx={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
                         </Typography>
                       </TableCell>
-
-                      {/* Actions */}
-                      <TableCell align="right" sx={{ py: 1.6 }}>
+<TableCell align="right" sx={{ py: 1.6 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.8 }}>
                           {canEdit && (
                             <Tooltip title="Edit operator credentials & clearance" arrow>
@@ -907,7 +884,7 @@ export default function UsersView() {
                                 onClick={() => handleOpenEdit(u)}
                                 sx={{
                                   color: '#64748b',
-                                  backgroundColor: '#f8fafc',
+                                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                                   border: '1px solid #e2e8f0',
                                   '&:hover': { color: '#5e72e4', backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }
                                 }}
@@ -933,7 +910,7 @@ export default function UsersView() {
                                   onClick={() => handleOpenDelete(u)}
                                   sx={{
                                     color: '#94a3b8',
-                                    backgroundColor: '#f8fafc',
+                                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                                     border: '1px solid #e2e8f0',
                                     '&:hover': { color: '#ef4444', backgroundColor: '#fef2f2', borderColor: '#fecaca' },
                                     '&.Mui-disabled': { opacity: 0.35 }
@@ -953,10 +930,202 @@ export default function UsersView() {
             </TableBody>
           </Table>
         </TableContainer>
-      </Card>
 
-      {/* CREATE NEW OPERATOR MODAL */}
-      <Dialog
+        {/* Mobile Adaptive User Cards (< md) */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, p: 2 }}>
+          {users.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#64748b' }}>
+                No operator accounts match the current filter criteria.
+              </Typography>
+            </Box>
+          ) : (
+            users.map((u) => {
+              const roleStyle = getRoleStyle(u.role?.name || u.role);
+              const isCurrent = currentUser?.username === u.username;
+              const canEdit = hasPermission('users:manage') || currentUser?.role === 'super_admin';
+              const canDelete = (hasPermission('users:manage') || currentUser?.role === 'super_admin') && !isCurrent;
+
+              return (
+                <Box
+                  key={`user-card-${u.id || u.username}`}
+                  sx={{
+                    p: 2,
+                    borderRadius: '14px',
+                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Avatar
+                        src={u.avatar}
+                        alt={u.fullName || u.username}
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          border: '2px solid #e2e8f0',
+                          backgroundColor: roleStyle.bg,
+                          color: roleStyle.chipColor,
+                          fontWeight: 800,
+                          fontSize: '15px'
+                        }}
+                      >
+                        {(u.fullName || u.username || 'U')[0].toUpperCase()}
+                      </Avatar>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+                          <Typography sx={{ fontSize: '14px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                            {u.fullName || u.username}
+                          </Typography>
+                          {isCurrent && (
+                            <Chip
+                              label="You"
+                              size="small"
+                              sx={{
+                                height: '18px',
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                backgroundColor: '#dcfce7',
+                                color: '#166534',
+                                border: '1px solid #bbf7d0'
+                              }}
+                            />
+                          )}
+                        </Box>
+                        <Typography sx={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace', fontWeight: 600 }}>
+                          @{u.username}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Tooltip title={canEdit ? 'Click to toggle status' : ''} arrow>
+                      <Chip
+                        icon={
+                          u.isActive ? (
+                            <CheckCircleRoundedIcon sx={{ fontSize: '14px !important', color: '#16a34a' }} />
+                          ) : (
+                            <BlockRoundedIcon sx={{ fontSize: '14px !important', color: '#ef4444' }} />
+                          )
+                        }
+                        label={u.isActive ? 'Active' : 'Disabled'}
+                        size="small"
+                        clickable={canEdit}
+                        onClick={canEdit ? () => handleToggleStatus(u) : undefined}
+                        sx={{
+                          backgroundColor: u.isActive ? (darkMode ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4') : (darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2'),
+                          color: u.isActive ? (darkMode ? '#4ade80' : '#16a34a') : (darkMode ? '#f87171' : '#ef4444'),
+                          border: `1px solid ${u.isActive ? (darkMode ? 'rgba(74, 222, 128, 0.3)' : '#bbf7d0') : (darkMode ? 'rgba(248, 113, 113, 0.3)' : '#fecaca')}`,
+                          fontWeight: 700,
+                          fontSize: '11px',
+                          borderRadius: '6px',
+                          height: '24px'
+                        }}
+                      />
+                    </Tooltip>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, pt: 0.5, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                      <Chip
+                        icon={<ShieldRoundedIcon sx={{ fontSize: '14px !important', color: `${roleStyle.color} !important` }} />}
+                        label={u.role?.displayName || u.role?.name}
+                        size="small"
+                        sx={{
+                          backgroundColor: roleStyle.bg,
+                          border: `1px solid ${roleStyle.border}`,
+                          color: roleStyle.chipColor,
+                          fontWeight: 700,
+                          fontSize: '11px',
+                          borderRadius: '6px',
+                          height: '24px'
+                        }}
+                      />
+
+                      <Tooltip title="Click to copy email address" arrow>
+                        <Box
+                          onClick={(e) => handleCopyEmail(u.email, e)}
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.8,
+                            cursor: 'pointer',
+                            p: 0.5,
+                            borderRadius: '6px',
+                            '&:hover': { backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }
+                          }}
+                        >
+                          <EmailRoundedIcon sx={{ fontSize: '14px', color: '#94a3b8' }} />
+                          <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#334155', fontWeight: 500 }}>
+                            {u.email}
+                          </Typography>
+                          {copiedEmail === u.email && (
+                            <CheckCircleRoundedIcon sx={{ fontSize: '12px', color: '#16a34a' }} />
+                          )}
+                        </Box>
+                      </Tooltip>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
+                    <Typography sx={{ fontSize: '11.5px', color: '#64748b' }}>
+                      Created: {new Date(u.createdAt || Date.now()).toLocaleDateString()}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                      {canEdit && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<EditRoundedIcon sx={{ fontSize: '15px !important' }} />}
+                          onClick={() => handleOpenEdit(u)}
+                          sx={{
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            borderRadius: '8px',
+                            color: '#5e72e4',
+                            borderColor: darkMode ? 'rgba(94, 114, 228, 0.4)' : '#cbd5e1',
+                            minHeight: '36px',
+                            px: 1.5,
+                            '&:hover': {
+                              borderColor: '#5e72e4',
+                              backgroundColor: 'rgba(94, 114, 228, 0.08)'
+                            }
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      )}
+
+                      {canDelete && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDelete(u)}
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '8px',
+                            border: darkMode ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #fee2e2',
+                            color: '#ef4444',
+                            '&:hover': { backgroundColor: '#fef2f2' }
+                          }}
+                        >
+                          <DeleteRoundedIcon sx={{ fontSize: '16px' }} />
+                        </IconButton>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })
+          )}
+        </Box>
+      </Card>
+<Dialog
         open={createModalOpen}
         onClose={() => !actionLoading && setCreateModalOpen(false)}
         maxWidth="sm"
@@ -971,7 +1140,7 @@ export default function UsersView() {
       >
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #5e72e4 0%, #825ee4 100%)',
+            backgroundColor: '#0f172a',
             p: 3,
             color: '#ffffff',
             display: 'flex',
@@ -1132,6 +1301,22 @@ export default function UsersView() {
                 <Select
                   value={formData.roleId}
                   onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  renderValue={(selectedId) => {
+                    const r = roles.find((x) => x.id === selectedId);
+                    if (!r) return 'Select role clearance...';
+                    const style = getRoleStyle(r.name);
+                    return (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ShieldRoundedIcon sx={{ fontSize: '15px', color: style.chipColor }} />
+                        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                          {r.displayName}
+                        </Typography>
+                        <Typography sx={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                          (@{r.name})
+                        </Typography>
+                      </Box>
+                    );
+                  }}
                   sx={{ borderRadius: '10px', fontSize: '13px' }}
                 >
                   {roles.map((r) => {
@@ -1141,7 +1326,7 @@ export default function UsersView() {
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <ShieldRoundedIcon sx={{ fontSize: '16px', color: style.chipColor }} />
-                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
                               {r.displayName}
                             </Typography>
                           </Box>
@@ -1160,7 +1345,7 @@ export default function UsersView() {
               sx={{
                 p: 1.5,
                 borderRadius: '12px',
-                backgroundColor: '#f8fafc',
+                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                 border: '1px solid #e2e8f0',
                 display: 'flex',
                 alignItems: 'center',
@@ -1168,7 +1353,7 @@ export default function UsersView() {
               }}
             >
               <Box>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
                   Account Active Status
                 </Typography>
                 <Typography sx={{ fontSize: '11.5px', color: '#64748b' }}>
@@ -1185,7 +1370,7 @@ export default function UsersView() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2.5, px: 3, borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+        <DialogActions sx={{ p: 2.5, px: 3, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
           <Button
             onClick={() => setCreateModalOpen(false)}
             sx={{ textTransform: 'none', color: '#64748b', fontWeight: 700 }}
@@ -1197,16 +1382,17 @@ export default function UsersView() {
             onClick={handleCreateSubmit}
             disabled={actionLoading}
             sx={{
-              background: 'linear-gradient(135deg, #5e72e4 0%, #825ee4 100%)',
+              backgroundColor: '#5e72e4',
               color: '#ffffff',
               textTransform: 'none',
-              fontWeight: 800,
-              fontSize: '13.5px',
-              borderRadius: '10px',
+              fontWeight: 600,
+              fontSize: '13px',
+              borderRadius: '8px',
               px: 3,
-              boxShadow: '0 4px 14px rgba(94, 114, 228, 0.35)',
+              boxShadow: 'none',
               '&:hover': {
-                background: 'linear-gradient(135deg, #4b5fcc 0%, #6f4ecc 100%)'
+                backgroundColor: '#4b5fcc',
+                boxShadow: 'none'
               }
             }}
           >
@@ -1214,9 +1400,7 @@ export default function UsersView() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* EDIT OPERATOR MODAL */}
-      <Dialog
+<Dialog
         open={editModalOpen}
         onClose={() => !actionLoading && setEditModalOpen(false)}
         maxWidth="sm"
@@ -1231,7 +1415,7 @@ export default function UsersView() {
       >
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #1171ef 0%, #11cdef 100%)',
+            backgroundColor: '#0f172a',
             p: 3,
             color: '#ffffff',
             display: 'flex',
@@ -1348,6 +1532,22 @@ export default function UsersView() {
                 <Select
                   value={formData.roleId}
                   onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  renderValue={(selectedId) => {
+                    const r = roles.find((x) => x.id === selectedId);
+                    if (!r) return 'Select role clearance...';
+                    const style = getRoleStyle(r.name);
+                    return (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ShieldRoundedIcon sx={{ fontSize: '15px', color: style.chipColor }} />
+                        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                          {r.displayName}
+                        </Typography>
+                        <Typography sx={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                          (@{r.name})
+                        </Typography>
+                      </Box>
+                    );
+                  }}
                   sx={{ borderRadius: '10px', fontSize: '13px' }}
                 >
                   {roles.map((r) => {
@@ -1357,7 +1557,7 @@ export default function UsersView() {
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <ShieldRoundedIcon sx={{ fontSize: '16px', color: style.chipColor }} />
-                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
                               {r.displayName}
                             </Typography>
                           </Box>
@@ -1409,7 +1609,7 @@ export default function UsersView() {
               sx={{
                 p: 1.5,
                 borderRadius: '12px',
-                backgroundColor: '#f8fafc',
+                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
                 border: '1px solid #e2e8f0',
                 display: 'flex',
                 alignItems: 'center',
@@ -1417,7 +1617,7 @@ export default function UsersView() {
               }}
             >
               <Box>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
                   Account Active
                 </Typography>
                 <Typography sx={{ fontSize: '11.5px', color: '#64748b' }}>
@@ -1434,7 +1634,7 @@ export default function UsersView() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2.5, px: 3, borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+        <DialogActions sx={{ p: 2.5, px: 3, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
           <Button
             onClick={() => setEditModalOpen(false)}
             sx={{ textTransform: 'none', color: '#64748b', fontWeight: 700 }}
@@ -1446,16 +1646,17 @@ export default function UsersView() {
             onClick={handleEditSubmit}
             disabled={actionLoading}
             sx={{
-              background: 'linear-gradient(135deg, #1171ef 0%, #11cdef 100%)',
+              backgroundColor: '#5e72e4',
               color: '#ffffff',
               textTransform: 'none',
-              fontWeight: 800,
-              fontSize: '13.5px',
-              borderRadius: '10px',
+              fontWeight: 600,
+              fontSize: '13px',
+              borderRadius: '8px',
               px: 3,
-              boxShadow: '0 4px 14px rgba(17, 113, 239, 0.35)',
+              boxShadow: 'none',
               '&:hover': {
-                background: 'linear-gradient(135deg, #0c56bd 0%, #0fb5d3 100%)'
+                backgroundColor: '#4b5fcc',
+                boxShadow: 'none'
               }
             }}
           >
@@ -1463,14 +1664,12 @@ export default function UsersView() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* CONFIRM DELETE USER DIALOG */}
-      <Dialog
+<Dialog
         open={deleteModalOpen}
         onClose={() => !actionLoading && setDeleteModalOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}
+        PaperProps={{ sx: { borderRadius: '18px', backgroundColor: darkMode ? '#111c44' : '#ffffff', border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none', color: darkMode ? '#ffffff' : 'inherit', p: 1 } }}
       >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 1 }}>
           <WarningAmberRoundedIcon sx={{ color: '#ef4444' }} />

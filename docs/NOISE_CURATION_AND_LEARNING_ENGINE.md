@@ -236,6 +236,30 @@ In the **Restored Posts Ledger** (and directly on verified post cards), operator
 When an operator drops a `.json` batch into the Ingest modal, if any posts are filtered out, an alert prompts the user:  
 *“ℹ️ X posts were classified as noise. After ingesting, you can review and manually salvage relevant posts in the Noise & Learning Engine page to teach the system without AI.”*
 
+#### 6. Comprehensive Filtering, Quick Sort Chips & Multi-Tier Sorting (Latest Posts by Default)
+To provide the exact same filtering and sorting power found on the Verified Intelligence Posts Feed:
+- **Default Latest Recency Sort**: Both the backend (`get_noise_posts`) and the client-side sorting engine sort posts by **latest creation timestamp first (`createdAt` descending)** by default.
+- **Quick Sort Chips**: One-click pills allow instant switching between common operational perspectives:
+  - 🕒 **Latest**: Sorts by post timestamp descending (Active default).
+  - 🔥 **Most Interactions**: Sum of Likes + Retweets + Replies + Quotes.
+  - 💬 **Most Discussion**: Sorts by tweet reply counts.
+  - ❤️ **Most Likes**: Sorts by heart/like engagement.
+  - 👥 **Top Reach**: Sorts by author follower counts.
+  - 📸 **Photo Evidence**: Sorts by volume of attached media assets.
+- **Full Grouped Sort Dropdown**:
+  - *Recency & Timeline*: `Latest / Most Recent`, `Oldest First`, `Recently Ingested / Scraped`.
+  - *Interactions & Virality*: `Most Interactions (Total)`, `Most Likes / Hearted`, `Most Reposts / Retweets`, `Most Discussion / Replies`, `Most Impressions / Views`.
+  - *Author & Influence*: `Top Author Reach (Followers)`, `Verified Accounts First`.
+  - *Media & Proof*: `Most Media Attachments (Photos/Videos)`.
+- **Direction Toggle**: A dedicated button flips between Descending (⬇️) and Ascending (⬆️) order with instant live re-sorting.
+- **Multi-Parameter Filter Toolbar**:
+  - *Keyword Search*: High-speed fuzzy search across post copy, author usernames, display names, and diagnostic exclusion reasons, with an instant Clear (`X`) button.
+  - *Exclusion Category Dropdown*: Lists all distinct categories detected in the pool with real-time post counts (e.g. `Off-Topic Noise (42)`, `No AQ Relevance (65)`, `No Geo Relevance (18)`, `Indian Domestic (30)`, `Excluded Account (9)`).
+  - *Media Filter*: Toggles between `All Attachments`, `Photo / Video Evidence`, and `Text Only (No Media)`.
+  - *Author Verification Filter*: Filters by `All Accounts`, `Verified Accounts Only`, and `Standard Accounts Only`.
+  - *Dynamic Date Filter*: Extracts distinct calendar dates directly from the post pool and displays formatted dates with item counts.
+- **One-Click Filter Reset**: A persistent reset button (`RestartAltRoundedIcon`) appears whenever any filter or non-default sort is active, restoring the view back to the default state (Latest posts first).
+
 ---
 
 ## 8. Verification & Performance Benchmarks
@@ -275,6 +299,67 @@ In accordance with Argon Dashboard 2 design language and enterprise accessibilit
 
 ---
 
-## 11. Summary
+## 11. Unified Pipeline Architecture: Ingested Files & Live X API Search
 
-The **Noise Ingestion Curation & Non-AI Learning Engine** bridges the gap between rigid negative query scraping and human domain expertise. By replacing unreliable AI models with **deterministic diagnostic inversion**, the EPA Punjab Air Quality Intelligence Portal delivers a production-ready, explainable, and continuously improving environmental surveillance platform.
+To eliminate discrepancies between uploaded historical batches and real-time social listening, the EPA Intelligence Portal enforces **strict pipeline symmetry**:
+
+```mermaid
+flowchart TD
+    subgraph Sources [Input Channels]
+        FileBatch[1. Scraped JSON File Upload] --> ParseBatch[Parse & Normalise Schema]
+        APISearch[2. Live X API Search] --> BuildQuery[Synthesize Negative Constraints]
+        BuildQuery --> XClient[Execute API / Simulation Fetch]
+        XClient --> Transform[Transform X Response]
+    end
+
+    subgraph UnifiedCore [Unified Pipeline Engine: pipeline.process_dataset]
+        ParseBatch --> PipelineGate
+        Transform --> PipelineGate[Unified Processing Pipeline]
+        
+        DBPosts[(Existing Database Posts)] -.->|Deduplication Reference| PipelineGate
+        ActiveRules[(Active Learned Rules)] -.->|Override Exceptions| PipelineGate
+        QueryConfig[(Active Negative Profile)] -.->|Dynamic Negative Constraints| PipelineGate
+        
+        PipelineGate --> ExactDedupe{Exact ID / Text Collision?}
+        ExactDedupe -- Yes --> AuditLog[(audit_logs: DUPLICATE_MERGED)]
+        ExactDedupe -- No --> FilterCheck{Base & Negative Constraints}
+        
+        FilterCheck -- Rejected --> NoiseStore[(noise_posts: EXCLUDED)]
+        FilterCheck -- Accepted --> Enrich[AQ Severity & Sentiment Engine]
+        Enrich --> CleanStore[(posts: VERIFIED)]
+    end
+
+    subgraph FeedbackLoop [Operator Real-Time Feedback]
+        NoiseStore --> NoiseFeed["Noise & Learning Feed (/noise)"]
+        CleanStore --> SearchFeed["Search & Intelligence Feeds (/search, /posts)"]
+        AuditLog --> AuditFeed["Deduplication Audit (/audit)"]
+    end
+```
+
+### Key Architectural Invariants
+
+1. **Symmetric Dual-Gateway Execution**:
+   - Both `POST /api/ingest` and `POST /api/x/search` pass incoming posts through `pipeline.process_dataset()`.
+   - Neither channel can bypass negative filters, script verification, geographic gating, or duplicate detection.
+
+2. **Upstream Negative Constraint Injection**:
+   - When a search is initiated against X.com, `build_effective_api_query()` parses the active query constraint version (e.g. `v1.1` "Official EPA Punjab Search Constraints").
+   - Negative filters (`-Delhi`, `-NCR`, `-Haryana`, `-from:EPCDPunjab`, etc.) and `-is:retweet` are injected directly into the API request string before network transmission, saving API rate limits and preventing irrelevant items before ingestion.
+
+3. **Persistent SQLite Cross-Deduplication**:
+   - Both file batches and API responses are checked against all records currently in `data/epa_intelligence.db`.
+   - Exact ID collisions (`DUPLICATE_ID`) and semantic duplicate text matches (`DUPLICATE_MERGED`) are recorded in `audit_logs` without polluting the clean posts feed.
+
+4. **Automated Noise Routing & Diagnostic Logging**:
+   - Any post fetched from the API that fails air quality relevance, geographic relevance, or matches an Indian domestic or off-topic pattern is routed directly into `noise_posts`.
+   - Diagnostic reasons (`EXCLUDED_INDIAN_CONTEXT`, `NO_AIR_QUALITY_RELEVANCE`, `OFF_TOPIC`, `EXCLUDED_ACCOUNT`) are preserved with full post metadata.
+
+5. **Uniform API & Frontend Data Contract**:
+   - Responses from `/api/x/search` and `/api/ingest` supply both camelCase (`exclusionCategory`, `exclusionReason`, `authorUsername`, `mediaUrls`) and snake_case properties.
+   - The Search UI displays a breakdown badge (`X fetched → Y verified, Z duplicates merged, W noise excluded`) with an immediate shortcut: `Inspect X Excluded Noise →`, directing the analyst to `/noise` for non-AI rule learning.
+
+---
+
+## 12. Summary
+
+The **Noise Ingestion Curation & Non-AI Learning Engine** bridges the gap between rigid negative query scraping and human domain expertise. By replacing unreliable AI models with **deterministic diagnostic inversion**, the EPA Punjab Air Quality Intelligence Portal delivers a production-ready, explainable, and continuously improving environmental surveillance platform across both batch ingestion and live API search channels.

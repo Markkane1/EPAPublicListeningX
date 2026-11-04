@@ -16,7 +16,9 @@ def initialize_service():
     database.init_db()
 
 def get_current_settings():
-    """Retrieves settings with masked sensitive fields for client presentation."""
+    """Retrieves settings with ALL sensitive fields removed/masked for client presentation.
+    Raw API keys, secrets, and bearer tokens are NEVER returned to the client.
+    """
     settings = database.get_settings()
     token = settings.get("x_bearer_token", "")
     api_key = settings.get("x_api_key", "")
@@ -24,13 +26,18 @@ def get_current_settings():
     turnstile_site_key = settings.get("turnstile_site_key", "1x00000000000000000000AA")
     turnstile_secret_key = settings.get("turnstile_secret_key", "")
 
-    safe_settings = dict(settings)
+    # Build a safe response dict - copy only non-sensitive keys
+    _SENSITIVE_KEYS = {"x_bearer_token", "x_api_key", "x_api_secret", "turnstile_secret_key"}
+    safe_settings = {k: v for k, v in settings.items() if k not in _SENSITIVE_KEYS}
+
+    # Expose presence flags (boolean) but never the raw values
     safe_settings["has_bearer_token"] = bool(token.strip())
     safe_settings["has_api_key"] = bool(api_key.strip())
     safe_settings["has_api_secret"] = bool(api_secret.strip())
-    safe_settings["turnstile_site_key"] = turnstile_site_key
+    safe_settings["turnstile_site_key"] = turnstile_site_key  # site key is public
     safe_settings["has_turnstile_secret"] = bool(turnstile_secret_key.strip())
-    
+
+    # Provide a safely-masked bearer token preview (first 4, last 4 chars)
     if token.strip():
         if len(token) > 10:
             safe_settings["x_bearer_token_masked"] = f"{token[:4]}...{token[-4:]}"
@@ -78,11 +85,112 @@ def test_x_credentials(bearer_token: str = None, api_key: str = None, api_secret
     endpoint = settings.get("x_api_endpoint", x_api_client.DEFAULT_ENDPOINT)
     return x_api_client.test_connection(bearer_token, endpoint_url=endpoint)
 
+def parse_query_constraints(query_text: str) -> dict:
+    """Extracts negative exclusions and account filters from an active search query string."""
+    if not query_text:
+        return {"excluded_authors": [], "excluded_keywords": [], "negatives": []}
+    tokens = query_text.split()
+    negatives = [tok for tok in tokens if tok.startswith('-')]
+    excluded_authors = []
+    excluded_keywords = []
+    for tok in negatives:
+        clean = tok.lstrip('-').replace('"', '').replace("'", "").strip()
+        if clean.lower().startswith('from:'):
+            handle = clean.split(':', 1)[1].lstrip('@').lower().strip()
+            if handle:
+                excluded_authors.append(handle)
+        else:
+            if clean:
+                excluded_keywords.append(clean.lower())
+    return {
+        "excluded_authors": excluded_authors,
+        "excluded_keywords": excluded_keywords,
+        "negatives": negatives
+    }
+
+def build_effective_api_query(keyword: str, active_query_text: str) -> str:
+    """
+    Constructs the effective query string for X API v2.
+    Ensures all negative constraints and language restrictions from the active query profile
+    are enforced when querying the API directly.
+    """
+    kw = (keyword or "").strip()
+    constraints = parse_query_constraints(active_query_text)
+    
+    # If no keyword provided, use the full active query string
+    if not kw:
+        base = active_query_text.strip() if active_query_text else "Lahore smog"
+        if "-is:retweet" not in base:
+            base += " -is:retweet"
+        if "lang:en" not in base:
+            base += " lang:en"
+        return base
+    
+    # If user provided a specific keyword (e.g. "Gujranwala" or "brick kiln"),
+    # combine it with the active negative exclusions and filters
+    negatives_str = " ".join(constraints["negatives"])
+    query_parts = [f"({kw})"]
+    if negatives_str:
+        query_parts.append(negatives_str)
+    if "lang:en" not in kw:
+        query_parts.append("lang:en")
+    query_parts.append("-is:retweet")
+    return " ".join(query_parts)
+
+def format_noise_post_for_client(p: dict) -> dict:
+    """Formats a noise post ensuring uniform camelCase and snake_case properties for frontend and API consumers."""
+    pid = str(p.get('id') or p.get('clean_id') or '')
+    media_raw = p.get('media_urls') or p.get('mediaUrls') or []
+    if isinstance(media_raw, str):
+        try:
+            import json
+            media_list = json.loads(media_raw)
+        except Exception:
+            media_list = [media_raw] if media_raw else []
+    else:
+        media_list = media_raw or []
+
+    author_username = (p.get('author_username') or p.get('authorUsername') or '').replace('@', '').strip()
+    exclusion_cat = p.get('exclusion_category') or p.get('exclusionCategory') or 'OFF_TOPIC'
+    exclusion_rsn = p.get('exclusion_reason') or p.get('exclusionReason') or 'Filtered as noise'
+    created_val = p.get('created_at') or p.get('createdAt')
+
+    return {
+        'id': pid,
+        'clean_id': pid,
+        'authorUsername': author_username,
+        'author_username': author_username,
+        'authorName': p.get('author_name') or p.get('authorName') or '',
+        'author_name': p.get('author_name') or p.get('authorName') or '',
+        'text': p.get('text') or '',
+        'createdAt': created_val,
+        'created_at': created_val,
+        'postUrl': p.get('post_url') or p.get('postUrl') or (f'https://x.com/{author_username}/status/{pid}' if author_username and pid else None),
+        'mediaUrls': media_list,
+        'media_urls': media_list,
+        'likes': int(p.get('likes') or 0),
+        'retweets': int(p.get('retweets') or 0),
+        'replies': int(p.get('replies') or 0),
+        'quotes': int(p.get('quotes') or 0),
+        'views': p.get('views'),
+        'authorAvatar': p.get('author_avatar') or p.get('authorAvatar') or '',
+        'authorVerified': bool(p.get('author_verified') or p.get('authorVerified')),
+        'authorDescription': p.get('author_description') or p.get('authorDescription') or '',
+        'exclusionCategory': exclusion_cat,
+        'exclusion_category': exclusion_cat,
+        'exclusionReason': exclusion_rsn,
+        'exclusion_reason': exclusion_rsn,
+        'status': p.get('status') or 'EXCLUDED',
+        'ingestedAt': p.get('ingested_at') or p.get('ingestedAt'),
+    }
+
 def execute_search_and_fetch(keyword: str, live_override: bool = False, max_results: int = 25, simulate_if_missing: bool = True):
     """
-    Executes search:
-    - If in live X API mode (or live_override is True): queries X API endpoint, transforms response,
-      runs pipeline filtering/enrichment, saves into local SQLite DB, and returns new posts.
+    Executes search and applies the full pipeline to API-fetched posts:
+    - If in live X API mode: queries X API endpoint with active negative constraints,
+      transforms response, runs full pipeline deduplication (against existing DB posts),
+      negative exclusions, Indian domestic checks, off-topic filtering, AQ & Geo relevance,
+      and sentiment enrichment. Excluded posts are stored in noise_posts.
     - If in file ingestion mode: searches existing local DB posts and returns matches.
     """
     settings = database.get_settings()
@@ -90,22 +198,19 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
     bearer_token = settings.get("x_bearer_token", "").strip()
     endpoint = settings.get("x_api_endpoint", x_api_client.DEFAULT_ENDPOINT)
 
+    active_query_obj = database.get_active_query_version_db()
+    active_query_text = active_query_obj.get("queryText", "") if active_query_obj else ""
+    query_constraints = parse_query_constraints(active_query_text)
+
     is_live_mode = (data_source == "x_api" or live_override is True)
 
     if is_live_mode:
         raw_posts = []
         is_simulated = False
 
-        if bearer_token:
-            kw = (keyword or "").strip()
-            if not kw:
-                kw = "Lahore smog"
-            
-            if "lang:" not in kw:
-                query_str = f"({kw}) lang:en -is:retweet"
-            else:
-                query_str = kw
+        query_str = build_effective_api_query(keyword, active_query_text)
 
+        if bearer_token:
             try:
                 api_resp = x_api_client.search_recent_tweets(
                     query=query_str,
@@ -117,21 +222,33 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
             except x_api_client.XApiError as err:
                 if simulate_if_missing:
                     print(f"[!] X API Live fetch encountered error ({err}). Falling back to simulation.")
-                    sim_resp = x_api_client.generate_mock_live_search(keyword or "Lahore smog", count=max_results)
+                    existing_all = database.get_all_posts()
+                    existing_sample_ids = [p['clean_id'] for p in existing_all[:5]] if existing_all else []
+                    sim_resp = x_api_client.generate_mock_live_search(query_str, count=max_results, existing_ids=existing_sample_ids)
                     raw_posts = x_api_client.transform_x_response(sim_resp)
                     is_simulated = True
                 else:
                     raise err
         else:
             if simulate_if_missing:
-                sim_resp = x_api_client.generate_mock_live_search(keyword or "Lahore smog", count=max_results)
+                existing_all = database.get_all_posts()
+                existing_sample_ids = [p['clean_id'] for p in existing_all[:5]] if existing_all else []
+                sim_resp = x_api_client.generate_mock_live_search(query_str, count=max_results, existing_ids=existing_sample_ids)
                 raw_posts = x_api_client.transform_x_response(sim_resp)
                 is_simulated = True
             else:
                 raise x_api_client.XApiError("X API Bearer Token is not configured. Please enter your credentials in Settings.")
 
+        # Load existing posts from database so deduplication and duplicate merging apply to API-fetched posts!
+        existing_posts = database.get_all_posts()
         learned_rules = database.get_active_learned_rules()
-        valid_posts, audit_log, noise_posts = pipeline.process_dataset(raw_posts, learned_rules=learned_rules)
+
+        valid_posts, audit_log, noise_posts = pipeline.process_dataset(
+            raw_posts,
+            learned_rules=learned_rules,
+            existing_posts=existing_posts,
+            query_constraints=query_constraints
+        )
 
         if valid_posts:
             database.save_posts_batch(valid_posts, source="x_api")
@@ -147,12 +264,16 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
             "success": True,
             "mode": "x_api",
             "isSimulated": is_simulated,
+            "queryUsed": query_str,
             "fetchedCount": len(raw_posts),
             "verifiedCount": len(valid_posts),
-            "duplicatesMerged": len([a for a in audit_log if a["status"] == "DUPLICATE_MERGED"]),
+            "exactDuplicates": len([a for a in audit_log if a.get("category") == "DUPLICATE_ID"]),
+            "semanticDuplicates": len([a for a in audit_log if a.get("category") == "SEMANTIC_DUPLICATE"]),
+            "duplicatesMerged": len([a for a in audit_log if a.get("status") == "DUPLICATE_MERGED"]),
             "noiseRemoved": len(noise_posts),
             "newPosts": valid_posts,
-            "noisePosts": noise_posts,
+            "noisePosts": [format_noise_post_for_client(np) for np in noise_posts],
+        "noiseExcluded": len(noise_posts),
             "allPosts": all_posts,
             "auditLog": audit_log,
             "stats": stats
@@ -178,8 +299,19 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
     Ingests a raw batch of posts (from drag-and-drop file or API payload),
     runs pipeline filtering and enrichment with active learned rules, and persists to SQLite.
     """
+    active_query_obj = database.get_active_query_version_db()
+    active_query_text = active_query_obj.get("queryText", "") if active_query_obj else ""
+    query_constraints = parse_query_constraints(active_query_text)
+
     learned_rules = database.get_active_learned_rules()
-    valid_posts, audit_log, noise_posts = pipeline.process_dataset(raw_posts, learned_rules=learned_rules)
+    existing_posts = database.get_all_posts() if mode == "merge" else []
+
+    valid_posts, audit_log, noise_posts = pipeline.process_dataset(
+        raw_posts,
+        learned_rules=learned_rules,
+        existing_posts=existing_posts,
+        query_constraints=query_constraints
+    )
 
     if valid_posts:
         database.save_posts_batch(valid_posts, source="file")
@@ -196,12 +328,15 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
         "mode": mode,
         "cleanPosts": all_posts,
         "newlyAddedPosts": valid_posts,
-        "noisePosts": noise_posts,
+        "noisePosts": [format_noise_post_for_client(np) for np in noise_posts],
+        "noiseExcluded": len(noise_posts),
         "auditLog": audit_log,
         "stats": {
             "totalIngested": len(raw_posts),
             "cleanCount": len(valid_posts),
-            "duplicatesMerged": len([a for a in audit_log if a["status"] == "DUPLICATE_MERGED"]),
+            "exactDuplicates": len([a for a in audit_log if a.get("category") == "DUPLICATE_ID"]),
+            "semanticDuplicates": len([a for a in audit_log if a.get("category") == "SEMANTIC_DUPLICATE"]),
+            "duplicatesMerged": len([a for a in audit_log if a.get("status") == "DUPLICATE_MERGED"]),
             "removedCount": len(noise_posts)
         }
     }
@@ -214,9 +349,17 @@ def get_all_audit_logs_service(limit=1000):
     """Returns audit log entries from DB."""
     return database.get_audit_logs(limit=limit)
 
-def get_noise_posts_service(search=None, category=None, status="EXCLUDED", limit=100, offset=0):
-    """Returns noise posts from DB."""
-    return database.get_noise_posts(search=search, category=category, status=status, limit=limit, offset=offset)
+def get_noise_posts_service(search=None, category=None, status="EXCLUDED", sort_by="newest", sort_order="desc", limit=250, offset=0):
+    """Returns noise posts from DB with sorting support (defaults to newest/latest)."""
+    return database.get_noise_posts(
+        search=search,
+        category=category,
+        status=status,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        limit=limit,
+        offset=offset
+    )
 
 def get_noise_stats_service():
     """Returns summary metrics and breakdown of noise posts."""

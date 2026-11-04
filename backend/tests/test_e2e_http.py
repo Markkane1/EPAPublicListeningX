@@ -1,8 +1,9 @@
+import os
 import json
 import urllib.request
 import urllib.error
 
-BASE_URL = "http://localhost:8080/api"
+BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8080/api")
 
 def request(path, method="GET", data=None, token=None):
     url = f"{BASE_URL}{path}"
@@ -128,10 +129,9 @@ def run_e2e_tests():
         "fullName": "Citizen Observer",
         "turnstileToken": "DEMO_BYPASS"
     })
-    if status == 200:
-        citizen_id = signup_res["user"]["id"]
-        request(f"/users/{citizen_id}", method="DELETE", token=admin_token)
-        print(f"[OK] 13. Public signup flow with Turnstile completed successfully.")
+    assert status == 403
+    assert signup_res.get("code") == "REGISTRATION_DISABLED"
+    print(f"[OK] 13. Public signup endpoint correctly rejected (403 REGISTRATION_DISABLED).")
 
     status, t_res = request("/turnstile/verify", method="POST", data={"token": "DEMO_BYPASS"})
     assert status == 200

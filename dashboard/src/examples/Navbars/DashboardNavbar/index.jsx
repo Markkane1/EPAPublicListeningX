@@ -91,7 +91,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
     if (!user || !user.role) return "#64748b";
     switch (user.role.name) {
       case "super_admin":
-        return "#7928ca";
+        return "#5e72e4";
       case "analyst":
         return "#0284c7";
       case "auditor":
@@ -126,15 +126,14 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
           width: "100%",
         }}
       >
-        
-        {/* Left Side: Sidenav Burger Toggle + Clean Breadcrumbs & Page Title */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 1.8 } }}>
+<Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 1.8 } }}>
           <Tooltip title={miniSidenav ? "Expand Navigation" : "Collapse Navigation"} arrow>
             <IconButton
               size="small"
               onClick={handleToggleSidenav}
               aria-label="Toggle navigation drawer"
               sx={{
+                display: { xs: "inline-flex", lg: "none" },
                 color: darkMode ? "#cbd5e1" : "#344767",
                 backgroundColor: darkMode ? "#111c44" : "#ffffff",
                 border: darkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
@@ -183,9 +182,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
             </Typography>
           </Box>
         </Box>
-
-        {/* Right Side: Status Pills, Actions, Utility Icons, User Profile */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap", ml: "auto" }}>
+<Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap", ml: "auto" }}>
           
           <Tooltip title="Click to change source or configure X API credentials in Settings" arrow>
             <Box
@@ -259,7 +256,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
               onClick={handleOpenIngest}
               startIcon={<CloudUploadRoundedIcon sx={{ fontSize: "16px !important" }} />}
               sx={{
-                background: "linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)",
+                backgroundColor: "#5e72e4",
                 color: "#ffffff",
                 textTransform: "none",
                 fontFamily: '"Open Sans", sans-serif',
@@ -268,11 +265,11 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
                 borderRadius: "8px",
                 px: { xs: 1.2, sm: 2 },
                 py: 0.6,
-                boxShadow: "0 4px 12px rgba(94, 114, 228, 0.25)",
+                boxShadow: "none",
                 whiteSpace: "nowrap",
                 "&:hover": {
-                  background: "linear-gradient(310deg, #4b5fcc 0%, #6f4ecc 100%)",
-                  boxShadow: "0 6px 16px rgba(94, 114, 228, 0.35)",
+                  backgroundColor: "#4b5fcc",
+                  boxShadow: "none",
                 },
               }}
             >

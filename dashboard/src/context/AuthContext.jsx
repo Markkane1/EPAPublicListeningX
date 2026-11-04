@@ -5,7 +5,6 @@ import {
   setAuthToken,
   clearAuthToken,
   loginUser,
-  signupUser,
   logoutUser,
   getMe
 } from '../services/api';
@@ -13,49 +12,46 @@ import {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setTokenState] = useState(() => getAuthToken());
+  const [token, setTokenState] = useState(() => {
+    const stored = getAuthToken();
+    if (!stored || stored === 'LOGGED_OUT') return null;
+    return stored;
+  });
+
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    const stored = getAuthToken();
+    return Boolean(stored && stored !== 'LOGGED_OUT');
+  });
 
   useEffect(() => {
     let isMounted = true;
 
     async function initSession() {
-      let storedToken = getAuthToken();
-      if (!storedToken) {
-        // Auto-provision demo admin session for local development
-        try {
-          const res = await loginUser({
-            username: 'admin',
-            password: 'EPAadmin2026!',
-            turnstileToken: 'DEMO_BYPASS'
-          });
-          if (res && res.token && isMounted) {
-            setUser(res.user);
-            setTokenState(res.token);
-            setIsLoading(false);
-            return;
-          }
-        } catch {
-          // Fall back gracefully
-        }
+      const storedToken = getAuthToken();
+      if (!storedToken || storedToken === 'LOGGED_OUT') {
         if (isMounted) {
           setUser(null);
+          setTokenState(null);
           setIsLoading(false);
         }
         return;
       }
 
+      // Verify stored session with backend
       try {
         const profile = await getMe();
-        if (isMounted) {
+        if (profile && isMounted) {
           setUser(profile);
           setTokenState(storedToken);
+        } else if (isMounted) {
+          clearAuthToken();
+          setUser(null);
+          setTokenState(null);
         }
       } catch (err) {
-        console.warn('Session expired or invalid:', err);
-        clearAuthToken();
         if (isMounted) {
+          clearAuthToken();
           setUser(null);
           setTokenState(null);
         }
@@ -68,8 +64,23 @@ export function AuthProvider({ children }) {
 
     initSession();
 
+    // Listen for auth-expired event dispatched by api.js on HTTP 401
+    const handleAuthExpired = () => {
+      if (isMounted) {
+        clearAuthToken();
+        setUser(null);
+        setTokenState(null);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('epa:auth-expired', handleAuthExpired);
+    }
+
     return () => {
       isMounted = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('epa:auth-expired', handleAuthExpired);
+      }
     };
   }, []);
 
@@ -77,20 +88,11 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const res = await loginUser({ username, password, turnstileToken });
-      setUser(res.user);
-      setTokenState(res.token);
-      return res;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const signup = useCallback(async (username, email, password, fullName, turnstileToken) => {
-    setIsLoading(true);
-    try {
-      const res = await signupUser({ username, email, password, fullName, turnstileToken });
-      setUser(res.user);
-      setTokenState(res.token);
+      if (res && res.token) {
+        setAuthToken(res.token);
+        setUser(res.user);
+        setTokenState(res.token);
+      }
       return res;
     } finally {
       setIsLoading(false);
@@ -100,7 +102,10 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try {
       await logoutUser();
+    } catch {
+      // ignore
     } finally {
+      clearAuthToken();
       setUser(null);
       setTokenState(null);
     }
@@ -120,7 +125,6 @@ export function AuthProvider({ children }) {
   const hasPermission = useCallback(
     (permissionCode) => {
       if (!user) return false;
-      
       if (user.role?.name === 'super_admin') return true;
       if (!user.permissions || !Array.isArray(user.permissions)) return false;
       return user.permissions.includes(permissionCode);
@@ -152,7 +156,6 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(user && token),
     isLoading,
     login,
-    signup,
     logout,
     refreshProfile,
     hasPermission,

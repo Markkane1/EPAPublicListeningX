@@ -8,11 +8,14 @@ import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
 
 import ArgonBox from "components/ArgonBox";
 import SidenavItem from "examples/Sidenav/SidenavItem";
 import SidenavFooter from "examples/Sidenav/SidenavFooter";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import MenuOpenRoundedIcon from "@mui/icons-material/MenuOpenRounded";
 import SidenavRoot from "examples/Sidenav/SidenavRoot";
 
 import { useArgonController, setMiniSidenav } from "context";
@@ -91,19 +94,17 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
 
   return (
     <SidenavRoot {...rest} variant="permanent" ownerState={{ darkSidenav, miniSidenav, layout, darkMode }}>
-      
       <Box
         sx={{
-          pt: 3,
+          pt: 2.5,
           pb: 1.5,
-          px: miniSidenav ? 1.5 : 3,
+          px: miniSidenav ? 1.5 : 2.5,
           position: "relative",
           display: "flex",
           alignItems: "center",
-          justifyContent: miniSidenav ? "center" : "flex-start",
+          justifyContent: miniSidenav ? "center" : "space-between",
         }}
       >
-        
         <Box
           onClick={closeSidenav}
           sx={{
@@ -120,60 +121,188 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           <CloseRoundedIcon sx={{ fontSize: "20px", color: isDark ? "#ffffff" : "#8392ab" }} />
         </Box>
 
-        <NavLink
-          to="/"
-          onClick={handleNavClick}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            textDecoration: "none",
-            gap: "10px",
-            minWidth: 0,
-          }}
-        >
+        {miniSidenav ? (
           <Box
             sx={{
-              width: "36px",
-              height: "36px",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              gap: 1.2,
+              width: "100%",
             }}
           >
-            <Box
-              component="img"
-              src={brand || "/logo-epa-mark.png"}
-              alt="EPA Punjab Logo"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = "/logo-epa-mark.png";
-              }}
-              sx={{
-                width: "32px",
-                height: "32px",
-                objectFit: "contain",
-                display: "block",
-              }}
-            />
-          </Box>
-
-          {!miniSidenav && (
-            <Typography
-              sx={{
-                fontFamily: '"Open Sans", sans-serif',
-                fontWeight: 700,
-                fontSize: "12.5px",
-                color: isDark ? "#ffffff" : "#1e293b",
-                letterSpacing: "0.2px",
-                whiteSpace: "nowrap",
-                lineHeight: 1.2,
+            <NavLink
+              to="/"
+              onClick={handleNavClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
               }}
             >
-              {brandName}
-            </Typography>
-          )}
-        </NavLink>
+              <Box
+                sx={{
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={brand || "/logo-epa-mark.png"}
+                  alt="EPA Punjab Logo"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/logo-epa-mark.png";
+                  }}
+                  sx={{
+                    width: "32px",
+                    height: "32px",
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                />
+              </Box>
+            </NavLink>
+
+            <Tooltip title="Expand sidebar" arrow placement="right">
+              <IconButton
+                size="small"
+                onClick={() => setMiniSidenav(dispatch, false)}
+                aria-label="Expand navigation sidebar"
+                sx={{
+                  display: { xs: "none", lg: "inline-flex" },
+                  color: isDark ? "#cbd5e1" : "#344767",
+                  backgroundColor: isDark ? "#111c44" : "#ffffff",
+                  border: isDark ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  p: 0.8,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
+                    borderColor: "#5e72e4",
+                    color: "#5e72e4",
+                    transform: "scale(1.05)",
+                  },
+                }}
+              >
+                <MenuRoundedIcon sx={{ fontSize: "20px" }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              minWidth: 0,
+            }}
+          >
+            <NavLink
+              to="/"
+              onClick={handleNavClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                gap: "10px",
+                minWidth: 0,
+                flex: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={brand || "/logo-epa-mark.png"}
+                  alt="EPA Punjab Logo"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/logo-epa-mark.png";
+                  }}
+                  sx={{
+                    width: "32px",
+                    height: "32px",
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+                <Typography
+                  sx={{
+                    fontFamily: '"Open Sans", sans-serif',
+                    fontWeight: 800,
+                    fontSize: "13px",
+                    color: isDark ? "#ffffff" : "#1e293b",
+                    letterSpacing: "-0.2px",
+                    lineHeight: 1.15,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  EPA Punjab
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: '"Open Sans", sans-serif',
+                    fontWeight: 700,
+                    fontSize: "11px",
+                    color: isDark ? "#825ee4" : "#5e72e4",
+                    letterSpacing: "0.2px",
+                    lineHeight: 1.15,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Social Listening
+                </Typography>
+              </Box>
+            </NavLink>
+
+            <Tooltip title="Collapse sidebar" arrow placement="bottom">
+              <IconButton
+                size="small"
+                onClick={() => setMiniSidenav(dispatch, true)}
+                aria-label="Collapse navigation sidebar"
+                sx={{
+                  display: { xs: "none", lg: "inline-flex" },
+                  color: isDark ? "#cbd5e1" : "#344767",
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f8fafc",
+                  border: isDark ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  p: 0.75,
+                  ml: 1,
+                  flexShrink: 0,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
+                    borderColor: "#5e72e4",
+                    color: "#5e72e4",
+                    transform: "scale(1.05)",
+                  },
+                }}
+              >
+                <MenuOpenRoundedIcon sx={{ fontSize: "19px" }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
       </Box>
 
       <Divider sx={{ my: 1, mx: 2, borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)" }} />

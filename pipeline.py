@@ -105,6 +105,19 @@ PAK_GEO_PATTERNS = [
 ]
 URDU_GEO_TERMS = ['لاہور', 'پنجاب', 'پاکستان', 'گوجرانوالہ', 'فیصل آباد', 'ملتان', 'راولپنڈی', 'اسلام آباد']
 
+# ---------------------------------------------------------------------------
+# Pre-compiled regular expressions for sub-millisecond per-post evaluation
+# ---------------------------------------------------------------------------
+COMPILED_OFF_TOPIC = [(re.compile(pat, re.IGNORECASE), desc) for pat, desc in OFF_TOPIC_PATTERNS]
+COMPILED_INDIAN = [(re.compile(pat, re.IGNORECASE), desc) for pat, desc in INDIAN_DOMESTIC_PATTERNS]
+COMPILED_AQ = [re.compile(pat, re.IGNORECASE) for pat in AIR_QUALITY_PATTERNS]
+COMPILED_GEO = [re.compile(pat, re.IGNORECASE) for pat in PAK_GEO_PATTERNS]
+GURMUKHI_REGEX = re.compile(r'[\u0a00-\u0a7f]')
+NORM_REPLY_REGEX = re.compile(r'^(?:@\w+\s*)+')
+NORM_URL_REGEX = re.compile(r'https?://\S+')
+NORM_PUNCT_REGEX = re.compile(r'[^\w\s]')
+NORM_SPACE_REGEX = re.compile(r'\s+')
+
 COMMON_STOP_WORDS = {
     'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'aren',
     'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by',
@@ -234,10 +247,10 @@ def extract_learning_candidates(post: dict, exclusion_category: str = "", exclus
 
 def normalize_text_for_dedup(text: str) -> str:
     """Normalizes text by stripping replies, URLs, and punctuation to detect semantic duplicates."""
-    t = re.sub(r'^(?:@\w+\s*)+', '', text)
-    t = re.sub(r'https?://\S+', '', t)
-    t = re.sub(r'[^\w\s]', '', t)
-    return re.sub(r'\s+', ' ', t).strip().lower()
+    t = NORM_REPLY_REGEX.sub('', text)
+    t = NORM_URL_REGEX.sub('', t)
+    t = NORM_PUNCT_REGEX.sub('', t)
+    return NORM_SPACE_REGEX.sub(' ', t).strip().lower()
 
 def enrich_post(p: dict) -> dict:
     """Enriches post with AQI metrics, severity class, city detection, category, and sentiment."""
@@ -390,11 +403,11 @@ def enrich_post(p: dict) -> dict:
     })
     return enriched
 
-def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
+def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts: list = None, query_constraints: dict = None) -> tuple:
     """
-    Processes raw posts list, applies filtering, deduplication, enrichment, and generates audit logs.
-    Dynamically incorporates non-AI learned rules (whitelisted authors, learned AQ keywords,
-    learned Punjab localities, and contextual exception patterns).
+    Processes raw posts list, applies filtering, deduplication against existing database posts,
+    negative query restrictions, non-AI learned rules, and US EPA enrichment.
+    Ensures identical restrictions are enforced on batch ingested posts and API-fetched posts alike.
     Returns (valid_posts, audit_log, noise_posts).
     """
     if learned_rules is None:
@@ -412,8 +425,34 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
     learned_exceptions = [e.strip().lower() for e in learned_rules.get("off_topic_exceptions", []) if e.strip()]
     has_indian_comparison_rule = any("comparison" in str(e).lower() or "cross_border" in str(e).lower() for e in learned_rules.get("indian_exceptions", []))
 
+    # Initialize seen IDs and normalized text mapping from existing DB posts
     seen_ids = set()
     seen_normalized_texts = {}
+
+    if existing_posts:
+        for ep in existing_posts:
+            eid = str(ep.get('id') or ep.get('clean_id') or '').strip()
+            if eid:
+                seen_ids.add(eid)
+            txt = ep.get('text') or ''
+            norm = normalize_text_for_dedup(txt)
+            if len(norm) > 15:
+                seen_normalized_texts[norm] = ep
+
+    # Integrate query constraints dynamically from active constraint profile
+    active_excluded_authors = set(EXCLUDED_USERNAMES)
+    active_indian_patterns = list(COMPILED_INDIAN)
+
+    if query_constraints:
+        for a in query_constraints.get('excluded_authors', []):
+            clean_a = a.lower().strip().replace('@', '')
+            if clean_a:
+                active_excluded_authors.add(clean_a)
+        for kw in query_constraints.get('excluded_keywords', []):
+            kw_clean = kw.strip().lower()
+            if kw_clean and not any(kw_clean in pat.lower() for pat, _ in INDIAN_DOMESTIC_PATTERNS):
+                active_indian_patterns.append((re.compile(r'\b' + re.escape(kw_clean) + r'\b', re.IGNORECASE), f"Query negative exclusion (-{kw_clean})"))
+
     valid_posts = []
     audit_log = []
     noise_posts = []
@@ -469,31 +508,35 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
 
         is_trusted_author = handle in learned_authors
 
+        # 1. Exact ID Deduplication (checks both batch and existing DB records)
         if pid in seen_ids:
             audit_log.append({
                 "index": idx,
                 "id": pid,
                 "author": handle,
-                "status": "REMOVED",
+                "status": "DUPLICATE_MERGED",
                 "category": "DUPLICATE_ID",
-                "reason": f"Duplicate post ID {pid}",
+                "reason": f"Duplicate post ID {pid} already indexed in system database",
                 "text": text
             })
             continue
 
-        if handle in EXCLUDED_USERNAMES and not is_trusted_author:
+        # 2. Excluded Accounts
+        if handle in active_excluded_authors and not is_trusted_author:
             record_noise(idx, pid, handle, text, "EXCLUDED_ACCOUNT",
                          f"Author @{handle} matches query negative constraint (-from:@{handle})", p)
             continue
 
-        if re.search(r'[\u0a00-\u0a7f]', text):
+        # 3. Gurmukhi Script Filter (Indian Punjab domestic discourse)
+        if GURMUKHI_REGEX.search(text):
             record_noise(idx, pid, handle, text, "EXCLUDED_INDIAN_CONTEXT",
                          "Contains Gurmukhi script associated with Indian Punjab domestic affairs", p)
             continue
 
+        # 4. Off-Topic Noise Filter
         off_topic_reason = None
-        for pat, desc in OFF_TOPIC_PATTERNS:
-            if re.search(pat, text_lower):
+        for pat_re, desc in COMPILED_OFF_TOPIC:
+            if pat_re.search(text_lower):
                 has_exception = False
                 for exc in learned_exceptions:
                     parts = [pt.strip() for pt in exc.split('+') if pt.strip()]
@@ -501,8 +544,8 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
                         has_exception = True
                         break
 
-                has_strong_aq = any(re.search(a, text_lower) for a in AIR_QUALITY_PATTERNS)
-                has_strong_geo = any(re.search(g, text_lower) for g in PAK_GEO_PATTERNS)
+                has_strong_aq = any(a.search(text_lower) for a in COMPILED_AQ)
+                has_strong_geo = any(g.search(text_lower) for g in COMPILED_GEO)
 
                 if is_trusted_author or has_exception or (has_strong_aq and has_strong_geo and "cricket" in text_lower and "smog" in text_lower):
                     off_topic_reason = None
@@ -515,9 +558,10 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
             record_noise(idx, pid, handle, text, "OFF_TOPIC", f"Unrelated topic: {off_topic_reason}", p)
             continue
 
+        # 5. Indian Domestic Context & Negative Keyword Filters
         indian_reason = None
-        for pat, desc in INDIAN_DOMESTIC_PATTERNS:
-            if re.search(pat, text_lower):
+        for pat_re, desc in active_indian_patterns:
+            if pat_re.search(text_lower):
                 has_pak_primary = any(re.search(g, text_lower) for g in ['lahore', 'pakistan', 'maryam nawaz', 'pakistani'])
                 is_pure_indian_author = handle in [
                     'faridkotpolice', 'caqm_official', 'pb_khabarnama', 'drshamamohd', 
@@ -541,9 +585,10 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
                          f"Matches negative query criteria: {indian_reason}", p)
             continue
 
+        # 6. Positive Air Quality Relevance Constraint
         has_aq = (
             is_trusted_author or
-            any(re.search(pat, text_lower) for pat in AIR_QUALITY_PATTERNS) or
+            any(pat.search(text_lower) for pat in COMPILED_AQ) or
             any(t in text for t in URDU_AQ_TERMS) or
             any(re.search(r'\b' + re.escape(kw) + r'\b', text_lower) for kw in learned_aq_list)
         )
@@ -552,9 +597,10 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
                          "Does not contain positive air quality, smog, or pollution keywords", p)
             continue
 
+        # 7. Positive Geographic Relevance Constraint
         has_geo = (
             is_trusted_author or
-            any(re.search(pat, text_lower) for pat in PAK_GEO_PATTERNS) or
+            any(pat.search(text_lower) for pat in COMPILED_GEO) or
             any(t in text for t in URDU_GEO_TERMS) or
             any(re.search(r'\b' + re.escape(kw) + r'\b', text_lower) for kw in learned_geo_list)
         )
@@ -566,6 +612,7 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
                          "Does not relate geographically to Lahore, Pakistani Punjab, or Pakistan", p)
             continue
 
+        # 8. Semantic Duplicate Merging (updates existing post metrics if duplicate text)
         norm_text = normalize_text_for_dedup(text)
         if len(norm_text) > 15 and norm_text in seen_normalized_texts:
             primary_post = seen_normalized_texts[norm_text]
@@ -581,17 +628,19 @@ def process_dataset(raw_posts: list, learned_rules: dict = None) -> tuple:
             for metric in ['likes', 'retweets', 'replies', 'quotes', 'views']:
                 primary_post[metric] = max(int(primary_post.get(metric) or 0), int(p.get(metric) or 0))
 
+            primary_clean_id = primary_post.get('clean_id') or primary_post.get('id') or pid
             audit_log.append({
                 "index": idx,
                 "id": pid,
                 "author": handle,
                 "status": "DUPLICATE_MERGED",
                 "category": "SEMANTIC_DUPLICATE",
-                "reason": f"Consolidated into primary post ID {primary_post['clean_id']} (identical text or promotional repost)",
+                "reason": f"Consolidated into primary post ID {primary_clean_id} (identical text or promotional repost)",
                 "text": text
             })
             continue
 
+        # 9. Enrichment with AQI metric, severity, city detection, category, and sentiment analysis
         enriched = enrich_post(p)
         seen_ids.add(pid)
         seen_normalized_texts[norm_text] = enriched
@@ -642,6 +691,10 @@ def run_pipeline(input_path: str, output_path: str, audit_path: str) -> dict:
             row = dict(p)
             if isinstance(row.get('mediaUrls'), list):
                 row['mediaUrls'] = ' ; '.join(row['mediaUrls'])
+            # Neutralize CSV formula injection (CWE-1236)
+            for k, v in row.items():
+                if isinstance(v, str) and v and v[0] in ('=', '+', '-', '@', '\t', '\r'):
+                    row[k] = "'" + v
             writer.writerow(row)
     print(f"[+] Cleaned posts CSV saved to: {csv_path} ({len(valid_posts)} rows)")
 

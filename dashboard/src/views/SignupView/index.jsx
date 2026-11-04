@@ -35,7 +35,7 @@ export default function SignupView() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
-  const [turnstileToken, setTurnstileToken] = useState('DEMO_BYPASS');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -93,7 +93,7 @@ export default function SignupView() {
         justifyContent: 'center',
         position: 'relative',
         p: { xs: 2, sm: 3 },
-        background: 'linear-gradient(310deg, #0f172a 0%, #1e293b 50%, #0f766e 100%)',
+        background: darkMode ? 'linear-gradient(310deg, #0b1437 0%, #111c44 60%, #1a1f37 100%)' : 'linear-gradient(310deg, #0f172a 0%, #1e1e38 55%, #5e72e4 100%)',
         overflow: 'auto'
       }}
     >
@@ -106,7 +106,7 @@ export default function SignupView() {
           width: '320px',
           height: '320px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(130, 94, 228, 0.22) 0%, transparent 70%)',
           filter: 'blur(40px)',
           pointerEvents: 'none'
         }}
@@ -187,13 +187,13 @@ export default function SignupView() {
             gap: 1.2,
             p: 1.4,
             mb: 2.5,
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #bbf7d0',
+            backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.12)' : 'rgba(94, 114, 228, 0.06)',
+            border: darkMode ? '1px solid rgba(94, 114, 228, 0.25)' : '1px solid rgba(94, 114, 228, 0.2)',
             borderRadius: '10px'
           }}
         >
-          <InfoOutlinedIcon sx={{ fontSize: '18px', color: '#16a34a', mt: 0.2, flexShrink: 0 }} />
-          <Typography sx={{ fontSize: '11.5px', color: '#166534', lineHeight: 1.45 }}>
+          <InfoOutlinedIcon sx={{ fontSize: '18px', color: '#5e72e4', mt: 0.2, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#cbd5e1' : '#32325d', lineHeight: 1.45 }}>
             New accounts receive standard <strong>Public Citizen</strong> observer clearance. EPA supervisors can grant elevated analyst or auditor privileges inside the Role registry.
           </Typography>
         </Box>
@@ -206,7 +206,7 @@ export default function SignupView() {
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <Box sx={{ mb: 1.8 }}>
-            <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', mb: 0.6 }}>
+            <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.6 }}>
               Full Name
             </Typography>
             <TextField
@@ -228,7 +228,7 @@ export default function SignupView() {
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mb: 1.8 }}>
             <Box>
-              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.6 }}>
                 Username
               </Typography>
               <TextField
@@ -249,7 +249,7 @@ export default function SignupView() {
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.6 }}>
                 Email Address
               </Typography>
               <TextField
@@ -273,7 +273,7 @@ export default function SignupView() {
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mb: 1.8 }}>
             <Box>
-              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.6 }}>
                 Password (min 6 chars)
               </Typography>
               <TextField
@@ -295,7 +295,7 @@ export default function SignupView() {
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', mb: 0.6 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.6 }}>
                 Confirm Password
               </Typography>
               <TextField
@@ -340,7 +340,7 @@ export default function SignupView() {
                   size="small"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
-                  sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#0f766e' } }}
+                  sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#5e72e4' } }}
                 />
               }
               label={
@@ -370,13 +370,13 @@ export default function SignupView() {
               fontSize: '14px',
               fontWeight: 700,
               textTransform: 'none',
-              background: 'linear-gradient(310deg, #0f766e 0%, #0d9488 100%)',
+              background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
               color: '#ffffff',
-              boxShadow: '0 6px 18px rgba(15, 118, 110, 0.35)',
+              boxShadow: '0 6px 18px rgba(94, 114, 228, 0.35)',
               transition: 'all 0.2s ease',
               '&:hover': {
-                background: 'linear-gradient(310deg, #115e59 0%, #0f766e 100%)',
-                boxShadow: '0 8px 22px rgba(15, 118, 110, 0.45)',
+                background: 'linear-gradient(310deg, #4b5fcc 0%, #5e72e4 100%)',
+                boxShadow: '0 8px 22px rgba(94, 114, 228, 0.45)',
                 transform: 'translateY(-1px)'
               }
             }}
@@ -391,7 +391,7 @@ export default function SignupView() {
                 component={RouterLink}
                 to="/login"
                 sx={{
-                  color: '#0f766e',
+                  color: '#5e72e4',
                   fontWeight: 700,
                   textDecoration: 'none',
                   '&:hover': { textDecoration: 'underline' }

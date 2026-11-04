@@ -22,6 +22,7 @@ import brandDark from 'assets/images/logo-epa-mark.png';
 
 import initialCleanedPosts from './data/cleaned_epa_posts.json';
 import initialAuditLog from './data/cleaning_audit.json';
+import initialNoisePosts from './data/initial_noise_posts.json';
 
 import DashboardView from './views/DashboardView';
 import SearchView from './views/SearchView';
@@ -33,7 +34,6 @@ import SettingsView from './views/SettingsView';
 import UsersView from './views/UsersView';
 import RolesView from './views/RolesView';
 import LoginView from './views/LoginView';
-import SignupView from './views/SignupView';
 
 import Lightbox from './components/Lightbox';
 import IngestModal from './components/IngestModal';
@@ -44,11 +44,11 @@ import { getSettings, getPosts, getNoisePosts, ingestPostsBatch, excludePost } f
 function AppContent() {
   const [controller] = useArgonController();
   const { sidenavColor, darkSidenav, darkMode } = controller;
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   const [posts, setPosts] = useState(initialCleanedPosts);
   const [auditLog, setAuditLog] = useState(initialAuditLog);
-  const [noisePosts, setNoisePosts] = useState([]);
+  const [noisePosts, setNoisePosts] = useState(initialNoisePosts);
   const [dataSource, setDataSource] = useState('file');
 
   const [lightbox, setLightbox] = useState({
@@ -176,31 +176,48 @@ function AppContent() {
 
   const dynamicRoutes = useMemo(() => getRoutes(user), [user]);
 
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  if (isLoading) {
+    return (
+      <ThemeProvider theme={darkMode ? themeDark : theme}>
+        <CssBaseline />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: darkMode ? '#0b1437' : '#f8f9fa' }}>
+          <p style={{ fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Verifying secure session...</p>
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <ThemeProvider theme={darkMode ? themeDark : theme}>
+        <CssBaseline />
+        <Routes>
+          <Route path="/login" element={<LoginView />} />
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
 
-      {isAuthPage ? (
+      <Sidenav
+        color={sidenavColor || 'info'}
+        brand={darkSidenav || darkMode ? brand : brandDark}
+        brandName="EPA Punjab Social Listening"
+        routes={dynamicRoutes}
+      />
+
+      <DashboardLayout>
+        <DashboardNavbar dataSource={dataSource} />
+
         <Routes>
-          <Route path="/login" element={<LoginView />} />
-          <Route path="/signup" element={<SignupView />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      ) : (
-        <>
-          <Sidenav
-            color={sidenavColor || 'info'}
-            brand={darkSidenav || darkMode ? brand : brandDark}
-            brandName="EPA Punjab Social Listening"
-            routes={dynamicRoutes}
-          />
-
-          <DashboardLayout>
-            <DashboardNavbar dataSource={dataSource} />
-
-            <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
               
               <Route
                 path="/dashboard"
@@ -234,12 +251,18 @@ function AppContent() {
                         } else if (res.newPosts && res.newPosts.length > 0) {
                           setPosts((prev) => [...res.newPosts, ...prev]);
                         }
+                        if (res.noisePosts && res.noisePosts.length > 0) {
+                          setNoisePosts((prev) => [...res.noisePosts, ...prev]);
+                        }
                         if (res.auditLog && res.auditLog.length > 0) {
                           setAuditLog((prev) => [...res.auditLog, ...prev]);
                         }
+                        const duplicatesCount = res.duplicatesMerged || 0;
+                        const noiseCount = res.noiseRemoved || 0;
+                        const verifiedCount = res.verifiedCount || res.newPosts?.length || 0;
                         setSnackbar({
                           open: true,
-                          message: `Search complete! ${res.verifiedCount || res.newPosts?.length || 0} verified posts processed and saved to local SQLite DB.`,
+                          message: `Search complete! ${verifiedCount} verified posts saved to local SQLite DB (${duplicatesCount} duplicates merged, ${noiseCount} noise excluded).`,
                           severity: 'success'
                         });
                       }}
@@ -264,12 +287,18 @@ function AppContent() {
                         } else if (res.newPosts && res.newPosts.length > 0) {
                           setPosts((prev) => [...res.newPosts, ...prev]);
                         }
+                        if (res.noisePosts && res.noisePosts.length > 0) {
+                          setNoisePosts((prev) => [...res.noisePosts, ...prev]);
+                        }
                         if (res.auditLog && res.auditLog.length > 0) {
                           setAuditLog((prev) => [...res.auditLog, ...prev]);
                         }
+                        const duplicatesCount = res.duplicatesMerged || 0;
+                        const noiseCount = res.noiseRemoved || 0;
+                        const verifiedCount = res.verifiedCount || res.newPosts?.length || 0;
                         setSnackbar({
                           open: true,
-                          message: `Search complete! ${res.verifiedCount || res.newPosts?.length || 0} verified posts processed and saved to local SQLite DB.`,
+                          message: `Search complete! ${verifiedCount} verified posts saved to local SQLite DB (${duplicatesCount} duplicates merged, ${noiseCount} noise excluded).`,
                           severity: 'success'
                         });
                       }}
@@ -403,8 +432,6 @@ function AppContent() {
             currentPosts={posts}
             onIngestSuccess={handleIngestSuccess}
           />
-        </>
-      )}
 
       <Snackbar
         open={snackbar.open}

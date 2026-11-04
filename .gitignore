@@ -1,0 +1,97 @@
+# ==============================================================================
+# Git Ignore Configuration - EPA Punjab Social Listening Platform
+# ==============================================================================
+
+# Environment & Credentials (CRITICAL: Never commit secrets or credentials)
+.env
+.env.local
+.env.*.local
+*.env
+# Keep only the sanitised example template
+!.env.example
+# Remove the duplicate legacy envexample
+.envexample
+
+# Private signing keys & certificates (CRITICAL: Never commit private keys)
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Extension build packages & binaries
+*.crx
+scrapper/release/*.zip
+scrapper/release/*.crx
+scrapper/release/*.pem
+
+# SQLite database files and WAL artifacts (may contain PII / API keys)
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Scratch / temporary working files
+scratch/
+.test_data/
+*.mjs
+*_dom.html
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.pytest_temp/
+.test_data/
+.coverage
+htmlcov/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Node / Vite Frontend Artifacts
+node_modules/
+dashboard/node_modules/
+dashboard/dist/
+dashboard/dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Logs & Temporary files
+logs/
+*.log
+
+# IDE & OS Metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -167,7 +167,7 @@
     "author": "proudbakra1",
     "status": "REMOVED",
     "category": "EXCLUDED_INDIAN_CONTEXT",
-    "reason": "Matches negative query criteria: Diwali firecracker pollution debates",
+    "reason": "Matches negative query criteria: Aam Aadmi Party (India)",
     "text": "So stubble burning is at peak in punjab right before diwali just to put all pollution games on Hindu festival once again all under Aap gov.\nIrony is this fire is burning right behind a petrol pump that can cause a havoc of a tragedy but kejriwal doesn't care abt punjabi's life"
   },
   {
@@ -739,8 +739,8 @@
     "category": "VERIFIED_VALID",
     "reason": "Verified air quality post for Lahore (AQI Measurement & Satellite Data)",
     "text": "EPA Report: Lahore Air Quality - Oct 2026 is cleanest October in 5 years\n\nAvg AQI 186 vs 218 in 2025 (-15%)\nPM2.5 121 vs 149 (-19%) | PM10 264 vs 295 (-11%)\n20/31 days cleaner, peak 282 vs 395 last year\n269 hrs at AQI 500 vs 449 in 2025 (-40%)\nData: IQAir, 8 stations | EPA Punjab https://t.co/XWH2TCDJVm",
-    "aqi_value": 186,
-    "severity": "Unhealthy",
+    "aqi_value": 500,
+    "severity": "Hazardous",
     "city": "Lahore"
   },
   {
@@ -2210,20 +2210,17 @@
     "author": "rahul1979601",
     "status": "REMOVED",
     "category": "EXCLUDED_INDIAN_CONTEXT",
-    "reason": "Matches negative query criteria: Diwali firecracker pollution debates",
+    "reason": "Matches negative query criteria: Aam Aadmi Party (India)",
     "text": "@AAPkaAnshuman @PSMangat @indian_nagrik @ANI @BhagwantMann This awareness has come in the past 3-4 yrs due to the pollution situation overall\nAap didnt do much to raise awareness\nStubble burning has been down for 2 yrs now \nI travel across villages almost everyday\nPollution increases after diwali because f crackers\nU can check on 9th nov"
   },
   {
     "index": 194,
     "id": "2116904907425058935",
     "author": "aapkaanshuman",
-    "status": "KEPT",
-    "category": "VERIFIED_VALID",
-    "reason": "Verified air quality post for Punjab Region (Agricultural Stubble Burning)",
-    "text": "@Rahul1979601 @PSMangat @indian_nagrik @ANI @BhagwantMann I never said anything about pollution \n\nI was talking about stubble burning coming down in Punjab only AFTER the AAP govt come to power, this is a historical fact 🤷🏾‍♂️",
-    "aqi_value": null,
-    "severity": "Unspecified",
-    "city": "Punjab Region"
+    "status": "REMOVED",
+    "category": "EXCLUDED_INDIAN_CONTEXT",
+    "reason": "Matches negative query criteria: Aam Aadmi Party (India)",
+    "text": "@Rahul1979601 @PSMangat @indian_nagrik @ANI @BhagwantMann I never said anything about pollution \n\nI was talking about stubble burning coming down in Punjab only AFTER the AAP govt come to power, this is a historical fact 🤷🏾‍♂️"
   },
   {
     "index": 195,
@@ -2314,8 +2311,8 @@
     "id": "2117129485665685946",
     "author": "arun2981",
     "status": "REMOVED",
-    "category": "NO_AIR_QUALITY_RELEVANCE",
-    "reason": "Does not contain positive air quality, smog, or pollution keywords",
+    "category": "EXCLUDED_INDIAN_CONTEXT",
+    "reason": "Matches negative query criteria: Aam Aadmi Party (India)",
     "text": "You can understand BJPs position in Punjab from the fact that they will give tickets to AAP rejected MLAs"
   },
   {

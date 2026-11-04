@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -12,6 +13,7 @@ import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
+import Tooltip from '@mui/material/Tooltip';
 
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
@@ -26,6 +28,8 @@ import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
 import PermIdentityRoundedIcon from '@mui/icons-material/PermIdentityRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded';
+import ViewAgendaRoundedIcon from '@mui/icons-material/ViewAgendaRounded';
+import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
 
 import { useArgonController } from 'context';
 import { searchXApi, getQueryVersions } from '../../services/api';
@@ -58,9 +62,12 @@ function SearchView({
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
 
-  const [keyword, setKeyword] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [keyword, setKeyword] = useState(() => searchParams.get('q') || searchParams.get('keyword') || '');
   const [activeTab, setActiveTab] = useState('top');
   const [searchMode, setSearchMode] = useState('db');
+  const [viewMode, setViewMode] = useState('feed');
   const [batchLimit, setBatchLimit] = useState(50);
   const [isFetching, setIsFetching] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -77,7 +84,7 @@ function SearchView({
       .catch(() => {});
   }, []);
 
-  const handleSearch = async (overrideTerm) => {
+  const handleSearch = useCallback(async (overrideTerm) => {
     const term = (typeof overrideTerm === 'string' ? overrideTerm : keyword).trim();
     if (!term) return;
 
@@ -124,11 +131,16 @@ function SearchView({
         }
 
         setSearchResults(results);
+        const dupCount = res.duplicatesMerged || 0;
+        const noiseCount = res.noiseRemoved || 0;
+        const verCount = res.verifiedCount || results.length;
         setFeedback({
           type: 'success',
-          message: `X.com API query complete: fetched ${res.fetchedCount || 0} posts, verified ${res.verifiedCount || results.length} posts saved to database.`,
+          message: `X.com API query complete: fetched ${res.fetchedCount || 0} posts → ${verCount} verified & saved to database (${dupCount} duplicates merged, ${noiseCount} noise excluded).`,
           count: results.length,
           stats: res.stats,
+          duplicatesMerged: dupCount,
+          noiseRemoved: noiseCount,
         });
 
         if (onFetchSuccess) {
@@ -148,7 +160,15 @@ function SearchView({
     } finally {
       setIsFetching(false);
     }
-  };
+  }, [batchLimit, keyword, onFetchSuccess, posts, searchMode]);
+
+  useEffect(() => {
+    const q = searchParams.get('q') || searchParams.get('keyword');
+    if (q && q !== lastSearchedTerm && posts.length > 0) {
+      setKeyword(q);
+      handleSearch(q);
+    }
+  }, [searchParams, posts.length, handleSearch, lastSearchedTerm]);
 
   const handleClear = () => {
     setKeyword('');
@@ -156,6 +176,9 @@ function SearchView({
     setSearchResults([]);
     setFeedback(null);
     setLastSearchedTerm('');
+    if (searchParams.get('q') || searchParams.get('keyword')) {
+      setSearchParams({});
+    }
   };
 
   const filteredResults = useMemo(() => {
@@ -187,35 +210,42 @@ function SearchView({
           mb: 3,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
             <Box
               sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '8px',
-                backgroundColor: '#16a34a',
+                width: 34,
+                height: 34,
+                borderRadius: '10px',
+                backgroundColor: '#0f1419',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: '15px',
+                fontSize: '16px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
               }}
             >
               𝕏
             </Box>
-            <Typography
-              sx={{
-                fontFamily: '"Open Sans", sans-serif',
-                fontWeight: 800,
-                fontSize: '18px',
-                color: darkMode ? '#ffffff' : '#0f172a',
-                letterSpacing: '-0.3px',
-              }}
-            >
-              X.com Search & Pulse Monitor
-            </Typography>
+            <Box>
+              <Typography
+                sx={{
+                  fontFamily: '"Open Sans", sans-serif',
+                  fontWeight: 800,
+                  fontSize: '18px',
+                  color: darkMode ? '#ffffff' : '#0f172a',
+                  letterSpacing: '-0.3px',
+                  lineHeight: 1.2,
+                }}
+              >
+                X.com Search & Pulse Monitor
+              </Typography>
+              <Typography sx={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
+                EPA Punjab Environmental Discourse Intelligence
+              </Typography>
+            </Box>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -259,10 +289,10 @@ function SearchView({
                   borderRadius: '9999px',
                   px: 1.8,
                   py: 0.4,
-                  backgroundColor: searchMode === 'live' ? '#16a34a' : 'transparent',
+                  backgroundColor: searchMode === 'live' ? '#5e72e4' : 'transparent',
                   color: searchMode === 'live' ? '#ffffff' : '#64748b',
-                  boxShadow: searchMode === 'live' ? '0 2px 6px rgba(22,163,74,0.3)' : 'none',
-                  '&:hover': { backgroundColor: searchMode === 'live' ? '#15803d' : 'transparent' },
+                  boxShadow: searchMode === 'live' ? '0 2px 6px rgba(94, 114, 228, 0.35)' : 'none',
+                  '&:hover': { backgroundColor: searchMode === 'live' ? '#4b5fcc' : 'transparent' },
                 }}
               >
                 Live X.com API
@@ -289,20 +319,21 @@ function SearchView({
               </FormControl>
             )}
 
-            <IconButton
-              size="small"
-              onClick={onNavigateSettings}
-              title="Configure API Settings"
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '9999px',
-                border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e8f0',
-                color: '#64748b',
-              }}
-            >
-              <TuneRoundedIcon sx={{ fontSize: '16px' }} />
-            </IconButton>
+            <Tooltip title="Configure X API Credentials">
+              <IconButton
+                size="small"
+                onClick={onNavigateSettings}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '9999px',
+                  border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e8f0',
+                  color: '#64748b',
+                }}
+              >
+                <TuneRoundedIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
 
@@ -318,8 +349,8 @@ function SearchView({
             transition: 'all 0.2s ease',
             '&:focus-within': {
               backgroundColor: darkMode ? '#0f172a' : '#ffffff',
-              borderColor: '#16a34a',
-              boxShadow: '0 0 0 3px rgba(22, 163, 74, 0.15)',
+              borderColor: '#5e72e4',
+              boxShadow: '0 0 0 3px rgba(94, 114, 228, 0.15)',
             },
           }}
         >
@@ -435,7 +466,7 @@ function SearchView({
                       height: '4px',
                       width: '48px',
                       borderRadius: '9999px',
-                      backgroundColor: '#16a34a',
+                      backgroundColor: '#5e72e4',
                     }}
                   />
                 )}
@@ -449,10 +480,33 @@ function SearchView({
             <Alert
               severity={feedback.type}
               onClose={() => setFeedback(null)}
+              action={
+                feedback.noiseRemoved > 0 ? (
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => navigate('/noise')}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '11.5px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(0,0,0,0.06)',
+                      px: 1.2,
+                      py: 0.3,
+                      whiteSpace: 'nowrap',
+                      '&:hover': { backgroundColor: 'rgba(0,0,0,0.12)' },
+                    }}
+                  >
+                    Inspect {feedback.noiseRemoved} Excluded Noise &rarr;
+                  </Button>
+                ) : null
+              }
               sx={{
                 borderRadius: '12px',
                 fontSize: '13px',
                 fontFamily: '"Open Sans", sans-serif',
+                alignItems: 'center',
               }}
             >
               {feedback.message}
@@ -463,29 +517,84 @@ function SearchView({
 
       {hasSearched ? (
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Typography sx={{ fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#0f1419' }}>
               Results for &quot;{lastSearchedTerm}&quot; ({filteredResults.length} posts)
             </Typography>
-            <Button
-              size="small"
-              onClick={handleClear}
-              sx={{ textTransform: 'none', color: '#64748b', fontSize: '13px' }}
-            >
-              Clear Search
-            </Button>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  backgroundColor: darkMode ? '#1e293b' : '#f1f5f9',
+                  borderRadius: '8px',
+                  p: '2px',
+                }}
+              >
+                <Tooltip title="Timeline Feed (X.com Style)">
+                  <IconButton
+                    size="small"
+                    onClick={() => setViewMode('feed')}
+                    sx={{
+                      borderRadius: '6px',
+                      p: 0.6,
+                      backgroundColor: viewMode === 'feed' ? (darkMode ? '#334155' : '#ffffff') : 'transparent',
+                      color: viewMode === 'feed' ? '#5e72e4' : '#64748b',
+                      boxShadow: viewMode === 'feed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    <ViewAgendaRoundedIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Grid View">
+                  <IconButton
+                    size="small"
+                    onClick={() => setViewMode('grid')}
+                    sx={{
+                      borderRadius: '6px',
+                      p: 0.6,
+                      backgroundColor: viewMode === 'grid' ? (darkMode ? '#334155' : '#ffffff') : 'transparent',
+                      color: viewMode === 'grid' ? '#5e72e4' : '#64748b',
+                      boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    <GridViewRoundedIcon sx={{ fontSize: '18px' }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+
+              <Button
+                size="small"
+                onClick={handleClear}
+                sx={{ textTransform: 'none', color: '#64748b', fontSize: '13px' }}
+              >
+                Clear Search
+              </Button>
+            </Box>
           </Box>
 
           {filteredResults.length > 0 ? (
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
-              {filteredResults.map((post) => (
-                <PostCard
-                  key={post.id || post.clean_id}
-                  post={post}
-                  onImageClick={onImageClick}
-                />
-              ))}
-            </Box>
+            viewMode === 'feed' ? (
+              <Box sx={{ maxWidth: '680px', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {filteredResults.map((post) => (
+                  <PostCard
+                    key={post.id || post.clean_id}
+                    post={post}
+                    onImageClick={onImageClick}
+                  />
+                ))}
+              </Box>
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+                {filteredResults.map((post) => (
+                  <PostCard
+                    key={post.id || post.clean_id}
+                    post={post}
+                    onImageClick={onImageClick}
+                  />
+                ))}
+              </Box>
+            )
           ) : (
             <Box
               sx={{
@@ -518,7 +627,7 @@ function SearchView({
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <TrendingUpRoundedIcon sx={{ color: '#16a34a', fontSize: '20px' }} />
+              <TrendingUpRoundedIcon sx={{ color: '#5e72e4', fontSize: '20px' }} />
               <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 800, fontSize: '16px', color: darkMode ? '#ffffff' : '#0f1419' }}>
                 Trending in Punjab Environmental Pulse
               </Typography>
@@ -535,24 +644,24 @@ function SearchView({
                   p: 1.5,
                   mb: 1.5,
                   borderRadius: '12px',
-                  backgroundColor: 'rgba(22, 163, 74, 0.08)',
-                  border: '1px solid rgba(22, 163, 74, 0.25)',
+                  backgroundColor: 'rgba(94, 114, 228, 0.08)',
+                  border: '1px solid rgba(94, 114, 228, 0.25)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  '&:hover': { backgroundColor: 'rgba(22, 163, 74, 0.15)' },
+                  '&:hover': { backgroundColor: 'rgba(94, 114, 228, 0.12)' },
                 }}
               >
                 <Box>
-                  <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase' }}>
+                  <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#5e72e4', textTransform: 'uppercase' }}>
                     Active Official Query • {savedQueries[0].version || 'v1.1'}
                   </Typography>
                   <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f1419', mt: 0.3 }}>
                     Official Punjab EPA Air Quality Criteria
                   </Typography>
                 </Box>
-                <AutoAwesomeRoundedIcon sx={{ color: '#16a34a', fontSize: '20px' }} />
+                <AutoAwesomeRoundedIcon sx={{ color: '#5e72e4', fontSize: '20px' }} />
               </Box>
             )}
 
@@ -636,12 +745,12 @@ function SearchView({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     '&:hover': {
-                      borderColor: '#16a34a',
+                      borderColor: '#5e72e4',
                     },
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: '#16a34a' }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: '#5e72e4' }}>
                       {op.label}
                     </Typography>
                     <Typography sx={{ fontSize: '11px', color: '#64748b' }}>
@@ -668,8 +777,8 @@ function SearchView({
                   borderColor: darkMode ? 'rgba(255,255,255,0.2)' : '#cbd5e1',
                   py: 0.8,
                   '&:hover': {
-                    borderColor: '#16a34a',
-                    backgroundColor: 'rgba(22, 163, 74, 0.05)',
+                    borderColor: '#5e72e4',
+                    backgroundColor: 'rgba(94, 114, 228, 0.06)',
                   },
                 }}
               >

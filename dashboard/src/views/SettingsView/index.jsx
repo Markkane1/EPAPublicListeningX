@@ -30,8 +30,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import { useArgonController } from '../../context';
 
-// Icons
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
@@ -54,7 +54,6 @@ import SyncRoundedIcon from '@mui/icons-material/SyncRounded';
 import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonCheckedRounded';
 import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
 
-// API Services
 import {
   getSettings,
   updateSettings,
@@ -70,6 +69,8 @@ import {
 } from '../../services/api';
 
 function SettingsView({ onSettingsSaved, onReloadFromDb }) {
+  const [controller] = useArgonController();
+  const { darkMode } = controller;
   const [tabValue, setTabValue] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -423,8 +424,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
 
   return (
     <Box sx={{ py: 1 }}>
-      {/* Top Feedback Alerts */}
-      {saveSuccess && (
+{saveSuccess && (
         <Alert
           severity="success"
           icon={<CheckCircleRoundedIcon />}
@@ -443,136 +443,43 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           {errorMessage}
         </Alert>
       )}
-
-      {/* Main Settings Container */}
-      <Card
+<Card
         sx={{
-          backgroundColor: '#ffffff',
+          backgroundColor: darkMode ? '#111c44' : '#ffffff',
           borderRadius: '16px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+          boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
           overflow: 'hidden'
         }}
       >
-        {/* Top Header & Live Telemetry Strip */}
-        <Box sx={{ p: { xs: 2.5, sm: 3 }, pb: 2.5, borderBottom: '1px solid #f1f5f9' }}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2 }}>
-            <Box>
-              <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '20px', color: '#0f172a', letterSpacing: '-0.01em' }}>
-                System Settings & Configuration
-              </Typography>
-              <Typography sx={{ fontSize: '13px', color: '#64748b', mt: 0.3 }}>
-                EPA Punjab air quality surveillance pipeline, NLP sentiment engine, search parameters, and API integration.
-              </Typography>
-            </Box>
-
-            {/* Quick-Jump Status Summary Strip */}
-            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-              <Tooltip title="Data Source: Click to configure pipeline" arrow>
-                <Chip
-                  icon={<HubRoundedIcon sx={{ fontSize: '14px !important' }} />}
-                  label={dataSource === 'x_api' ? 'Live X API' : 'File Ingestion'}
-                  onClick={() => setTabValue(0)}
-                  size="small"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '11px',
-                    borderRadius: '6px',
-                    bgcolor: dataSource === 'x_api' ? '#ecfdf5' : '#f1f5f9',
-                    color: dataSource === 'x_api' ? '#065f46' : '#334155',
-                    cursor: 'pointer',
-                    border: '1px solid',
-                    borderColor: dataSource === 'x_api' ? '#a7f3d0' : '#e2e8f0',
-                    '&:hover': { bgcolor: '#e2e8f0' }
-                  }}
-                />
-              </Tooltip>
-
-              <Tooltip title="NLP Model: Click to view sentiment engines" arrow>
-                <Chip
-                  icon={<TuneRoundedIcon sx={{ fontSize: '14px !important' }} />}
-                  label={sentimentEngineState === 'transformer' ? 'RoBERTa NLP' : 'VADER Lexicon'}
-                  onClick={() => setTabValue(0)}
-                  size="small"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '11px',
-                    borderRadius: '6px',
-                    bgcolor: '#f5f3ff',
-                    color: '#5b21b6',
-                    cursor: 'pointer',
-                    border: '1px solid #ddd6fe',
-                    '&:hover': { bgcolor: '#ede9fe' }
-                  }}
-                />
-              </Tooltip>
-
-              <Tooltip title="Active Query: Click to view constraints" arrow>
-                <Chip
-                  icon={<CheckCircleRoundedIcon sx={{ fontSize: '14px !important', color: '#059669 !important' }} />}
-                  label={`Query: ${activeVersionObj?.versionTag || 'v1.1'}`}
-                  onClick={() => setTabValue(1)}
-                  size="small"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '11px',
-                    borderRadius: '6px',
-                    bgcolor: '#ecfdf5',
-                    color: '#047857',
-                    cursor: 'pointer',
-                    border: '1px solid #a7f3d0',
-                    '&:hover': { bgcolor: '#d1fae5' }
-                  }}
-                />
-              </Tooltip>
-
-              <Tooltip title="Local Storage: Click to view database stats" arrow>
-                <Chip
-                  icon={<StorageRoundedIcon sx={{ fontSize: '14px !important' }} />}
-                  label={`${dbInfo.totalPosts} Verified`}
-                  onClick={() => setTabValue(3)}
-                  size="small"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '11px',
-                    borderRadius: '6px',
-                    bgcolor: '#f8fafc',
-                    color: '#475569',
-                    cursor: 'pointer',
-                    border: '1px solid #cbd5e1',
-                    '&:hover': { bgcolor: '#f1f5f9' }
-                  }}
-                />
-              </Tooltip>
-            </Box>
-          </Box>
-
-          {/* Clean Top Tabs Navigation */}
+<Box sx={{ px: { xs: 2, sm: 3 }, pt: 1.5, pb: 0, borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' }, gap: 1.5 }}>
           <Tabs
             value={tabValue}
             onChange={(e, val) => setTabValue(val)}
             variant="scrollable"
-            scrollButtons={false}
+            scrollButtons="auto"
             allowScrollButtonsMobile
             sx={{
-              mt: 2.5,
               minHeight: '44px',
-              borderBottom: '1px solid #e2e8f0',
+              maxWidth: '100%',
+              '& .MuiTabs-scroller': {
+                overflowX: 'auto !important'
+              },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#4f46e5',
+                backgroundColor: '#5e72e4',
                 height: '2.5px',
                 borderRadius: '2px'
               },
               '& .MuiTab-root': {
                 minWidth: 'auto',
                 whiteSpace: 'nowrap',
-                px: { xs: 1.5, sm: 2.5 },
-                fontSize: { xs: '12px', sm: '13px' },
+                px: { xs: 1.5, sm: 2.2 },
+                fontSize: { xs: '12.5px', sm: '13px' },
                 textTransform: 'none',
                 fontWeight: 600,
                 minHeight: '44px',
-                color: '#64748b',
-                '&.Mui-selected': { color: '#4f46e5' }
+                color: darkMode ? '#8898aa' : '#64748b',
+                '&.Mui-selected': { color: darkMode ? '#ffffff' : '#5e72e4' }
               }
             }}
           >
@@ -617,13 +524,88 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               }
             />
           </Tabs>
-        </Box>
+<Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', flexWrap: 'wrap', gap: 1, py: 1 }}>
+            <Tooltip title="Data Source: Click to switch pipeline mode" arrow>
+              <Chip
+                icon={<HubRoundedIcon sx={{ fontSize: '14px !important' }} />}
+                label={dataSource === 'x_api' ? 'Live X API' : 'File Ingestion'}
+                onClick={() => setTabValue(0)}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  borderRadius: '6px',
+                  bgcolor: dataSource === 'x_api' ? '#ecfdf5' : '#f1f5f9',
+                  color: dataSource === 'x_api' ? '#065f46' : '#334155',
+                  cursor: 'pointer',
+                  border: '1px solid',
+                  borderColor: dataSource === 'x_api' ? '#a7f3d0' : '#e2e8f0',
+                  '&:hover': { bgcolor: '#e2e8f0' }
+                }}
+              />
+            </Tooltip>
 
-        {/* Tab 0: Pipeline & AI Models */}
-        {tabValue === 0 && (
+            <Tooltip title="NLP Model: Click to configure sentiment engine" arrow>
+              <Chip
+                icon={<TuneRoundedIcon sx={{ fontSize: '14px !important' }} />}
+                label={sentimentEngineState === 'transformer' ? 'RoBERTa NLP' : 'VADER Lexicon'}
+                onClick={() => setTabValue(0)}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  borderRadius: '6px',
+                  bgcolor: '#f5f3ff',
+                  color: '#5b21b6',
+                  cursor: 'pointer',
+                  border: '1px solid #ddd6fe',
+                  '&:hover': { bgcolor: '#ede9fe' }
+                }}
+              />
+            </Tooltip>
+
+            <Tooltip title="Active Query: Click to inspect constraints" arrow>
+              <Chip
+                icon={<CheckCircleRoundedIcon sx={{ fontSize: '14px !important', color: '#059669 !important' }} />}
+                label={`Query: ${activeVersionObj?.versionTag || 'v1.1'}`}
+                onClick={() => setTabValue(1)}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  borderRadius: '6px',
+                  bgcolor: '#ecfdf5',
+                  color: '#047857',
+                  cursor: 'pointer',
+                  border: '1px solid #a7f3d0',
+                  '&:hover': { bgcolor: '#d1fae5' }
+                }}
+              />
+            </Tooltip>
+
+            <Tooltip title="Local Storage: Click to view database stats" arrow>
+              <Chip
+                icon={<StorageRoundedIcon sx={{ fontSize: '14px !important' }} />}
+                label={`${dbInfo.totalPosts} Verified`}
+                onClick={() => setTabValue(3)}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  borderRadius: '6px',
+                  bgcolor: '#f8fafc',
+                  color: '#475569',
+                  cursor: 'pointer',
+                  border: '1px solid #cbd5e1',
+                  '&:hover': { bgcolor: '#f1f5f9' }
+                }}
+              />
+            </Tooltip>
+          </Box>
+        </Box>
+{tabValue === 0 && (
           <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-            {/* Section 1: Ingestion Mode */}
-            <Box sx={{ mb: 4 }}>
+<Box sx={{ mb: 4 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                 <Box>
                   <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
@@ -641,7 +623,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     fontSize: '11px',
                     borderRadius: '6px',
                     bgcolor: dataSource === 'x_api' ? '#ecfdf5' : '#eef2ff',
-                    color: dataSource === 'x_api' ? '#047857' : '#4338ca',
+                    color: dataSource === 'x_api' ? '#047857' : '#4b5fcc',
                     border: '1px solid',
                     borderColor: dataSource === 'x_api' ? '#a7f3d0' : '#c7d2fe'
                   }}
@@ -649,12 +631,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                {/* File Ingestion Tile */}
-                <Box
+<Box
                   onClick={() => setDataSource('file')}
                   sx={{
                     border: '1.5px solid',
-                    borderColor: dataSource === 'file' ? '#4f46e5' : '#e2e8f0',
+                    borderColor: dataSource === 'file' ? '#5e72e4' : '#e2e8f0',
                     backgroundColor: dataSource === 'file' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
@@ -666,7 +647,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: dataSource === 'file' ? '#4f46e5' : '#94a3b8' }}>
+                  <Box sx={{ pt: 0.3, color: dataSource === 'file' ? '#5e72e4' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {dataSource === 'file' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -675,7 +656,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                      <FolderZipRoundedIcon sx={{ fontSize: '18px', color: dataSource === 'file' ? '#4f46e5' : '#64748b' }} />
+                      <FolderZipRoundedIcon sx={{ fontSize: '18px', color: dataSource === 'file' ? '#5e72e4' : '#64748b' }} />
                       <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
                         File Ingestion Mode (Batch Scrapes)
                       </Typography>
@@ -686,9 +667,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     </Typography>
                   </Box>
                 </Box>
-
-                {/* Live X API Tile */}
-                <Box
+<Box
                   onClick={() => setDataSource('x_api')}
                   sx={{
                     border: '1.5px solid',
@@ -704,7 +683,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: dataSource === 'x_api' ? '#059669' : '#94a3b8' }}>
+                  <Box sx={{ pt: 0.3, color: dataSource === 'x_api' ? '#2dce89' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {dataSource === 'x_api' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -725,12 +704,25 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                 </Box>
               </Box>
+
+              {dataSource === 'x_api' && !bearerToken && (
+                <Alert
+                  severity="info"
+                  icon={<KeyRoundedIcon />}
+                  action={
+                    <Button color="inherit" size="small" onClick={() => setTabValue(2)} sx={{ textTransform: 'none', fontWeight: 600, fontSize: '12px' }}>
+                      Configure Keys &rarr;
+                    </Button>
+                  }
+                  sx={{ mt: 2, borderRadius: '10px', fontSize: '12px' }}
+                >
+                  Live X API mode requires a valid Twitter Bearer Token to connect and query live streams.
+                </Alert>
+              )}
             </Box>
 
             <Divider sx={{ my: 3 }} />
-
-            {/* Section 2: Sentiment Engine */}
-            <Box sx={{ mb: 3 }}>
+<Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                 <Box>
                   <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
@@ -748,7 +740,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     fontSize: '11px',
                     borderRadius: '6px',
                     bgcolor: sentimentEngineState === 'transformer' ? '#f5f3ff' : '#eef2ff',
-                    color: sentimentEngineState === 'transformer' ? '#5b21b6' : '#4338ca',
+                    color: sentimentEngineState === 'transformer' ? '#5b21b6' : '#4b5fcc',
                     border: '1px solid',
                     borderColor: sentimentEngineState === 'transformer' ? '#ddd6fe' : '#c7d2fe'
                   }}
@@ -756,12 +748,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                {/* VADER Tile */}
-                <Box
+<Box
                   onClick={() => handleSwitchEngine('vader')}
                   sx={{
                     border: '1.5px solid',
-                    borderColor: sentimentEngineState === 'vader' ? '#4f46e5' : '#e2e8f0',
+                    borderColor: sentimentEngineState === 'vader' ? '#5e72e4' : '#e2e8f0',
                     backgroundColor: sentimentEngineState === 'vader' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
@@ -773,7 +764,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'vader' ? '#4f46e5' : '#94a3b8' }}>
+                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'vader' ? '#5e72e4' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {sentimentEngineState === 'vader' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -783,7 +774,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <SpeedRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'vader' ? '#4f46e5' : '#64748b' }} />
+                        <SpeedRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'vader' ? '#5e72e4' : '#64748b' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
                           VADER + Regional Lexicon
                         </Typography>
@@ -795,13 +786,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     </Typography>
                   </Box>
                 </Box>
-
-                {/* Transformer Tile */}
-                <Box
+<Box
                   onClick={() => handleSwitchEngine('transformer')}
                   sx={{
                     border: '1.5px solid',
-                    borderColor: sentimentEngineState === 'transformer' ? '#4f46e5' : '#e2e8f0',
+                    borderColor: sentimentEngineState === 'transformer' ? '#5e72e4' : '#e2e8f0',
                     backgroundColor: sentimentEngineState === 'transformer' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
@@ -813,7 +802,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'transformer' ? '#4f46e5' : '#94a3b8' }}>
+                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'transformer' ? '#5e72e4' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {sentimentEngineState === 'transformer' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -823,7 +812,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AutoAwesomeRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'transformer' ? '#4f46e5' : '#64748b' }} />
+                        <AutoAwesomeRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'transformer' ? '#5e72e4' : '#64748b' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
                           Local Transformer (RoBERTa)
                         </Typography>
@@ -846,15 +835,13 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                 </Box>
               </Box>
-
-              {/* Re-analyze Action Strip */}
-              <Box
+<Box
                 sx={{
                   mt: 2.5,
                   p: 2,
                   borderRadius: '10px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -881,8 +868,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     textTransform: 'none',
                     fontWeight: 600,
                     fontSize: '12px',
-                    borderColor: '#4f46e5',
-                    color: '#4f46e5',
+                    borderColor: '#5e72e4',
+                    color: '#5e72e4',
                     borderRadius: '8px',
                     px: 2,
                     py: 0.7,
@@ -900,16 +887,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Alert>
               )}
             </Box>
-
-            {/* Bottom Save Bar */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, borderTop: '1px solid #f1f5f9' }}>
+<Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9' }}>
               <Button
                 variant="contained"
                 onClick={handleSave}
                 disabled={saving}
                 startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveRoundedIcon sx={{ fontSize: '18px' }} />}
                 sx={{
-                  backgroundColor: '#4f46e5',
+                  backgroundColor: '#5e72e4',
                   color: '#ffffff',
                   textTransform: 'none',
                   fontWeight: 600,
@@ -918,7 +903,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   px: 3,
                   py: 0.8,
                   boxShadow: 'none',
-                  '&:hover': { backgroundColor: '#4338ca', boxShadow: 'none' }
+                  '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
                 }}
               >
                 {saving ? 'Saving...' : 'Save Pipeline Configuration'}
@@ -926,18 +911,15 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             </Box>
           </Box>
         )}
-
-        {/* Tab 1: Search Query Rules */}
-        {tabValue === 1 && (
+{tabValue === 1 && (
           <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-            {/* Version Management Bar */}
-            <Box
+<Box
               sx={{
                 mb: 2.5,
                 p: { xs: 1.5, sm: 2 },
                 borderRadius: '12px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
+                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: { xs: 'column', lg: 'row' },
                 alignItems: { xs: 'stretch', lg: 'center' },
@@ -965,8 +947,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     sx={{
                       fontSize: '12.5px',
                       fontWeight: 600,
-                      backgroundColor: '#ffffff',
+                      backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                      color: darkMode ? '#ffffff' : '#1e293b',
                       borderRadius: '8px',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined },
+                      '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : undefined },
                       '& .MuiSelect-select': { py: 0.8, textOverflow: 'ellipsis', overflow: 'hidden' },
                     }}
                   >
@@ -1047,16 +1032,16 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   onClick={handleOpenNewVersionModal}
                   startIcon={<BookmarkAddRoundedIcon sx={{ fontSize: '16px' }} />}
                   sx={{
-                    background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+                    backgroundColor: '#5e72e4',
                     color: '#ffffff',
                     textTransform: 'none',
                     fontWeight: 600,
                     fontSize: '12px',
                     borderRadius: '8px',
                     py: 0.6,
-                    boxShadow: '0 4px 10px rgba(94, 114, 228, 0.25)',
+                    boxShadow: 'none',
                     whiteSpace: 'nowrap',
-                    '&:hover': { background: 'linear-gradient(310deg, #5263cf 0%, #7353cc 100%)' },
+                    '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' },
                   }}
                 >
                   + Save As New Version
@@ -1073,9 +1058,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 {versionMessage.text}
               </Alert>
             )}
-
-            {/* Query Editor Box */}
-            <Box sx={{ mb: 3 }}>
+<Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
                   Boolean Search String (X API / Pipeline Query Syntax)
@@ -1094,19 +1077,19 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   width: '100%',
                   p: 2,
                   borderRadius: '10px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #cbd5e1',
+                  backgroundColor: darkMode ? '#070d24' : '#f8fafc',
+                  border: darkMode ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid #cbd5e1',
                   fontFamily: 'Consolas, Monaco, "Courier New", monospace',
                   fontSize: '12px',
                   lineHeight: 1.6,
-                  color: '#1e293b',
+                  color: darkMode ? '#f8fafc' : '#1e293b',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   resize: 'vertical',
                   boxSizing: 'border-box',
                   outline: 'none',
                   '&:focus': {
-                    borderColor: '#4f46e5',
+                    borderColor: '#5e72e4',
                     boxShadow: '0 0 0 3px rgba(79, 70, 229, 0.12)'
                   }
                 }}
@@ -1127,6 +1110,17 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Typography>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {selectedVersionObj && queryDraft !== selectedVersionObj.queryText && (
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={() => setQueryDraft(selectedVersionObj.queryText)}
+                      sx={{ textTransform: 'none', fontSize: '11.5px', color: '#64748b' }}
+                    >
+                      Revert Changes
+                    </Button>
+                  )}
+
                   <Button
                     size="small"
                     variant="outlined"
@@ -1153,7 +1147,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     onClick={handleUpdateCurrentVersion}
                     startIcon={<SaveRoundedIcon sx={{ fontSize: '15px' }} />}
                     sx={{
-                      backgroundColor: '#4f46e5',
+                      backgroundColor: '#5e72e4',
                       color: '#ffffff',
                       textTransform: 'none',
                       fontSize: '11.5px',
@@ -1161,7 +1155,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       borderRadius: '6px',
                       py: 0.4,
                       boxShadow: 'none',
-                      '&:hover': { backgroundColor: '#4338ca', boxShadow: 'none' }
+                      '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
                     }}
                   >
                     Save Changes to {tagDraft}
@@ -1180,25 +1174,21 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Box>
               </Box>
             </Box>
-
-            {/* Parsed Rule Breakdown (Clean, calm presentation) */}
-            <Box
+<Box
               sx={{
                 p: 2.5,
                 borderRadius: '10px',
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
+                backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2
               }}
             >
-              <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a' }}>
                 Query Rule Breakdown
               </Typography>
-
-              {/* Keywords */}
-              {parsedTokens.positives.length > 0 && (
+{parsedTokens.positives.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexWrap: 'wrap' }}>
                   <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', minWidth: '130px', pt: 0.4 }}>
                     Monitored Topics ({parsedTokens.positives.length}):
@@ -1222,9 +1212,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                 </Box>
               )}
-
-              {/* Geographies */}
-              {parsedTokens.locations.length > 0 && (
+{parsedTokens.locations.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexWrap: 'wrap' }}>
                   <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', minWidth: '130px', pt: 0.4 }}>
                     Target Geographies ({parsedTokens.locations.length}):
@@ -1249,9 +1237,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                 </Box>
               )}
-
-              {/* Exclusions */}
-              {parsedTokens.negatives.length > 0 && (
+{parsedTokens.negatives.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexWrap: 'wrap' }}>
                   <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', minWidth: '130px', pt: 0.4 }}>
                     Negative Exclusions ({parsedTokens.negatives.length}):
@@ -1288,9 +1274,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             </Box>
           </Box>
         )}
-
-        {/* Tab 2: X (Twitter) API v2 */}
-        {tabValue === 2 && (
+{tabValue === 2 && (
           <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
@@ -1302,11 +1286,17 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, maxWidth: '780px' }}>
-              {/* Bearer Token */}
-              <Box>
-                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155', mb: 0.8 }}>
-                  X API Bearer Token (App-Only Recommended)
-                </Typography>
+<Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    X API Bearer Token (App-Only Recommended)
+                  </Typography>
+                  {bearerToken ? (
+                    <Chip label="Configured" size="small" sx={{ height: '18px', fontSize: '10px', bgcolor: '#dcfce7', color: '#15803d', fontWeight: 600 }} />
+                  ) : (
+                    <Chip label="Not Configured" size="small" sx={{ height: '18px', fontSize: '10px', bgcolor: '#f1f5f9', color: '#64748b' }} />
+                  )}
+                </Box>
                 <OutlinedInput
                   type={showBearer ? 'text' : 'password'}
                   placeholder="Paste your Twitter Bearer Token (AAAA...)"
@@ -1316,6 +1306,20 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   size="small"
                   endAdornment={
                     <InputAdornment position="end">
+                      <Button
+                        size="small"
+                        onClick={async () => {
+                          try {
+                            const text = await navigator.clipboard.readText();
+                            if (text) setBearerToken(text.trim());
+                          } catch (e) {
+                            console.warn('Clipboard read error:', e);
+                          }
+                        }}
+                        sx={{ fontSize: '11px', textTransform: 'none', py: 0.2, px: 1, minWidth: 'auto', mr: 0.5, color: '#64748b' }}
+                      >
+                        Paste
+                      </Button>
                       <IconButton
                         size="small"
                         onClick={() => setShowBearer(!showBearer)}
@@ -1328,19 +1332,18 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   sx={{
                     fontSize: '13px',
                     borderRadius: '8px',
-                    backgroundColor: '#f8fafc',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#cbd5e1' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4f46e5' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4f46e5' }
+                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    color: darkMode ? '#ffffff' : '#1e293b',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' }
                   }}
                 />
                 <Typography sx={{ fontSize: '11.5px', color: '#64748b', mt: 0.5 }}>
                   Found under Twitter Developer Portal → Projects & Apps → Keys and Tokens → Bearer Token.
                 </Typography>
               </Box>
-
-              {/* Endpoint Base URL */}
-              <Box>
+<Box>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155', mb: 0.8 }}>
                   API Endpoint Base URL
                 </Typography>
@@ -1352,17 +1355,16 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   sx={{
                     fontSize: '13px',
                     borderRadius: '8px',
-                    backgroundColor: '#f8fafc',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#cbd5e1' }
+                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    color: darkMode ? '#ffffff' : '#1e293b',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' }
                   }}
                 />
-                <Typography sx={{ fontSize: '11.5px', color: '#64748b', mt: 0.5 }}>
+                <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#64748b', mt: 0.5 }}>
                   Standard recent search endpoint: <code>https://api.twitter.com/2/tweets/search/recent</code>
                 </Typography>
               </Box>
-
-              {/* Consumer Keys (Optional) */}
-              <Box sx={{ pt: 1 }}>
+<Box sx={{ pt: 1 }}>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155', mb: 1 }}>
                   OAuth 1.0a Consumer Credentials (Optional)
                 </Typography>
@@ -1380,12 +1382,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       sx={{
                         fontSize: '13px',
                         borderRadius: '8px',
-                        backgroundColor: '#f8fafc'
+                        backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                        color: darkMode ? '#ffffff' : '#1e293b',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' }
                       }}
                     />
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: '12px', color: '#64748b', mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#64748b', mb: 0.5 }}>
                       Consumer API Secret
                     </Typography>
                     <OutlinedInput
@@ -1398,15 +1402,15 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       sx={{
                         fontSize: '13px',
                         borderRadius: '8px',
-                        backgroundColor: '#f8fafc'
+                        backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                        color: darkMode ? '#ffffff' : '#1e293b',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' }
                       }}
                     />
                   </Box>
                 </Box>
               </Box>
-
-              {/* Actions & Test Status */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pt: 1.5, flexWrap: 'wrap' }}>
+<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pt: 1.5, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   onClick={handleTestConnection}
@@ -1422,8 +1426,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     px: 2.5,
                     py: 0.8,
                     '&:hover': {
-                      borderColor: '#94a3b8',
-                      backgroundColor: '#f8fafc'
+                      borderColor: darkMode ? 'rgba(255, 255, 255, 0.3)' : '#94a3b8',
+                      backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc'
                     }
                   }}
                 >
@@ -1436,7 +1440,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   disabled={saving}
                   startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveRoundedIcon sx={{ fontSize: '18px' }} />}
                   sx={{
-                    backgroundColor: '#4f46e5',
+                    backgroundColor: '#5e72e4',
                     color: '#ffffff',
                     textTransform: 'none',
                     fontWeight: 600,
@@ -1446,7 +1450,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     py: 0.8,
                     boxShadow: 'none',
                     '&:hover': {
-                      backgroundColor: '#4338ca',
+                      backgroundColor: '#4b5fcc',
                       boxShadow: 'none'
                     }
                   }}
@@ -1466,9 +1470,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             </Box>
           </Box>
         )}
-
-        {/* Tab 3: Database & Storage */}
-        {tabValue === 3 && (
+{tabValue === 3 && (
           <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
@@ -1480,11 +1482,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 3 }}>
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <Typography sx={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+                <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
                   Engine
                 </Typography>
-                <Typography sx={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', mt: 0.5 }}>
+                <Typography sx={{ fontSize: '15px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', mt: 0.5 }}>
                   SQLite 3
                 </Typography>
                 <Typography sx={{ fontSize: '11px', color: '#059669', fontWeight: 600, mt: 0.3 }}>
@@ -1492,11 +1494,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Typography>
               </Box>
 
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <Typography sx={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+                <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
                   Database Path
                 </Typography>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', mt: 0.5, wordBreak: 'break-all' }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', mt: 0.5, wordBreak: 'break-all' }}>
                   data/epa_intelligence.db
                 </Typography>
                 <Typography sx={{ fontSize: '11px', color: '#64748b', mt: 0.3 }}>
@@ -1504,11 +1506,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Typography>
               </Box>
 
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <Typography sx={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+                <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
                   Verified Posts
                 </Typography>
-                <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#059669', mt: 0.5 }}>
+                <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#2dce89', mt: 0.5 }}>
                   {dbInfo.totalPosts}
                 </Typography>
                 <Typography sx={{ fontSize: '11px', color: '#64748b', mt: 0.3 }}>
@@ -1516,11 +1518,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Typography>
               </Box>
 
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <Typography sx={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+                <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
                   Last Synchronized
                 </Typography>
-                <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#0f172a', mt: 0.5 }}>
+                <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', mt: 0.5 }}>
                   {new Date(dbInfo.lastSync).toLocaleDateString()}
                 </Typography>
                 <Typography sx={{ fontSize: '11px', color: '#64748b', mt: 0.3 }}>
@@ -1544,10 +1546,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 }}
               >
                 <Box sx={{ flex: 1, minWidth: '240px' }}>
-                  <Typography sx={{ fontSize: '13.5px', fontWeight: 700, color: '#166534' }}>
+                  <Typography sx={{ fontSize: '13.5px', fontWeight: 700, color: darkMode ? '#2dce89' : '#166534' }}>
                     Sync Frontend State with SQLite Store
                   </Typography>
-                  <Typography sx={{ fontSize: '12px', color: '#15803d', mt: 0.3 }}>
+                  <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#15803d', mt: 0.3 }}>
                     Reload latest verified posts, sentiment labels, and deduplication states from disk into dashboard memory.
                   </Typography>
                 </Box>
@@ -1579,15 +1581,19 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           </Box>
         )}
       </Card>
-
-      {/* Save New Query Version Modal */}
-      <Dialog
+<Dialog
         open={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: '16px', p: 1 }
+          sx: {
+            borderRadius: '16px',
+            p: { xs: 0.5, sm: 1 },
+            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            color: darkMode ? '#ffffff' : '#0f172a',
+            backgroundImage: 'none'
+          }
         }}
       >
         <DialogTitle sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: '#0f172a', pb: 1 }}>
@@ -1636,7 +1642,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               '& .MuiInputBase-root': {
                 fontFamily: 'monospace',
                 fontSize: '11px',
-                backgroundColor: '#f8fafc',
+                backgroundColor: darkMode ? '#070d24' : '#f8fafc',
+                color: darkMode ? '#ffffff' : '#1e293b',
               }
             }}
           />
@@ -1668,35 +1675,39 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             disabled={versionActionLoading || !newTag.trim() || !newQueryText.trim()}
             onClick={handleSaveNewVersion}
             sx={{
-              backgroundColor: '#4f46e5',
+              backgroundColor: '#5e72e4',
               color: '#ffffff',
               textTransform: 'none',
               fontWeight: 600,
               borderRadius: '8px',
               px: 3,
               boxShadow: 'none',
-              '&:hover': { backgroundColor: '#4338ca', boxShadow: 'none' }
+              '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
             }}
           >
             Save Version
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Query Version History Ledger Modal */}
-      <Dialog
+<Dialog
         open={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: '16px', p: 1 }
+          sx: {
+            borderRadius: '16px',
+            p: { xs: 0.5, sm: 1 },
+            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            color: darkMode ? '#ffffff' : '#0f172a',
+            backgroundImage: 'none'
+          }
         }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <HistoryRoundedIcon sx={{ color: '#4f46e5', fontSize: '22px' }} />
-            <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: '#0f172a' }}>
+            <HistoryRoundedIcon sx={{ color: '#5e72e4', fontSize: '22px' }} />
+            <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#0f172a' }}>
               Query Version History & Evolution Ledger
             </Typography>
           </Box>
@@ -1709,9 +1720,9 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             Track how search constraints have evolved over time to adapt to shifting pollution patterns, sports tournament noise, and cross-border debates.
           </Typography>
 
-          <TableContainer sx={{ border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+          <TableContainer sx={{ border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', borderRadius: '10px' }}>
             <Table size="small">
-              <TableHead sx={{ backgroundColor: '#f8fafc' }}>
+              <TableHead sx={{ backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
                 <TableRow>
                   <TableCell sx={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>Version</TableCell>
                   <TableCell sx={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>Title & Description</TableCell>

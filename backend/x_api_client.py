@@ -33,9 +33,32 @@ def get_bearer_token_from_credentials(api_key: str, api_secret: str) -> str:
     body = "grant_type=client_credentials".encode("utf-8")
     req = urllib.request.Request(DEFAULT_OAUTH_TOKEN_URL, data=body, headers=headers, method="POST")
 
+    try:
+        with _safe_urlopen(req, timeout=20) as resp:
+            raw_data = resp.read().decode("utf-8")
+            token_data = json.loads(raw_data)
+            bearer_token = token_data.get("access_token")
+            if not bearer_token:
+                raise XApiError("OAuth2 token exchange returned no access_token.")
+            return bearer_token
+    except XApiError:
+        raise
+    except Exception as e:
+        raise XApiError(f"OAuth2 token exchange failed: {str(e)}")
+
+
 def _get_ssl_context(verify=True):
-    """Creates a secure SSL context with fallback for Windows CA quirks."""
+    """Creates a secure SSL context.
+    When verify=False is requested (only by _safe_urlopen on CA-missing systems),
+    emit a RuntimeWarning so operators are aware.  Never silently disable verification.
+    """
     if not verify:
+        import warnings
+        warnings.warn(
+            "SSL certificate verification disabled. Install certifi: pip install certifi",
+            RuntimeWarning,
+            stacklevel=3,
+        )
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -44,13 +67,7 @@ def _get_ssl_context(verify=True):
         import certifi
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
-        try:
-            return ssl.create_default_context()
-        except Exception:
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            return ctx
+        return ssl.create_default_context()
 
 def _safe_urlopen(req, timeout=20):
     """Executes urlopen with standard verification and graceful fallback if system CA is unconfigured."""
@@ -58,7 +75,10 @@ def _safe_urlopen(req, timeout=20):
         ctx = _get_ssl_context(verify=True)
         return urllib.request.urlopen(req, context=ctx, timeout=timeout)
     except urllib.error.URLError as e:
-        if "CERTIFICATE_VERIFY_FAILED" in str(e):
+        reason_str = str(e.reason) if hasattr(e, "reason") else str(e)
+        # Only fall back when the system has no CA bundle configured at all,
+        # never for actual certificate validation failures.
+        if "No module named" in reason_str or ("SSL" in reason_str and "CERTIFICATE_VERIFY_FAILED" not in reason_str):
             ctx = _get_ssl_context(verify=False)
             return urllib.request.urlopen(req, context=ctx, timeout=timeout)
         raise e
@@ -257,10 +277,14 @@ def transform_x_response(api_response: dict) -> list:
 
     return standardized_posts
 
-def generate_mock_live_search(query: str, count: int = 10) -> dict:
+def generate_mock_live_search(query: str, count: int = 10, existing_ids: list = None) -> dict:
     """
     Generates realistic dynamic mock response formatted strictly as X API v2 payload.
-    Used for testing the full end-to-end flow when live API credentials are not yet entered.
+    Emulates a real-world surveillance stream comprising:
+    - High-quality verified air quality reports from Punjab cities
+    - Indian domestic discourse posts (to test negative filter enforcement)
+    - Off-topic chatter (cricket sports, fast food)
+    - Duplicate posts (to test deduplication against existing DB)
     """
     base_id = random.randint(2118000000000000000, 2119000000000000000)
     now = datetime.now(timezone.utc)
@@ -270,7 +294,9 @@ def generate_mock_live_search(query: str, count: int = 10) -> dict:
         {"name": "Pak Environmentalists", "username": "pakenviro_pk", "verified": False, "avatar": "https://abs.twimg.com/sticky/default_profile_images/default_profile_bigger.png", "desc": "Climate and air quality advocacy group Pakistan"},
         {"name": "Dr. Hamza Environmentalist", "username": "drhamza_env", "verified": True, "avatar": "https://pbs.twimg.com/profile_images/1858161494233427968/VLu2kJ6J_bigger.jpg", "desc": "Pulmonology and environmental health researcher, Multan"},
         {"name": "Punjab News Daily", "username": "punjabnewsdaily", "verified": True, "avatar": "https://abs.twimg.com/sticky/default_profile_images/default_profile_bigger.png", "desc": "Breaking environmental headlines across Punjab"},
-        {"name": "Gujranwala Updates", "username": "gwa_updates", "verified": False, "avatar": "https://abs.twimg.com/sticky/default_profile_images/default_profile_bigger.png", "desc": "Local affairs and industrial pollution updates Gujranwala"}
+        {"name": "Gujranwala Updates", "username": "gwa_updates", "verified": False, "avatar": "https://abs.twimg.com/sticky/default_profile_images/default_profile_bigger.png", "desc": "Local affairs and industrial pollution updates Gujranwala"},
+        {"name": "Delhi Pollution Watch", "username": "delhipollution", "verified": True, "avatar": "https://abs.twimg.com/sticky/default_profile_images/default_profile_bigger.png", "desc": "Real-time air pollution updates for Delhi NCR and surrounding regions"},
+        {"name": "Cricket Fans PK", "username": "cricket_punjab", "verified": False, "avatar": "https://abs.twimg.com/sticky/default_profile_images/default_profile_bigger.png", "desc": "All news about cricket tournaments in Lahore stadium"}
     ]
 
     mock_images = [
@@ -284,22 +310,37 @@ def generate_mock_live_search(query: str, count: int = 10) -> dict:
     media = []
 
     for i in range(count):
-        tid = str(base_id + i)
-        author = mock_authors[i % len(mock_authors)]
+        author_idx = i % len(mock_authors)
+        author = mock_authors[author_idx]
         uid = f"100{i+10}"
         
+        # Test duplicate ID if existing_ids provided on i == 3
+        if i == 3 and existing_ids and len(existing_ids) > 0:
+            tid = str(existing_ids[0])
+        else:
+            tid = str(base_id + i)
+
         aqi = random.choice([430, 510, 580, 620, 310, 245, 180, 490, 525, 390])
         city = random.choice(["Lahore", "Gujranwala", "Faisalabad", "Multan", "Attock"])
         created_time = (now - timedelta(minutes=i * 18 + random.randint(1, 10))).isoformat()
 
-        text_options = [
-            f"URGENT: Hazardous AQI {aqi} recorded in {city} this afternoon. Particulate PM2.5 levels are 35x WHO limits. Please wear N95 masks! #smog #{city}",
-            f"EPA Anti-smog squad inspected 14 industrial units in {city} today, sealing 3 non-compliant steel mills and issuing heavy fines. #CleanAir #PunjabEPA",
-            f"Air quality in {city} is catastrophic today with AQI reaching {aqi}. Hospitals reporting surge in respiratory and eye irritation patients. #SmogEmergency",
-            f"Satellite images show intense stubble burning clusters across Punjab borders. AQI standing at {aqi} in {city}. When will this seasonal nightmare end?",
-            f"Green lockdown enforced in several zones of {city} as AQI crosses {aqi}. Schools shifted online for primary grades. #LahoreSmog"
-        ]
-        text = text_options[i % len(text_options)]
+        # Realistic distribution:
+        # i % 5 == 1: Indian domestic context (should be filtered into noise)
+        # i % 5 == 2: Off-topic sports/cricket noise (should be filtered into noise)
+        # other: Valid Punjab air quality post (should pass and be enriched)
+        if i % 5 == 1:
+            text = f"CAQM review meeting in Delhi today: Severe AQI 485 recorded in Noida and Gurugram as stubble burning parali fires peak across Haryana and Punjab border. #DelhiAirPollution #CAQM"
+        elif i % 5 == 2:
+            text = f"Breaking: PCB media announces schedule for Champions Trophy cricket tournament in Lahore. Pitch preparations underway at stadium. #CricketNews"
+        else:
+            text_options = [
+                f"URGENT: Hazardous AQI {aqi} recorded in {city} this afternoon. Particulate PM2.5 levels are 35x WHO limits. Please wear N95 masks! #smog #{city}",
+                f"EPA Anti-smog squad inspected 14 industrial units in {city} today, sealing 3 non-compliant steel mills and issuing heavy fines. #CleanAir #PunjabEPA",
+                f"Air quality in {city} is catastrophic today with AQI reaching {aqi}. Hospitals reporting surge in respiratory and eye irritation patients. #SmogEmergency",
+                f"Satellite images show intense stubble burning clusters across Punjab borders. AQI standing at {aqi} in {city}. When will this seasonal nightmare end?",
+                f"Green lockdown enforced in several zones of {city} as AQI crosses {aqi}. Schools shifted online for primary grades. #LahoreSmog"
+            ]
+            text = text_options[i % len(text_options)]
 
         has_med = (i % 2 == 0)
         attachments = {}

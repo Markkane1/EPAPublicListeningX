@@ -442,7 +442,7 @@
     modal.innerHTML = `
       <div class="xps-modal-box">
         <div class="xps-modal-header">
-          <div class="xps-modal-title">Preview Collected ${state.activeTab.toUpperCase()} (${data.length} items)</div>
+          <div class="xps-modal-title">Preview Collected ${escapeHtml(state.activeTab.toUpperCase())} (${data.length} items)</div>
           <input type="text" class="xps-modal-search" placeholder="Filter rows..." id="xps-modal-filter"/>
           <button class="xps-icon-btn" id="xps-modal-close" style="font-size:18px;">✕</button>
         </div>
@@ -450,7 +450,7 @@
           <table class="xps-table" id="xps-preview-table">
             <thead>
               <tr>
-                ${headers.map(h => `<th>${h}</th>`).join('')}
+                ${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}
               </tr>
             </thead>
             <tbody id="xps-preview-tbody">
@@ -476,6 +476,25 @@
     });
   }
 
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function sanitizeUrl(url) {
+    if (!url) return '#';
+    const s = String(url).trim();
+    if (/^(https?:\/\/|\/)/i.test(s)) {
+      return escapeHtml(s);
+    }
+    return '#';
+  }
+
   function renderTableRows(rows, headers) {
     if (!rows.length) return `<tr><td colspan="${headers.length}" style="text-align:center;padding:24px;">No matching rows found</td></tr>`;
     return rows.slice(0, 100).map(row => `
@@ -483,13 +502,16 @@
         ${headers.map(h => {
           const val = row[h];
           if (h === 'postUrl' || h === 'url') {
-            return `<td><a href="${val}" target="_blank" rel="noopener">Open Link ↗</a></td>`;
+            const safeUrl = sanitizeUrl(val);
+            return `<td><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Open Link ↗</a></td>`;
           }
           if (h === 'authorAvatar' || h === 'avatar') {
-            return val ? `<td><img src="${val}" class="xps-user-avatar"/></td>` : `<td>-</td>`;
+            const safeAvatar = sanitizeUrl(val);
+            return safeAvatar !== '#' ? `<td><img src="${safeAvatar}" class="xps-user-avatar" alt="Avatar"/></td>` : `<td>-</td>`;
           }
           const text = val !== null && val !== undefined ? String(val) : '';
-          return `<td title="${text.replace(/"/g, '&quot;')}">${text}</td>`;
+          const escaped = escapeHtml(text);
+          return `<td title="${escaped}">${escaped}</td>`;
         }).join('')}
       </tr>
     `).join('') + (rows.length > 100 ? `<tr><td colspan="${headers.length}" style="text-align:center;color:#71767b;padding:12px;">Showing first 100 of ${rows.length} rows (all rows will be included in CSV/JSON/Excel exports)</td></tr>` : '');

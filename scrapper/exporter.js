@@ -15,7 +15,11 @@ const XExporter = (() => {
 
   function sanitizeForCsv(val) {
     if (val === null || val === undefined) return '';
-    const str = String(val);
+    let str = String(val);
+    // Neutralize CSV formula injection (CWE-1236)
+    if (/^[\=\+\-\@\t\r]/.test(str)) {
+      str = "'" + str;
+    }
     if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
       return `"${str.replace(/"/g, '""')}"`;
     }
@@ -67,8 +71,11 @@ const XExporter = (() => {
     for (const item of data) {
       table += '<tr>';
       for (const h of headers) {
-        const val = item[h] !== null && item[h] !== undefined ? String(item[h]) : '';
-        
+        let val = item[h] !== null && item[h] !== undefined ? String(item[h]) : '';
+        // Neutralize formula injection
+        if (/^[\=\+\-\@\t\r]/.test(val)) {
+          val = "'" + val;
+        }
         const safeVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         table += `<td>${safeVal}</td>`;
       }
