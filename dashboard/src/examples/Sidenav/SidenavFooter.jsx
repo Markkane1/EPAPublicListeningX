@@ -6,10 +6,13 @@ import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import { useArgonController } from "context";
+import { useAuth } from "context/AuthContext";
 
 function SidenavFooter({ onOpenIngest }) {
   const [controller] = useArgonController();
   const { miniSidenav } = controller || {};
+  const { hasPermission } = useAuth();
+  if (!hasPermission("posts.ingest")) return null;
 
   const handleOpen = () => {
     if (onOpenIngest) {

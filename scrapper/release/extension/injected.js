@@ -20,14 +20,36 @@
     }
   }
 
-  function isTwitterApiUrl(url) {
+  const PUBLIC_SEARCH_MARKERS = [
+    'SearchTimeline',
+    'search/adaptive',
+    'RecentSearch',
+    'search/tweets',
+    'tweets/search'
+  ];
+
+  const REJECTED_PATH_MARKERS = [
+    '/dm/',
+    'direct_message',
+    'directmessage',
+    '/notifications',
+    'notificationstimeline',
+    '/settings'
+  ];
+
+  function requestPath(url) {
+    const hashAt = url.indexOf('#');
+    const noHash = hashAt === -1 ? url : url.slice(0, hashAt);
+    const queryAt = noHash.indexOf('?');
+    return queryAt === -1 ? noHash : noHash.slice(0, queryAt);
+  }
+
+  function isPublicSearchUrl(url) {
     if (!url || typeof url !== 'string') return false;
-    return (
-      url.includes('/graphql/') ||
-      url.includes('/i/api/') ||
-      url.includes('api.twitter.com') ||
-      url.includes('api.x.com')
-    );
+    const path = requestPath(url);
+    const lower = path.toLowerCase();
+    if (REJECTED_PATH_MARKERS.some(marker => lower.includes(marker))) return false;
+    return PUBLIC_SEARCH_MARKERS.some(marker => path.includes(marker));
   }
 
   const originalFetch = window.fetch;
@@ -35,7 +57,7 @@
     const response = await originalFetch.apply(this, args);
     try {
       const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
-      if (isTwitterApiUrl(url)) {
+      if (isPublicSearchUrl(url)) {
         const clone = response.clone();
         clone.json().then(data => {
           emitData(url, data);
@@ -58,7 +80,7 @@
   };
 
   XMLHttpRequest.prototype.send = function () {
-    if (isTwitterApiUrl(this.__scraperUrl)) {
+    if (isPublicSearchUrl(this.__scraperUrl)) {
       this.addEventListener('load', function () {
         try {
           if (this.responseText && this.status >= 200 && this.status < 300) {

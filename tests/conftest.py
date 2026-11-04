@@ -7,6 +7,13 @@ import time
 import socketserver
 import pytest
 
+TEST_TURNSTILE_TOKEN = "unit-test-turnstile-ok"
+TEST_ADMIN_PASSWORD = "UnitTestAdmin#2026"
+TEST_ANALYST_PASSWORD = "UnitTestAnalyst#2026"
+TEST_AUDITOR_PASSWORD = "UnitTestAuditor#2026"
+TEST_VIEWER_PASSWORD = "UnitTestViewer#2026"
+os.environ["EPA_TURNSTILE_TEST_TOKEN"] = TEST_TURNSTILE_TOKEN
+
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
@@ -32,10 +39,10 @@ def temp_db(monkeypatch):
     test_db_path = temp_file.name
     temp_file.close()
 
-    monkeypatch.setitem(database.DEFAULT_USERS_DATA[0], "password", "EPAadmin2026!")
-    monkeypatch.setitem(database.DEFAULT_USERS_DATA[1], "password", "EPAanalyst2026!")
-    monkeypatch.setitem(database.DEFAULT_USERS_DATA[2], "password", "EPAauditor2026!")
-    monkeypatch.setitem(database.DEFAULT_USERS_DATA[3], "password", "EPAviewer2026!")
+    monkeypatch.setitem(database.DEFAULT_USERS_DATA[0], "password", TEST_ADMIN_PASSWORD)
+    monkeypatch.setitem(database.DEFAULT_USERS_DATA[1], "password", TEST_ANALYST_PASSWORD)
+    monkeypatch.setitem(database.DEFAULT_USERS_DATA[2], "password", TEST_AUDITOR_PASSWORD)
+    monkeypatch.setitem(database.DEFAULT_USERS_DATA[3], "password", TEST_VIEWER_PASSWORD)
 
     orig_db_path = database.DB_PATH
     monkeypatch.setattr(database, "DB_PATH", test_db_path)
@@ -140,10 +147,10 @@ def auth_tokens(temp_db):
     """
     Returns valid authenticated sessions for all 4 default roles.
     """
-    res_admin = service.auth_login_service("admin", "EPAadmin2026!", turnstile_token="DEMO_BYPASS")
-    res_analyst = service.auth_login_service("analyst", "EPAanalyst2026!", turnstile_token="DEMO_BYPASS")
-    res_auditor = service.auth_login_service("auditor", "EPAauditor2026!", turnstile_token="DEMO_BYPASS")
-    res_viewer = service.auth_login_service("viewer", "EPAviewer2026!", turnstile_token="DEMO_BYPASS")
+    res_admin = service.auth_login_service("admin", TEST_ADMIN_PASSWORD, turnstile_token=TEST_TURNSTILE_TOKEN)
+    res_analyst = service.auth_login_service("analyst", TEST_ANALYST_PASSWORD, turnstile_token=TEST_TURNSTILE_TOKEN)
+    res_auditor = service.auth_login_service("auditor", TEST_AUDITOR_PASSWORD, turnstile_token=TEST_TURNSTILE_TOKEN)
+    res_viewer = service.auth_login_service("viewer", TEST_VIEWER_PASSWORD, turnstile_token=TEST_TURNSTILE_TOKEN)
 
     return {
         "admin": res_admin["token"],

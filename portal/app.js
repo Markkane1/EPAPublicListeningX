@@ -350,7 +350,9 @@
 
   function init() {
     
-    if (window.PRELOADED_CLEANED_POSTS && Array.isArray(window.PRELOADED_CLEANED_POSTS)) {
+    if (Array.isArray(window.EPA_POSTS_DATA)) {
+      state.cleanedPosts = window.EPA_POSTS_DATA;
+    } else if (Array.isArray(window.PRELOADED_CLEANED_POSTS)) {
       state.cleanedPosts = window.PRELOADED_CLEANED_POSTS;
     }
     if (window.PRELOADED_AUDIT_LOG && Array.isArray(window.PRELOADED_AUDIT_LOG)) {
@@ -498,15 +500,22 @@
     const dupCount = state.auditLog.filter(a => a.status === "DUPLICATE_MERGED").length;
     const remCount = state.auditLog.filter(a => a.status === "REMOVED").length;
 
-    const aqiPosts = state.cleanedPosts.filter(p => p.aqi_value);
-    const peakAqi = aqiPosts.length > 0 ? Math.max(...aqiPosts.map(p => p.aqi_value)) : 606;
-    const avgAqi = aqiPosts.length > 0 ? (aqiPosts.reduce((acc, p) => acc + p.aqi_value, 0) / aqiPosts.length).toFixed(1) : 361.1;
+    const aqiValues = state.cleanedPosts.map((p) => {
+      const raw = p.aqi_value;
+      const n = typeof raw === "number" ? raw : Number(raw);
+      return Number.isFinite(n) ? n : null;
+    }).filter((n) => n !== null);
+    const hasAqi = aqiValues.length > 0;
+    const peakAqi = hasAqi ? Math.max(...aqiValues) : "—";
+    const avgAqi = hasAqi ? (aqiValues.reduce((acc, n) => acc + n, 0) / aqiValues.length).toFixed(1) : "—";
 
     const cityMap = {};
     state.cleanedPosts.forEach(p => {
+      if (!p.city_detected) return;
       cityMap[p.city_detected] = (cityMap[p.city_detected] || 0) + 1;
     });
-    const topCity = Object.keys(cityMap).sort((a, b) => cityMap[b] - cityMap[a])[0] || "Lahore";
+    const cityNames = Object.keys(cityMap);
+    const topCity = cityNames.sort((a, b) => cityMap[b] - cityMap[a])[0] || "—";
 
     setElementText("kpi-total-scraped", totalScraped);
     setElementText("kpi-clean-posts", cleanCount);
@@ -514,6 +523,25 @@
     setElementText("kpi-peak-aqi", peakAqi);
     setElementText("kpi-avg-aqi", avgAqi);
     setElementText("kpi-top-city", topCity);
+    setAqiBadge("kpi-peak-badge", hasAqi, typeof peakAqi === "number" && peakAqi >= 301);
+    setAqiBadge("kpi-avg-badge", hasAqi, typeof avgAqi === "string" && Number(avgAqi) >= 301);
+  }
+
+  function setAqiBadge(id, hasAqi, hazardous) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!hasAqi) {
+      el.textContent = "No AQI yet";
+      el.className = "kpi-badge kpi-badge-info";
+      return;
+    }
+    if (hazardous) {
+      el.textContent = "Hazardous";
+      el.className = "kpi-badge kpi-badge-danger";
+      return;
+    }
+    el.textContent = "Recorded";
+    el.className = "kpi-badge kpi-badge-info";
   }
 
   function setElementText(id, text) {

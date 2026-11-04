@@ -32,6 +32,7 @@ import ViewAgendaRoundedIcon from '@mui/icons-material/ViewAgendaRounded';
 import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
 
 import { useArgonController } from 'context';
+import { useAuth } from 'context/AuthContext';
 import { searchXApi, getQueryVersions } from '../../services/api';
 import PostCard from 'components/PostCard';
 
@@ -61,6 +62,8 @@ function SearchView({
 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
+  const { hasPermission } = useAuth();
+  const canSearchLive = hasPermission('posts.search_x');
 
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -87,6 +90,7 @@ function SearchView({
   const handleSearch = useCallback(async (overrideTerm) => {
     const term = (typeof overrideTerm === 'string' ? overrideTerm : keyword).trim();
     if (!term) return;
+    if (searchMode === 'live' && !canSearchLive) return;
 
     setIsFetching(true);
     setFeedback(null);
@@ -160,7 +164,7 @@ function SearchView({
     } finally {
       setIsFetching(false);
     }
-  }, [batchLimit, keyword, onFetchSuccess, posts, searchMode]);
+  }, [batchLimit, canSearchLive, keyword, onFetchSuccess, posts, searchMode]);
 
   useEffect(() => {
     const q = searchParams.get('q') || searchParams.get('keyword');
@@ -278,25 +282,27 @@ function SearchView({
                 Database ({posts.length})
               </Button>
 
-              <Button
-                size="small"
-                onClick={() => setSearchMode('live')}
-                startIcon={<LanguageRoundedIcon sx={{ fontSize: '15px !important' }} />}
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  borderRadius: '9999px',
-                  px: 1.8,
-                  py: 0.4,
-                  backgroundColor: searchMode === 'live' ? '#5e72e4' : 'transparent',
-                  color: searchMode === 'live' ? '#ffffff' : '#64748b',
-                  boxShadow: searchMode === 'live' ? '0 2px 6px rgba(94, 114, 228, 0.35)' : 'none',
-                  '&:hover': { backgroundColor: searchMode === 'live' ? '#4b5fcc' : 'transparent' },
-                }}
-              >
-                Live X.com API
-              </Button>
+              {canSearchLive && (
+                <Button
+                  size="small"
+                  onClick={() => setSearchMode('live')}
+                  startIcon={<LanguageRoundedIcon sx={{ fontSize: '15px !important' }} />}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    borderRadius: '9999px',
+                    px: 1.8,
+                    py: 0.4,
+                    backgroundColor: searchMode === 'live' ? '#5e72e4' : 'transparent',
+                    color: searchMode === 'live' ? '#ffffff' : '#64748b',
+                    boxShadow: searchMode === 'live' ? '0 2px 6px rgba(94, 114, 228, 0.35)' : 'none',
+                    '&:hover': { backgroundColor: searchMode === 'live' ? '#4b5fcc' : 'transparent' },
+                  }}
+                >
+                  Live X.com API
+                </Button>
+              )}
             </Box>
 
             {searchMode === 'live' && (
@@ -399,6 +405,7 @@ function SearchView({
             </IconButton>
           )}
 
+          {(searchMode !== 'live' || canSearchLive) && (
           <Button
             variant="contained"
             onClick={() => handleSearch()}
@@ -421,6 +428,7 @@ function SearchView({
           >
             {isFetching ? <CircularProgress size={16} color="inherit" /> : 'Search'}
           </Button>
+          )}
         </Box>
 
         <Box

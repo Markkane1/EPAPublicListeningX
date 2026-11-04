@@ -123,9 +123,11 @@ npm run build
 ```
 
 ### 5.3. Default Role Credentials
-| Role | Username | Default Password | Clearance Level |
+There is no published password. Set `DEFAULT_ADMIN_PASSWORD`, `DEFAULT_ANALYST_PASSWORD`, `DEFAULT_AUDITOR_PASSWORD`, and `DEFAULT_VIEWER_PASSWORD` in `.env` before the first seed. Each value must be unique and at least 8 characters. Placeholder values and any previously published password are rejected. When a seed password is missing or rejected, the server generates one and appends it to `data/bootstrap-credentials.txt` on the server host. That file is gitignored. An existing database whose hash still matches a retired published password is rehashed the same way on startup, and that account's sessions are deleted.
+
+| Role | Username | Password source | Clearance Level |
 | :--- | :--- | :--- | :--- |
-| **Super Administrator** | `admin` | `EPAadmin2026!` | Full administrative clearance across all 20 permissions |
-| **Environmental Analyst** | `analyst` | `EPAanalyst2026!` | Intelligence feeds, analytics, deduplication, noise review, export |
-| **Data Operator / Auditor** | `auditor` | `EPAauditor2026!` | Operational access to noise review, post exclusion/restoration |
-| **Read-Only Viewer** | `viewer` | `EPAviewer2026!` | Read-only dashboards and analytical summaries |
+| **Super Administrator** | `admin` | `.env` or the bootstrap file | Full administrative clearance across all 20 permissions |
+| **Environmental Analyst** | `analyst` | `.env` or the bootstrap file | Intelligence feeds, analytics, deduplication, noise review, export |
+| **Data Operator / Auditor** | `auditor` | `.env` or the bootstrap file | Operational access to noise review, post exclusion/restoration |
+| **Read-Only Viewer** | `viewer` | `.env` or the bootstrap file | Read-only dashboards and analytical summaries |

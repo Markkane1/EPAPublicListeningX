@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime, timezone, timedelta
 from backend import database
+from tests.conftest import TEST_ADMIN_PASSWORD
 
 class TestDatabaseUnit:
     def test_schema_and_permissions_initialization(self, temp_db):
@@ -37,7 +38,7 @@ class TestDatabaseUnit:
         assert database._verify_password(None, pwd_hash, salt) is False
 
     def test_session_lifecycle(self, temp_db):
-        user, _ = database.authenticate_user_db("admin", "EPAadmin2026!")
+        user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         assert user is not None
 
         token = database.create_auth_session_db(user["id"])
@@ -53,7 +54,7 @@ class TestDatabaseUnit:
         assert database.validate_auth_token_db(token) is None
 
     def test_expired_session_rejected(self, temp_db):
-        user, _ = database.authenticate_user_db("admin", "EPAadmin2026!")
+        user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         assert user is not None
         token = database.create_auth_session_db(user["id"])
         past_date = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
@@ -66,6 +67,8 @@ class TestDatabaseUnit:
     def test_user_crud_and_validation(self, temp_db):
         roles = database.get_roles_list_db()
         viewer_role = next(r for r in roles if r["name"] == "viewer")
+        admin_user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
+        admin_id = admin_user["id"]
 
         # Create user
         new_user = database.create_user_db(
@@ -74,7 +77,8 @@ class TestDatabaseUnit:
             password="UnitPassword123!",
             full_name="Unit Tester",
             role_id=viewer_role["id"],
-            is_active=1
+            is_active=1,
+            current_user_id=admin_id,
         )
         assert new_user["username"] == "unit_test_user"
         assert new_user["fullName"] == "Unit Tester"
@@ -87,7 +91,8 @@ class TestDatabaseUnit:
                 email="short@epa.punjab.gov.pk",
                 password="short",
                 full_name="Short Pwd",
-                role_id=viewer_role["id"]
+                role_id=viewer_role["id"],
+                current_user_id=admin_id,
             )
 
         # Duplicate username error
@@ -97,7 +102,8 @@ class TestDatabaseUnit:
                 email="other@epa.punjab.gov.pk",
                 password="ValidPassword123!",
                 full_name="Duplicate",
-                role_id=viewer_role["id"]
+                role_id=viewer_role["id"],
+                current_user_id=admin_id,
             )
 
         # Duplicate email error
@@ -107,7 +113,8 @@ class TestDatabaseUnit:
                 email="unit@epa.punjab.gov.pk",
                 password="ValidPassword123!",
                 full_name="Duplicate",
-                role_id=viewer_role["id"]
+                role_id=viewer_role["id"],
+                current_user_id=admin_id,
             )
 
         # Update user
@@ -126,7 +133,7 @@ class TestDatabaseUnit:
         assert "inactive" in err.lower() or "disabled" in err.lower() or "deactivated" in err.lower()
 
         # Delete user
-        admin_user, _ = database.authenticate_user_db("admin", "EPAadmin2026!")
+        admin_user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         del_res = database.delete_user_db(user_id, current_user_id=admin_user["id"])
         assert del_res["success"] is True
         assert database.get_user_by_id_db(user_id) is None
@@ -149,12 +156,14 @@ class TestDatabaseUnit:
         assert custom_role["name"] == "test_temp_role"
 
         # Assign user to custom role
+        admin_user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         usr = database.create_user_db(
             username="temp_role_user",
             email="temp_role@epa.gov.pk",
             password="ValidPassword123!",
             full_name="Temp Role User",
-            role_id=custom_role["id"]
+            role_id=custom_role["id"],
+            current_user_id=admin_user["id"],
         )
 
         # Deletion blocked while users are assigned
@@ -162,7 +171,7 @@ class TestDatabaseUnit:
             database.delete_role_db(custom_role["id"])
 
         # Delete user first, then role deletion succeeds
-        admin_user, _ = database.authenticate_user_db("admin", "EPAadmin2026!")
+        admin_user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         database.delete_user_db(usr["id"], current_user_id=admin_user["id"])
         del_role_res = database.delete_role_db(custom_role["id"])
         assert del_role_res["success"] is True
@@ -291,10 +300,13 @@ class TestDatabaseUnit:
 
     def test_turnstile_verification_tokens(self, temp_db):
         ok, _ = database.verify_turnstile_token("DEMO_BYPASS")
-        assert ok is True
+        assert ok is False
 
         ok, _ = database.verify_turnstile_token("TEST_BYPASS")
-        assert ok is True
+        assert ok is False
+
+        ok, _ = database.verify_turnstile_token("XXXX.DUMMY.TOKEN.XXXX")
+        assert ok is False
 
         ok, err = database.verify_turnstile_token("")
         assert ok is False

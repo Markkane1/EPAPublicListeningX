@@ -9,6 +9,7 @@ import { ArgonControllerProvider } from './context';
 
 import './assets/css/nucleo-icons.css';
 import './assets/css/nucleo-svg.css';
+import './reduced-motion.css';
 
 import App from './App';
 

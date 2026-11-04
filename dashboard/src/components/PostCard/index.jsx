@@ -62,9 +62,9 @@ function getSeverityBadgeStyle(code) {
     case 'sensitive':
       return { bg: 'linear-gradient(310deg, #ffd600 0%, #be9b00 100%)', color: '#212529', label: 'Sensitive' };
     case 'moderate':
-      return { bg: 'linear-gradient(310deg, #11cdef 0%, #1171ef 100%)', color: '#fff', label: 'Moderate' };
+      return { bg: 'linear-gradient(310deg, #0b6a78 0%, #1171ef 100%)', color: '#fff', label: 'Moderate' };
     case 'good':
-      return { bg: 'linear-gradient(310deg, #2dce89 0%, #2dcecc 100%)', color: '#fff', label: 'Good' };
+      return { bg: 'linear-gradient(310deg, #0b5d3b 0%, #0e6a68 100%)', color: '#fff', label: 'Good' };
     default:
       return { bg: '#8392ab', color: '#fff', label: 'Alert' };
   }
@@ -420,7 +420,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                 px: 1,
                 py: 0.25,
                 borderRadius: '5px',
-                background: 'linear-gradient(310deg, #11cdef 0%, #1171ef 100%)',
+                background: 'linear-gradient(310deg, #0b6a78 0%, #1171ef 100%)',
                 color: '#ffffff',
                 fontSize: '10.5px',
                 fontWeight: 700,

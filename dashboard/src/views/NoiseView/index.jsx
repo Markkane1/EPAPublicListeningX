@@ -63,6 +63,7 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import { isVideoUrl } from '../../utils/media';
 
 import { useArgonController } from 'context';
+import { useAuth } from 'context/AuthContext';
 import DetailedStatisticsCard from 'examples/Cards/StatisticsCards/DetailedStatisticsCard';
 
 import {
@@ -394,7 +395,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 py: 0.25,
                 borderRadius: '5px',
                 backgroundColor: '#e6f8f0',
-                color: '#2dce89',
+                color: '#0b5d3b',
                 fontSize: '10.5px',
                 fontWeight: 700,
                 border: '1px solid #bbf7d0',
@@ -781,6 +782,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
         </Box>
 
         {!isRestored ? (
+          onRestoreClick ? (
           <Button
             variant="contained"
             size="small"
@@ -791,33 +793,35 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
               textTransform: 'none',
               fontWeight: 700,
               fontSize: '11.5px',
-              background: 'linear-gradient(310deg, #2dce89 0%, #2dcecc 100%)',
+              background: 'linear-gradient(310deg, #0b5d3b 0%, #0e6a68 100%)',
               color: '#fff',
               boxShadow: '0 2px 8px rgba(45, 206, 137, 0.35)',
               px: 1.5,
               py: 0.5,
               whiteSpace: 'nowrap',
               '&:hover': {
-                background: 'linear-gradient(310deg, #26af74 0%, #25b3b1 100%)',
+                background: 'linear-gradient(310deg, #094a2e 0%, #0c5553 100%)',
               },
             }}
           >
             Mark Relevant & Learn
           </Button>
+          ) : null
         ) : (
           <Box display="flex" alignItems="center" gap={1}>
             <Chip
-              icon={<CheckCircleRoundedIcon sx={{ fontSize: '14px !important', color: '#2dce89 !important' }} />}
+              icon={<CheckCircleRoundedIcon sx={{ fontSize: '14px !important', color: '#0b5d3b !important' }} />}
               label="Salvaged to Feed"
               size="small"
               sx={{
                 backgroundColor: '#e6f8f0',
-                color: '#2dce89',
+                color: '#0b5d3b',
                 fontWeight: 700,
                 fontSize: '11px',
                 border: '1px solid #bbf7d0',
               }}
             />
+            {onExcludeClick ? (
             <Button
               variant="outlined"
               color="error"
@@ -843,6 +847,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
             >
               Exclude as Noise
             </Button>
+            ) : null}
           </Box>
         )}
       </Box>
@@ -888,6 +893,8 @@ export const NOISE_QUICK_SORTS = [
 function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcluded, onImageClick }) {
   const [controller] = useArgonController();
   const { miniSidenav, darkMode } = controller || {};
+  const { hasPermission } = useAuth();
+  const canManageNoise = hasPermission('noise.manage');
 
   const [activeTab, setActiveTab] = useState(0); 
   const [noisePostsList, setNoisePostsList] = useState(propNoisePosts);
@@ -1284,18 +1291,9 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         }
       });
 
-      let res;
-      try {
-        res = await restoreNoisePost(selectedPost.id, rulesToApply);
-      } catch (backendErr) {
-        console.warn('Backend restore note, falling back to local state restoration:', backendErr);
-        res = {
-          success: true,
-          restoredPost: {
-            ...selectedPost,
-            source: 'noise_restored',
-          },
-        };
+      const res = await restoreNoisePost(selectedPost.id, rulesToApply);
+      if (!res || res.success === false) {
+        throw new Error((res && res.error) || 'Restore did not succeed.');
       }
 
       setFeedbackAlert({
@@ -1505,6 +1503,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
           >
             Refresh
           </Button>
+          {canManageNoise && (
           <Button
             variant="contained"
             size="small"
@@ -1515,13 +1514,14 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '13px',
-              background: 'linear-gradient(310deg, #11cdef 0%, #1171ef 100%)',
+              background: 'linear-gradient(310deg, #0b6a78 0%, #1171ef 100%)',
               color: '#fff',
               boxShadow: '0 4px 10px rgba(17, 205, 239, 0.3)',
             }}
           >
             + Add Learned Rule
           </Button>
+          )}
         </Box>
       </Box>
 
@@ -2175,8 +2175,8 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                     post={post}
                     isRestored={activeTab === 2 || post.status === 'RESTORED'}
                     onImageClick={onImageClick}
-                    onRestoreClick={() => handleOpenRestoreDialog(post)}
-                    onExcludeClick={() => handleOpenExcludeDialog(post)}
+                    onRestoreClick={canManageNoise ? () => handleOpenRestoreDialog(post) : undefined}
+                    onExcludeClick={canManageNoise ? () => handleOpenExcludeDialog(post) : undefined}
                   />
                 ))}
               </Box>
@@ -2220,6 +2220,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 These explainable heuristic rules were induced from operator curation. They are applied immediately across all future ingestion runs without AI.
               </Typography>
             </Box>
+            {canManageNoise && (
             <Button
               variant="outlined"
               size="small"
@@ -2239,6 +2240,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
             >
               + Add Rule Manually
             </Button>
+            )}
           </Box>
 
           {learnedRulesList.length === 0 ? (
@@ -2294,7 +2296,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                                 : (darkMode ? 'rgba(251, 99, 64, 0.2)' : '#fef3e2'),
                             color:
                               rule.ruleType === 'author_whitelist'
-                                ? '#2dce89'
+                                ? (darkMode ? '#4ade80' : '#0b5d3b')
                                 : rule.ruleType === 'aq_keyword'
                                 ? '#38bdf8'
                                 : rule.ruleType === 'geo_keyword'
@@ -2313,6 +2315,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                         {rule.hitCount || 0} salvaged
                       </TableCell>
                       <TableCell sx={{ borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
+                        {canManageNoise ? (
                         <FormControlLabel
                           control={
                             <Switch
@@ -2327,15 +2330,27 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                               sx={{
                                 fontSize: '12px',
                                 fontWeight: 600,
-                                color: rule.isActive ? '#2dce89' : (darkMode ? '#64748b' : '#8392ab'),
+                                color: rule.isActive ? (darkMode ? '#4ade80' : '#0b5d3b') : (darkMode ? '#64748b' : '#8392ab'),
                               }}
                             >
                               {rule.isActive ? 'Active' : 'Disabled'}
                             </Typography>
                           }
                         />
+                        ) : (
+                          <Typography
+                            sx={{
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              color: rule.isActive ? (darkMode ? '#4ade80' : '#0b5d3b') : (darkMode ? '#64748b' : '#8392ab'),
+                            }}
+                          >
+                            {rule.isActive ? 'Active' : 'Disabled'}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #edf2f7' }}>
+                        {canManageNoise && (
                         <Tooltip title="Delete Rule">
                           <IconButton
                             size="small"
@@ -2345,6 +2360,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                             <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
                           </IconButton>
                         </Tooltip>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -2378,7 +2394,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                 height: 38,
                 borderRadius: '50%',
                 backgroundColor: darkMode ? 'rgba(45, 206, 137, 0.2)' : '#e6f8f0',
-                color: '#2dce89',
+                color: darkMode ? '#4ade80' : '#0b5d3b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2562,13 +2578,14 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
           <Button onClick={() => setRestoreModalOpen(false)} disabled={isRestoring} sx={{ textTransform: 'none', color: darkMode ? '#94a3b8' : undefined }}>
             Cancel
           </Button>
+          {canManageNoise && (
           <Button
             variant="contained"
             onClick={handleConfirmRestore}
             disabled={isRestoring}
             startIcon={isRestoring ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeRoundedIcon />}
             sx={{
-              background: 'linear-gradient(310deg, #2dce89 0%, #2dcecc 100%)',
+              background: 'linear-gradient(310deg, #0b5d3b 0%, #0e6a68 100%)',
               color: '#fff',
               textTransform: 'none',
               fontWeight: 700,
@@ -2577,6 +2594,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
           >
             {isRestoring ? 'Restoring & Learning...' : `Confirm & Restore (+${selectedRuleIndices.size} Rules)`}
           </Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -2843,7 +2861,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
             variant="contained"
             onClick={handleAddManualRule}
             sx={{
-              background: 'linear-gradient(310deg, #11cdef 0%, #1171ef 100%)',
+              background: 'linear-gradient(310deg, #0b6a78 0%, #1171ef 100%)',
               color: '#fff',
               textTransform: 'none',
               fontWeight: 700,

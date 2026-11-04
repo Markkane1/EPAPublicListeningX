@@ -20,10 +20,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import brand from 'assets/images/logo-epa-mark.png';
 import brandDark from 'assets/images/logo-epa-mark.png';
 
-import initialCleanedPosts from './data/cleaned_epa_posts.json';
-import initialAuditLog from './data/cleaning_audit.json';
-import initialNoisePosts from './data/initial_noise_posts.json';
-
 import DashboardView from './views/DashboardView';
 import SearchView from './views/SearchView';
 import PostsView from './views/PostsView';
@@ -39,16 +35,19 @@ import Lightbox from './components/Lightbox';
 import IngestModal from './components/IngestModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getRoutes } from './routes';
-import { getSettings, getPosts, getNoisePosts, ingestPostsBatch, excludePost } from './services/api';
+import { getSettings, getPosts, getNoisePosts, getAuditLogs, ingestPostsBatch, excludePost } from './services/api';
 
 function AppContent() {
   const [controller] = useArgonController();
   const { sidenavColor, darkSidenav, darkMode } = controller;
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, hasPermission } = useAuth();
+  const canIngest = hasPermission('posts.ingest');
+  const canExclude = hasPermission('posts.exclude');
 
-  const [posts, setPosts] = useState(initialCleanedPosts);
-  const [auditLog, setAuditLog] = useState(initialAuditLog);
-  const [noisePosts, setNoisePosts] = useState(initialNoisePosts);
+  const [posts, setPosts] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [noisePosts, setNoisePosts] = useState([]);
+  const [loadErrors, setLoadErrors] = useState([]);
   const [dataSource, setDataSource] = useState('file');
 
   const [lightbox, setLightbox] = useState({
@@ -68,41 +67,64 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
   }, [location.pathname]);
 
   useEffect(() => {
-    async function initSync() {
-      try {
-        const [settingsData, dbPosts, dbNoise] = await Promise.all([
-          getSettings().catch(() => null),
-          getPosts().catch(() => null),
-          getNoisePosts({ status: 'EXCLUDED', limit: 250 }).catch(() => null)
-        ]);
+    if (!isAuthenticated) return undefined;
+    let cancelled = false;
 
-        if (settingsData && settingsData.data_source) {
-          setDataSource(settingsData.data_source);
-        }
-        if (dbPosts && Array.isArray(dbPosts) && dbPosts.length > 0) {
-          setPosts(dbPosts);
-        }
-        if (dbNoise && Array.isArray(dbNoise) && dbNoise.length > 0) {
-          setNoisePosts(dbNoise);
-        }
-      } catch (err) {
-        console.warn('Backend sync note: operating with bundled dataset.', err);
+    async function initSync() {
+      const errors = [];
+      const [settingsResult, postsResult, noiseResult, auditResult] = await Promise.all([
+        getSettings().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
+        getPosts().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
+        getNoisePosts({ status: 'EXCLUDED', limit: 250 }).then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
+        getAuditLogs().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
+      ]);
+      if (cancelled) return;
+
+      if (settingsResult.ok && settingsResult.value && settingsResult.value.data_source) {
+        setDataSource(settingsResult.value.data_source);
       }
+
+      if (postsResult.ok && Array.isArray(postsResult.value)) {
+        setPosts(postsResult.value);
+      } else {
+        setPosts([]);
+        errors.push('Verified posts failed to load. Refresh the page after the API is reachable.');
+      }
+
+      if (noiseResult.ok && Array.isArray(noiseResult.value)) {
+        setNoisePosts(noiseResult.value);
+      } else {
+        setNoisePosts([]);
+        errors.push('Noise posts failed to load. Refresh the page after the API is reachable.');
+      }
+
+      if (auditResult.ok && Array.isArray(auditResult.value)) {
+        setAuditLog(auditResult.value);
+      } else {
+        setAuditLog([]);
+        errors.push('The audit log failed to load. Refresh the page after the API is reachable.');
+      }
+
+      setLoadErrors(errors);
     }
-    if (isAuthenticated) {
-      initSync();
-    }
+
+    initSync();
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!canIngest) return undefined;
     const handleOpenModal = () => setIsIngestOpen(true);
     window.addEventListener('open-ingest-modal', handleOpenModal);
     return () => window.removeEventListener('open-ingest-modal', handleOpenModal);
-  }, []);
+  }, [canIngest]);
 
   const handleOpenLightbox = (images, index) => {
     setLightbox({ images, activeIndex: index });
@@ -212,7 +234,13 @@ function AppContent() {
       />
 
       <DashboardLayout>
-        <DashboardNavbar dataSource={dataSource} />
+        <DashboardNavbar dataSource={dataSource} posts={posts} />
+
+        {loadErrors.length > 0 && (
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+            {loadErrors.join(' ')}
+          </Alert>
+        )}
 
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -280,7 +308,7 @@ function AppContent() {
                       dataSource={dataSource}
                       onImageClick={handleOpenLightbox}
                       onNavigateSettings={() => navigate('/settings')}
-                      onExcludePost={handleExcludeFromVerified}
+                      onExcludePost={canExclude ? handleExcludeFromVerified : undefined}
                       onFetchSuccess={(res) => {
                         if (res.allPosts && res.allPosts.length > 0) {
                           setPosts(res.allPosts);
@@ -388,16 +416,30 @@ function AppContent() {
                       onReloadFromDb={async () => {
                         try {
                           const freshPosts = await getPosts();
-                          if (freshPosts && freshPosts.length > 0) {
-                            setPosts(freshPosts);
+                          if (!Array.isArray(freshPosts)) {
+                            setPosts([]);
                             setSnackbar({
                               open: true,
-                              message: `Reloaded ${freshPosts.length} verified posts from SQLite database!`,
-                              severity: 'success'
+                              message: 'Verified posts failed to load. Refresh the page after the API is reachable.',
+                              severity: 'error'
                             });
+                            return;
                           }
+                          setPosts(freshPosts);
+                          setSnackbar({
+                            open: true,
+                            message: freshPosts.length
+                              ? `Reloaded ${freshPosts.length} verified posts from SQLite database!`
+                              : 'Reloaded verified posts. The database returned none.',
+                            severity: 'success'
+                          });
                         } catch (e) {
-                          setSnackbar({ open: true, message: `Failed to reload from DB: ${e.message}`, severity: 'error' });
+                          setPosts([]);
+                          setSnackbar({
+                            open: true,
+                            message: `Verified posts failed to load. Refresh the page after the API is reachable. ${e.message}`,
+                            severity: 'error'
+                          });
                         }
                       }}
                     />
@@ -426,12 +468,14 @@ function AppContent() {
             onNext={handleNextLightbox}
           />
 
-          <IngestModal
-            open={isIngestOpen}
-            onClose={() => setIsIngestOpen(false)}
-            currentPosts={posts}
-            onIngestSuccess={handleIngestSuccess}
-          />
+          {canIngest && (
+            <IngestModal
+              open={isIngestOpen}
+              onClose={() => setIsIngestOpen(false)}
+              currentPosts={posts}
+              onIngestSuccess={handleIngestSuccess}
+            />
+          )}
 
       <Snackbar
         open={snackbar.open}

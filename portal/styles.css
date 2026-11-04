@@ -879,8 +879,9 @@ body {
 
 .lightbox-close {
   position: absolute;
-  top: -2.5rem;
-  right: 0;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
   background: transparent;
   border: none;
   color: #fff;
@@ -892,6 +893,7 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 2;
   background: rgba(255, 255, 255, 0.15);
   color: white;
   border: none;
@@ -905,8 +907,8 @@ body {
   font-size: 1.2rem;
 }
 .lightbox-nav-btn:hover { background: rgba(255, 255, 255, 0.3); }
-.lightbox-prev { left: -3.5rem; }
-.lightbox-next { right: -3.5rem; }
+.lightbox-prev { left: 16px; }
+.lightbox-next { right: 16px; }
 
 
 .empty-state {
@@ -919,6 +921,17 @@ body {
   margin-bottom: 1rem;
 }
 
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 @media (max-width: 768px) {
   .portal-container { padding: 1rem; }

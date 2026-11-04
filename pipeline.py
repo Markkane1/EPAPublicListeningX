@@ -71,7 +71,6 @@ INDIAN_DOMESTIC_PATTERNS = [
     (r'\bjalandhar\b', "Jalandhar (Indian Punjab)"),
     (r'\baap punjab\b', "Aam Aadmi Party Punjab (India)"),
     (r'\baamaadmiparty\b', "Aam Aadmi Party (India)"),
-    (r'\baap\b', "Aam Aadmi Party (India)"),
     (r'\bbjp\b', "Bharatiya Janata Party politics"),
     (r'\bdiwali\b', "Diwali firecracker pollution debates"),
     (r'\bcrackers\b', "Diwali firecracker debates"),
@@ -403,6 +402,51 @@ def enrich_post(p: dict) -> dict:
     })
     return enriched
 
+def _as_count(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+def _media_urls(post):
+    raw = post.get("mediaUrls")
+    if raw is None:
+        raw = post.get("media_urls") or []
+    if isinstance(raw, str):
+        stripped = raw.strip()
+        if stripped.startswith("["):
+            try:
+                parsed = json.loads(stripped)
+                raw = parsed if isinstance(parsed, list) else []
+            except json.JSONDecodeError:
+                raw = [part.strip() for part in raw.split(";") if part.strip()]
+        else:
+            raw = [part.strip() for part in raw.split(";") if part.strip()]
+    if not isinstance(raw, list):
+        return []
+    return [item.strip() for item in raw if isinstance(item, str) and item.strip()]
+
+def _merge_engagement(primary, incoming):
+    """Keep the higher engagement counts and the union of media URLs."""
+    merged = []
+    seen = set()
+    for url in _media_urls(primary) + _media_urls(incoming):
+        if url not in seen:
+            seen.add(url)
+            merged.append(url)
+    primary["mediaUrls"] = merged
+    primary["media_count"] = len(merged)
+    primary["has_media"] = bool(merged)
+    for metric in ("likes", "retweets", "replies", "quotes", "views", "bookmarks"):
+        primary[metric] = max(_as_count(primary.get(metric)), _as_count(incoming.get(metric)))
+    primary["total_engagement"] = (
+        _as_count(primary.get("likes"))
+        + _as_count(primary.get("retweets")) * 2
+        + _as_count(primary.get("replies")) * 2
+        + _as_count(primary.get("quotes")) * 2
+    )
+    return primary
+
 def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts: list = None, query_constraints: dict = None) -> tuple:
     """
     Processes raw posts list, applies filtering, deduplication against existing database posts,
@@ -428,12 +472,22 @@ def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts:
     # Initialize seen IDs and normalized text mapping from existing DB posts
     seen_ids = set()
     seen_normalized_texts = {}
+    id_index = {}
+    saved_ids = set()
+
+    def queue_for_save(post):
+        sid = str(post.get("id") or post.get("clean_id") or "").strip()
+        if not sid or sid in saved_ids:
+            return
+        saved_ids.add(sid)
+        valid_posts.append(post)
 
     if existing_posts:
         for ep in existing_posts:
             eid = str(ep.get('id') or ep.get('clean_id') or '').strip()
             if eid:
                 seen_ids.add(eid)
+                id_index[eid] = ep
             txt = ep.get('text') or ''
             norm = normalize_text_for_dedup(txt)
             if len(norm) > 15:
@@ -509,7 +563,11 @@ def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts:
         is_trusted_author = handle in learned_authors
 
         # 1. Exact ID Deduplication (checks both batch and existing DB records)
-        if pid in seen_ids:
+        if pid and pid in seen_ids:
+            primary = id_index.get(pid)
+            if primary is not None:
+                _merge_engagement(primary, p)
+                queue_for_save(primary)
             audit_log.append({
                 "index": idx,
                 "id": pid,
@@ -616,17 +674,8 @@ def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts:
         norm_text = normalize_text_for_dedup(text)
         if len(norm_text) > 15 and norm_text in seen_normalized_texts:
             primary_post = seen_normalized_texts[norm_text]
-            p_media = p.get('mediaUrls') or []
-            if isinstance(p_media, str):
-                p_media = [u.strip() for u in p_media.split(';') if u.strip()]
-            existing_media = set(primary_post.get('mediaUrls') or [])
-            merged_media = list(existing_media.union(set(p_media)))
-            primary_post['mediaUrls'] = merged_media
-            primary_post['media_count'] = len(merged_media)
-            primary_post['has_media'] = len(merged_media) > 0
-
-            for metric in ['likes', 'retweets', 'replies', 'quotes', 'views']:
-                primary_post[metric] = max(int(primary_post.get(metric) or 0), int(p.get(metric) or 0))
+            _merge_engagement(primary_post, p)
+            queue_for_save(primary_post)
 
             primary_clean_id = primary_post.get('clean_id') or primary_post.get('id') or pid
             audit_log.append({
@@ -643,8 +692,10 @@ def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts:
         # 9. Enrichment with AQI metric, severity, city detection, category, and sentiment analysis
         enriched = enrich_post(p)
         seen_ids.add(pid)
+        if pid:
+            id_index[pid] = enriched
         seen_normalized_texts[norm_text] = enriched
-        valid_posts.append(enriched)
+        queue_for_save(enriched)
 
         audit_log.append({
             "index": idx,

@@ -24,7 +24,6 @@ import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
@@ -37,7 +36,14 @@ import {
 } from "context";
 import { useAuth } from "../../../context/AuthContext";
 
-function DashboardNavbar({ isMini = false, dataSource = "file" }) {
+function readNumericAqi(post) {
+  const raw = post?.aqi_value;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string" && raw.trim() !== "" && Number.isFinite(Number(raw))) return Number(raw);
+  return null;
+}
+
+function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
   const [controller, dispatch] = useArgonController();
   const { miniSidenav, darkMode } = controller;
   const { user, logout, hasPermission } = useAuth();
@@ -86,6 +92,21 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
   };
 
   const canIngest = hasPermission("posts.ingest");
+
+  const computedAlerts = [];
+  const aqiReadings = posts
+    .map((post) => ({ post, aqi: readNumericAqi(post) }))
+    .filter((item) => item.aqi !== null);
+  if (aqiReadings.length > 0) {
+    const peak = aqiReadings.reduce((best, item) => (item.aqi > best.aqi ? item : best));
+    if (peak.aqi >= 301) {
+      const city = peak.post.city_detected || peak.post.city || "the loaded posts";
+      computedAlerts.push({
+        title: `Hazardous AQI ${peak.aqi} in ${city}`,
+        detail: "Computed from posts that include a numeric AQI.",
+      });
+    }
+  }
 
   const getRoleBadgeColor = () => {
     if (!user || !user.role) return "#64748b";
@@ -429,14 +450,25 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
 
                 <Divider sx={{ my: 0.8 }} />
 
-                <MenuItem onClick={handleLogout} sx={{ borderRadius: "8px", py: 0.8, color: "#ef4444" }}>
-                  <ListItemIcon>
-                    <LogoutRoundedIcon sx={{ fontSize: "18px", color: "#ef4444" }} />
-                  </ListItemIcon>
-                  <Typography sx={{ fontSize: "13px", fontWeight: 700, color: "#ef4444" }}>
-                    Sign Out
-                  </Typography>
-                </MenuItem>
+                <Button
+                  type="button"
+                  onClick={handleLogout}
+                  aria-label="Sign out"
+                  startIcon={<LogoutRoundedIcon sx={{ fontSize: "18px" }} />}
+                  sx={{
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    borderRadius: "8px",
+                    py: 0.8,
+                    px: 1.5,
+                    color: "#ef4444",
+                    textTransform: "none",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                  }}
+                >
+                  Sign out
+                </Button>
               </Menu>
             </>
           )}
@@ -458,58 +490,43 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
               },
             }}
           >
-            <MenuItem onClick={handleCloseMenu} sx={{ py: 1.2, "&:hover": { backgroundColor: darkMode ? "rgba(255, 255, 255, 0.06)" : undefined } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Box
-                  sx={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    backgroundColor: darkMode ? "rgba(239, 68, 68, 0.2)" : "#fee2e2",
-                    color: "#ef4444",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <WarningAmberRoundedIcon sx={{ fontSize: "19px" }} />
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: "13px", fontWeight: 700, color: darkMode ? "#ffffff" : "#1e293b" }}>
-                    Hazardous AQI 606 in Lahore
-                  </Typography>
-                  <Typography sx={{ fontSize: "11px", color: darkMode ? "#94a3b8" : "#64748b" }}>
-                    Severe smog alert active for Punjab region
-                  </Typography>
-                </Box>
+            {computedAlerts.length === 0 ? (
+              <Box role="status" sx={{ px: 1.5, py: 1.4 }}>
+                <Typography sx={{ fontSize: "13px", fontWeight: 600, color: darkMode ? "#cbd5e1" : "#475569" }}>
+                  There are no alerts.
+                </Typography>
               </Box>
-            </MenuItem>
-            <MenuItem onClick={handleCloseMenu} sx={{ py: 1.2, "&:hover": { backgroundColor: darkMode ? "rgba(255, 255, 255, 0.06)" : undefined } }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Box
-                  sx={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    backgroundColor: darkMode ? "rgba(34, 197, 94, 0.2)" : "#dcfce7",
-                    color: "#16a34a",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <CheckCircleRoundedIcon sx={{ fontSize: "19px" }} />
+            ) : (
+              computedAlerts.map((alert) => (
+                <Box key={alert.title} role="status" sx={{ px: 1.5, py: 1.2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box
+                      sx={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        backgroundColor: darkMode ? "rgba(239, 68, 68, 0.2)" : "#fee2e2",
+                        color: "#ef4444",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <WarningAmberRoundedIcon sx={{ fontSize: "19px" }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: "13px", fontWeight: 700, color: darkMode ? "#ffffff" : "#1e293b" }}>
+                        {alert.title}
+                      </Typography>
+                      <Typography sx={{ fontSize: "11px", color: darkMode ? "#94a3b8" : "#64748b" }}>
+                        {alert.detail}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography sx={{ fontSize: "13px", fontWeight: 700, color: darkMode ? "#ffffff" : "#1e293b" }}>
-                    Verified Clean Posts Ready
-                  </Typography>
-                  <Typography sx={{ fontSize: "11px", color: darkMode ? "#94a3b8" : "#64748b" }}>
-                    Pipeline active in Punjab district zones
-                  </Typography>
-                </Box>
-              </Box>
-            </MenuItem>
+              ))
+            )}
           </Menu>
         </Box>
       </Toolbar>
@@ -520,6 +537,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file" }) {
 DashboardNavbar.propTypes = {
   isMini: PropTypes.bool,
   dataSource: PropTypes.string,
+  posts: PropTypes.arrayOf(PropTypes.object),
 };
 
 export default DashboardNavbar;

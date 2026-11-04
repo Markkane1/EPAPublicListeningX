@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 from datetime import datetime, timezone
@@ -63,6 +64,10 @@ def update_settings(new_settings: dict):
         except Exception as e:
             print(f"[!] Warning: OAuth2 client_credentials token exchange failed: {e}")
 
+    endpoint = new_settings.get("x_api_endpoint")
+    if isinstance(endpoint, str) and endpoint.strip() and not x_api_client.is_official_x_api_url(endpoint):
+        raise ValueError("X API endpoint must use https and host api.twitter.com or api.x.com.")
+
     updated = database.save_settings(new_settings)
     return get_current_settings()
 
@@ -111,31 +116,45 @@ def parse_query_constraints(query_text: str) -> dict:
 def build_effective_api_query(keyword: str, active_query_text: str) -> str:
     """
     Constructs the effective query string for X API v2.
-    Ensures all negative constraints and language restrictions from the active query profile
-    are enforced when querying the API directly.
+    A keyword is added in front of the active query's parenthesized groups and negatives.
     """
     kw = (keyword or "").strip()
-    constraints = parse_query_constraints(active_query_text)
-    
-    # If no keyword provided, use the full active query string
+    base = active_query_text.strip() if active_query_text else ""
     if not kw:
-        base = active_query_text.strip() if active_query_text else "Lahore smog"
+        if not base:
+            base = "Lahore smog"
         if "-is:retweet" not in base:
             base += " -is:retweet"
         if "lang:en" not in base:
             base += " lang:en"
         return base
-    
-    # If user provided a specific keyword (e.g. "Gujranwala" or "brick kiln"),
-    # combine it with the active negative exclusions and filters
-    negatives_str = " ".join(constraints["negatives"])
-    query_parts = [f"({kw})"]
-    if negatives_str:
-        query_parts.append(negatives_str)
+
+    groups = re.findall(r"\([^)]*\)", base)
+    constraints = parse_query_constraints(base)
+    parts = [f"({kw})"]
+    parts.extend(groups)
+    if constraints["negatives"]:
+        parts.append(" ".join(constraints["negatives"]))
     if "lang:en" not in kw:
-        query_parts.append("lang:en")
-    query_parts.append("-is:retweet")
-    return " ".join(query_parts)
+        parts.append("lang:en")
+    parts.append("-is:retweet")
+    return " ".join(part for part in parts if part)
+
+def _search_failure(message: str, query_str: str = "") -> dict:
+    return {
+        "success": False,
+        "mode": "x_api",
+        "isSimulated": False,
+        "error": message,
+        "queryUsed": query_str,
+        "fetchedCount": 0,
+        "verifiedCount": 0,
+        "newPosts": [],
+        "noisePosts": [],
+        "allPosts": [],
+        "auditLog": [],
+        "stats": database.get_db_stats(),
+    }
 
 def format_noise_post_for_client(p: dict) -> dict:
     """Formats a noise post ensuring uniform camelCase and snake_case properties for frontend and API consumers."""
@@ -205,39 +224,23 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
     is_live_mode = (data_source == "x_api" or live_override is True)
 
     if is_live_mode:
-        raw_posts = []
-        is_simulated = False
-
         query_str = build_effective_api_query(keyword, active_query_text)
-
-        if bearer_token:
-            try:
-                api_resp = x_api_client.search_recent_tweets(
-                    query=query_str,
-                    bearer_token=bearer_token,
-                    max_results=max_results,
-                    endpoint_url=endpoint
-                )
-                raw_posts = x_api_client.transform_x_response(api_resp)
-            except x_api_client.XApiError as err:
-                if simulate_if_missing:
-                    print(f"[!] X API Live fetch encountered error ({err}). Falling back to simulation.")
-                    existing_all = database.get_all_posts()
-                    existing_sample_ids = [p['clean_id'] for p in existing_all[:5]] if existing_all else []
-                    sim_resp = x_api_client.generate_mock_live_search(query_str, count=max_results, existing_ids=existing_sample_ids)
-                    raw_posts = x_api_client.transform_x_response(sim_resp)
-                    is_simulated = True
-                else:
-                    raise err
-        else:
-            if simulate_if_missing:
-                existing_all = database.get_all_posts()
-                existing_sample_ids = [p['clean_id'] for p in existing_all[:5]] if existing_all else []
-                sim_resp = x_api_client.generate_mock_live_search(query_str, count=max_results, existing_ids=existing_sample_ids)
-                raw_posts = x_api_client.transform_x_response(sim_resp)
-                is_simulated = True
-            else:
-                raise x_api_client.XApiError("X API Bearer Token is not configured. Please enter your credentials in Settings.")
+        if not bearer_token:
+            return _search_failure(
+                "X API Bearer Token is not configured. Please enter your credentials in Settings.",
+                query_str,
+            )
+        try:
+            api_resp = x_api_client.search_recent_tweets(
+                query=query_str,
+                bearer_token=bearer_token,
+                max_results=max_results,
+                endpoint_url=endpoint
+            )
+            raw_posts = x_api_client.transform_x_response(api_resp)
+        except x_api_client.XApiError as err:
+            return _search_failure(str(err), query_str)
+        is_simulated = False
 
         # Load existing posts from database so deduplication and duplicate merging apply to API-fetched posts!
         existing_posts = database.get_all_posts()
@@ -319,6 +322,15 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
         database.save_noise_posts_batch(noise_posts)
     if audit_log:
         database.save_audit_logs_batch(audit_log)
+    if mode != "merge":
+        submitted_ids = [str(item.get("id")) for item in (raw_posts or []) if isinstance(item, dict) and item.get("id")]
+        database.delete_posts_except_ids(submitted_ids)
+
+    kept_ids = {str(entry.get("id")) for entry in audit_log if entry.get("status") == "KEPT"}
+    newly_added = [
+        post for post in valid_posts
+        if str(post.get("id") or post.get("clean_id") or "") in kept_ids
+    ]
 
     all_posts = database.get_all_posts()
     stats = database.get_db_stats()
@@ -327,17 +339,17 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
         "success": True,
         "mode": mode,
         "cleanPosts": all_posts,
-        "newlyAddedPosts": valid_posts,
+        "newlyAddedPosts": newly_added,
         "noisePosts": [format_noise_post_for_client(np) for np in noise_posts],
         "noiseExcluded": len(noise_posts),
         "auditLog": audit_log,
         "stats": {
             "totalIngested": len(raw_posts),
-            "cleanCount": len(valid_posts),
+            "cleanCount": len(newly_added),
             "exactDuplicates": len([a for a in audit_log if a.get("category") == "DUPLICATE_ID"]),
             "semanticDuplicates": len([a for a in audit_log if a.get("category") == "SEMANTIC_DUPLICATE"]),
             "duplicatesMerged": len([a for a in audit_log if a.get("status") == "DUPLICATE_MERGED"]),
-            "removedCount": len(noise_posts)
+            "removedCount": len(noise_posts),
         }
     }
 
@@ -533,7 +545,7 @@ def get_user_service(user_id: int):
         raise ValueError(f"User with ID {user_id} not found.")
     return user
 
-def create_user_service(data: dict):
+def create_user_service(data: dict, current_user_id: int = None):
     """Creates a new user record."""
     username = data.get("username")
     email = data.get("email")
@@ -550,10 +562,11 @@ def create_user_service(data: dict):
         full_name=full_name,
         role_id=role_id,
         is_active=is_active,
-        avatar=avatar
+        avatar=avatar,
+        current_user_id=current_user_id
     )
 
-def update_user_service(user_id: int, data: dict, current_user_id: int = None):
+def update_user_service(user_id: int, data: dict, current_user_id: int = None, current_session_token: str = None):
     """Updates an existing user record."""
     full_name = data.get("fullName") or data.get("full_name")
     email = data.get("email")
@@ -570,7 +583,8 @@ def update_user_service(user_id: int, data: dict, current_user_id: int = None):
         is_active=is_active,
         password=password,
         avatar=avatar,
-        current_user_id=current_user_id
+        current_user_id=current_user_id,
+        current_session_token=current_session_token
     )
 
 def delete_user_service(user_id: int, current_user_id: int = None):

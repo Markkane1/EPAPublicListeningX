@@ -20,15 +20,15 @@ function DetailedStatisticsCard({
   const gradientColors = {
     primary: "linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)",
     secondary: "linear-gradient(310deg, #627594 0%, #a8b8d8 100%)",
-    info: "linear-gradient(310deg, #1171ef 0%, #11cdef 100%)",
-    success: "linear-gradient(310deg, #2dce89 0%, #2dcecc 100%)",
+    info: "linear-gradient(310deg, #1171ef 0%, #0b6a78 100%)",
+    success: "linear-gradient(310deg, #0b5d3b 0%, #0e6a68 100%)",
     warning: "linear-gradient(310deg, #fb6340 0%, #fbb140 100%)",
     error: "linear-gradient(310deg, #f5365c 0%, #f56036 100%)",
     dark: "linear-gradient(310deg, #212529 0%, #212229 100%)",
   };
 
   const badgeColorsLight = {
-    success: { bg: "#e6f8f0", text: "#2dce89" },
+    success: { bg: "#e6f8f0", text: "#0b5d3b" },
     error: { bg: "#fde8e8", text: "#f5365c" },
     warning: { bg: "#fef3e2", text: "#fb6340" },
     info: { bg: "#e7f6fd", text: "#1171ef" },

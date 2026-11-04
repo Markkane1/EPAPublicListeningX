@@ -173,10 +173,11 @@ export default function LoginView() {
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <Box sx={{ mb: 2 }}>
-            <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.8 }}>
+            <Typography component="label" htmlFor="login-username" sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.8, display: 'block' }}>
               Username or Official Email
             </Typography>
             <TextField
+              id="login-username"
               fullWidth
               size="small"
               placeholder="e.g. admin or yourname@epa.punjab.gov.pk"
@@ -195,11 +196,12 @@ export default function LoginView() {
 
           <Box sx={{ mb: 1.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
-              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155' }}>
+              <Typography component="label" htmlFor="login-password" sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155' }}>
                 Account Password
               </Typography>
             </Box>
             <TextField
+              id="login-password"
               fullWidth
               size="small"
               type={showPassword ? 'text' : 'password'}
@@ -216,9 +218,10 @@ export default function LoginView() {
                   <InputAdornment position="end">
                     <IconButton
                       size="small"
+                      type="button"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
-                      tabIndex={-1}
                     >
                       {showPassword ? (
                         <VisibilityOffRoundedIcon sx={{ fontSize: '18px', color: '#94a3b8' }} />

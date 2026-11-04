@@ -87,15 +87,11 @@ def build():
 
     browser_exe = find_browser()
     crx_filename = f"epa-x-scrapper-v{version}.crx"
-    pem_filename = f"epa-x-scrapper-v{version}.pem"
     crx_path = os.path.join(RELEASE_DIR, crx_filename)
-    pem_path = os.path.join(RELEASE_DIR, pem_filename)
 
     if browser_exe:
         print(f"\n[2/2] Packing Chromium CRX extension using {os.path.basename(browser_exe)}...")
         cmd = [browser_exe, f"--pack-extension={STAGE_DIR}", "--no-message-box"]
-        if os.path.exists(pem_path):
-            cmd.append(f"--pack-extension-key={pem_path}")
 
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -103,13 +99,13 @@ def build():
             raw_pem = os.path.join(RELEASE_DIR, "extension.pem")
             if os.path.exists(raw_crx):
                 shutil.move(raw_crx, crx_path)
+            # Chrome writes extension.pem beside the folder. The release tree must not keep that key.
             if os.path.exists(raw_pem):
-                shutil.move(raw_pem, pem_path)
+                os.remove(raw_pem)
 
             if os.path.exists(crx_path):
                 crx_size_kb = os.path.getsize(crx_path) / 1024
                 print(f"  ✓ Created {crx_path} ({crx_size_kb:.1f} KB)")
-                print(f"  ✓ Signing Key preserved at {pem_path}")
         except Exception as e:
             print(f"  Note: Chromium packed CRX build failed or timed out: {e}")
     else:

@@ -12,7 +12,6 @@ This guide explains how to share and install the **EPA Punjab Social Listening**
 | **`epa-x-scrapper-v1.0.0.crx`** | Signed Chromium packed extension | Direct drag-and-drop installation |
 | **`extension/`** | Pre-extracted extension directory | Immediate local "Load unpacked" install |
 | **`quick_install.bat`** | Windows 1-click helper script | Automatically opens `chrome://extensions` and the folder |
-| **`epa-x-scrapper-v1.0.0.pem`** | Cryptographic private key | Developer use (preserves extension ID across updates) |
 
 ---
 

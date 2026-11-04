@@ -6,7 +6,7 @@
 [![Material UI](https://img.shields.io/badge/Design-Argon%20Dashboard%202%20MUI-007FFF?logo=mui&logoColor=white)](https://mui.com/)
 [![Database](https://img.shields.io/badge/Database-SQLite%20WAL-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Security](https://img.shields.io/badge/Security-RBAC%20%2B%20Turnstile-success)](#-role-based-access-control-rbac)
-[![Test Suite](https://img.shields.io/badge/Tests-41%2F41%20Passed-brightgreen)](#-testing--audit-suite)
+[![Test Suite](https://img.shields.io/badge/Tests-pytest-brightgreen)](#-testing--audit-suite)
 
 An enterprise-grade social listening, real-time surveillance, and environmental intelligence platform engineered for the **Punjab Environmental Protection Agency (EPA)**. The platform ingests, filters, deduplicates, and analyzes social discourse from **𝕏 (Twitter)** regarding air quality, smog emergencies, agricultural stubble burning, and public health across Pakistani Punjab.
 
@@ -31,10 +31,7 @@ air-quality, social-listening, punjab-epa, smog-detection, aqi-monitor, twitter-
 The system monitors public discourse using high-precision negative filtering rules tailored for the Punjab region:
 
 ```text
-(AQI OR "air quality" OR pollution OR smog or "clean air") 
-(Lahore or gujranwala OR Pakistan OR Punjab) 
--Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -india -india's 
--from:DelhiPollution -from:@ANI -from:@EPCCDpunjab -from:@EPAPunjab lang:en
+(AQI OR "air quality" OR pollution OR smog OR "clean air") (Lahore OR Gujranwala OR Faisalabad OR Multan OR Rawalpindi OR Islamabad OR Sialkot OR Punjab OR Pakistan) -Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -from:DelhiPollution -from:ANI -from:EPCCDpunjab -from:EPAPunjab lang:en
 ```
 
 ### Multi-Stage Processing Pipeline:
@@ -210,7 +207,7 @@ All protected endpoints require a valid Bearer token (`Authorization: Bearer <to
 | Method | Endpoint | Description | Clearance |
 |---|---|---|---|
 | `POST` | `/api/auth/login` | Authenticate user & issue 7-day session token | Public |
-| `POST` | `/api/auth/signup` | Public registration (defaults to `viewer` role) | Public |
+| `POST` | `/api/auth/signup` | Registration is closed (HTTP 403) | Public |
 | `POST` | `/api/auth/logout` | Revoke active session token | Authenticated |
 | `GET` | `/api/auth/me` | Retrieve active profile and granted permissions | Authenticated |
 
@@ -250,26 +247,10 @@ All protected endpoints require a valid Bearer token (`Authorization: Bearer <to
 
 The backend includes comprehensive test suites covering database schema initialization, authentication lifecycles, and permission gates.
 
-Run the full end-to-end audit:
+Run the automated suite from the repository root:
 
 ```powershell
-python -m backend.tests.comprehensive_rbac_audit
-```
-
-**Audit Output:**
-```text
-======================================================================
-  EXHAUSTIVE RBAC & AUTHENTICATION END-TO-END AUDIT SUITE
-======================================================================
- [PASS] Database Repository & Schema Verification (8/8)
- [PASS] Authentication & Session Verification (7/7)
- [PASS] Role Management & Permission Assignments (4/4)
- [PASS] User Management & Role Assignments (11/11)
- [PASS] Page & Endpoint Permission Gates Audit (7/7)
- [PASS] Public Signup & Turnstile Captcha Audit (4/4)
-======================================================================
-  AUDIT COMPLETE: 41 CHECKS EVALUATED — ALL PASSED (100%)
-======================================================================
+python -m pytest tests
 ```
 
 To run API endpoint unit tests:

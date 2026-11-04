@@ -1,0 +1,2 @@
+# Server runtime is the Python standard library, plus optional certifi for TLS CA bundles.
+pytest>=8

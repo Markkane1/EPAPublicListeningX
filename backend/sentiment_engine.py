@@ -2,13 +2,7 @@ import os
 import sys
 import re
 import json
-import ssl
 from typing import Dict, Any, Optional, Tuple
-
-try:
-    ssl._create_default_https_context = ssl._create_unverified_context
-except Exception:
-    pass
 
 _VADER_ANALYZER = None
 _TRANSFORMER_PIPELINE = None

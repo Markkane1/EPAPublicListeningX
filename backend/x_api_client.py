@@ -47,22 +47,18 @@ def get_bearer_token_from_credentials(api_key: str, api_secret: str) -> str:
         raise XApiError(f"OAuth2 token exchange failed: {str(e)}")
 
 
-def _get_ssl_context(verify=True):
-    """Creates a secure SSL context.
-    When verify=False is requested (only by _safe_urlopen on CA-missing systems),
-    emit a RuntimeWarning so operators are aware.  Never silently disable verification.
-    """
-    if not verify:
-        import warnings
-        warnings.warn(
-            "SSL certificate verification disabled. Install certifi: pip install certifi",
-            RuntimeWarning,
-            stacklevel=3,
-        )
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        return ctx
+_OFFICIAL_X_API_HOSTS = frozenset({"api.twitter.com", "api.x.com"})
+
+def is_official_x_api_url(url) -> bool:
+    """True only for https URLs whose host is an official X API host."""
+    if not url or not isinstance(url, str):
+        return False
+    parsed = urllib.parse.urlparse(url.strip())
+    host = (parsed.hostname or "").lower()
+    return parsed.scheme == "https" and host in _OFFICIAL_X_API_HOSTS
+
+def _get_ssl_context():
+    """Creates a verifying SSL context. Certificate failures are not bypassed."""
     try:
         import certifi
         return ssl.create_default_context(cafile=certifi.where())
@@ -70,23 +66,9 @@ def _get_ssl_context(verify=True):
         return ssl.create_default_context()
 
 def _safe_urlopen(req, timeout=20):
-    """Executes urlopen with standard verification and graceful fallback if system CA is unconfigured."""
-    try:
-        ctx = _get_ssl_context(verify=True)
-        return urllib.request.urlopen(req, context=ctx, timeout=timeout)
-    except urllib.error.URLError as e:
-        reason_str = str(e.reason) if hasattr(e, "reason") else str(e)
-        # Only fall back when the system has no CA bundle configured at all,
-        # never for actual certificate validation failures.
-        if "No module named" in reason_str or ("SSL" in reason_str and "CERTIFICATE_VERIFY_FAILED" not in reason_str):
-            ctx = _get_ssl_context(verify=False)
-            return urllib.request.urlopen(req, context=ctx, timeout=timeout)
-        raise e
-    except urllib.error.HTTPError as e:
-        err_msg = e.read().decode("utf-8", errors="replace")
-        raise XApiError(f"OAuth2 Token exchange failed ({e.code}): {err_msg}", status_code=e.code, raw_body=err_msg)
-    except Exception as e:
-        raise XApiError(f"Failed to connect to Twitter OAuth endpoint: {str(e)}")
+    """Executes urlopen with certificate verification. Failures propagate."""
+    ctx = _get_ssl_context()
+    return urllib.request.urlopen(req, context=ctx, timeout=timeout)
 
 def search_recent_tweets(query: str, bearer_token: str, max_results: int = 25, endpoint_url: str = None) -> dict:
     """
@@ -97,6 +79,8 @@ def search_recent_tweets(query: str, bearer_token: str, max_results: int = 25, e
         raise XApiError("No Bearer Token provided. Please enter your X API Bearer Token in Settings.", status_code=401)
 
     url = endpoint_url.strip() if endpoint_url else DEFAULT_ENDPOINT
+    if not is_official_x_api_url(url):
+        raise XApiError("X API endpoint must be https://api.twitter.com or https://api.x.com.")
 
     params = {
         "query": query,

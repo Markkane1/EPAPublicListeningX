@@ -99,13 +99,15 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Credentials", "true")
 
     def _set_security_headers(self):
-        """Emit HTTP security headers for all responses."""
+        """Emit HTTP security headers for all responses, including static files."""
+        if getattr(self, "_security_headers_sent", False):
+            return
+        self._security_headers_sent = True
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("X-XSS-Protection", "1; mode=block")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         self.send_header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
-        # Content-Security-Policy: allow same-origin scripts, Cloudflare Turnstile
         self.send_header(
             "Content-Security-Policy",
             "default-src 'self'; "
@@ -115,10 +117,15 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
             "media-src 'self' https: data: blob:; "
             "connect-src 'self' https:; "
             "frame-src 'self' https://challenges.cloudflare.com https://platform.twitter.com; "
+            "frame-ancestors 'none'; "
             "font-src 'self' https: data:; "
             "object-src 'none'; "
             "base-uri 'self';"
         )
+
+    def end_headers(self):
+        self._set_security_headers()
+        super().end_headers()
 
     def do_OPTIONS(self):
         """Handle CORS preflight requests."""
@@ -179,15 +186,18 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
 
         return user, None
 
+    def _trusted_proxies(self):
+        raw = os.environ.get("TRUSTED_PROXIES", "")
+        return {item.strip() for item in raw.split(",") if item.strip()}
+
     def _get_client_ip(self) -> str:
-        """Returns the client IP, preferring X-Forwarded-For when behind a proxy."""
-        xff = self.headers.get("X-Forwarded-For", "")
-        if xff:
-            # Take the first (leftmost) IP — closest to the actual client
-            return xff.split(",")[0].strip()
-        if hasattr(self, 'client_address') and self.client_address:
-            return self.client_address[0]
-        return "127.0.0.1"
+        """Rate-limit on the peer address unless that peer is a trusted proxy."""
+        peer = self.client_address[0] if getattr(self, "client_address", None) else "127.0.0.1"
+        if peer in self._trusted_proxies():
+            xff = self.headers.get("X-Forwarded-For", "")
+            if xff:
+                return xff.split(",")[0].strip()
+        return peer
 
     def _parse_json_body(self):
         """Parses request JSON body with an enforced size cap."""
@@ -223,6 +233,10 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
 
         if path.startswith('/api/'):
             try:
+                if path == '/api/health':
+                    self.send_json({"status": "ok"})
+                    return
+
                 # --- Auth endpoints ---
                 if path == '/api/auth/turnstile-key':
                     site_key = os.environ.get("TURNSTILE_SITE_KEY", "")
@@ -498,7 +512,7 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                 if err_resp:
                     self.send_json(err_resp[0], status=err_resp[1])
                     return
-                res = service.create_user_service(body)
+                res = service.create_user_service(body, current_user_id=user["id"])
                 self.send_json(res, status=201)
 
             elif re.match(r'^/api/users/(\d+)/update$', path) or re.match(r'^/api/users/(\d+)$', path):
@@ -508,7 +522,12 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 m = re.match(r'^/api/users/(\d+)', path)
                 target_user_id = int(m.group(1))
-                res = service.update_user_service(target_user_id, body, current_user_id=user["id"])
+                res = service.update_user_service(
+                    target_user_id,
+                    body,
+                    current_user_id=user["id"],
+                    current_session_token=self._get_bearer_token(),
+                )
                 self.send_json(res)
 
             elif re.match(r'^/api/users/(\d+)/delete$', path):
@@ -762,7 +781,12 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json(err_resp[0], status=err_resp[1])
                     return
                 user_id = int(m_user.group(1))
-                res = service.update_user_service(user_id, body, current_user_id=user["id"])
+                res = service.update_user_service(
+                    user_id,
+                    body,
+                    current_user_id=user["id"],
+                    current_session_token=self._get_bearer_token(),
+                )
                 self.send_json(res)
                 return
 

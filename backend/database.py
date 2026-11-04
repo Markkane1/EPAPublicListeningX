@@ -120,7 +120,7 @@ DEFAULT_USERS_DATA = [
     {
         "username": os.environ.get("DEFAULT_ADMIN_USERNAME", "admin"),
         "email": os.environ.get("DEFAULT_ADMIN_EMAIL", "admin@epa.punjab.gov.pk"),
-        "password": os.environ.get("DEFAULT_ADMIN_PASSWORD", "EPAadmin2026!"),
+        "password": os.environ.get("DEFAULT_ADMIN_PASSWORD", ""),
         "full_name": os.environ.get("DEFAULT_ADMIN_FULLNAME", "EPA Chief Administrator"),
         "role": "super_admin",
         "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
@@ -128,7 +128,7 @@ DEFAULT_USERS_DATA = [
     {
         "username": os.environ.get("DEFAULT_ANALYST_USERNAME", "analyst"),
         "email": os.environ.get("DEFAULT_ANALYST_EMAIL", "analyst@epa.punjab.gov.pk"),
-        "password": os.environ.get("DEFAULT_ANALYST_PASSWORD", "EPAanalyst2026!"),
+        "password": os.environ.get("DEFAULT_ANALYST_PASSWORD", ""),
         "full_name": os.environ.get("DEFAULT_ANALYST_FULLNAME", "Dr. Ayesha Malik (Lead Analyst)"),
         "role": "analyst",
         "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150"
@@ -136,7 +136,7 @@ DEFAULT_USERS_DATA = [
     {
         "username": os.environ.get("DEFAULT_AUDITOR_USERNAME", "auditor"),
         "email": os.environ.get("DEFAULT_AUDITOR_EMAIL", "auditor@epa.punjab.gov.pk"),
-        "password": os.environ.get("DEFAULT_AUDITOR_PASSWORD", "EPAauditor2026!"),
+        "password": os.environ.get("DEFAULT_AUDITOR_PASSWORD", ""),
         "full_name": os.environ.get("DEFAULT_AUDITOR_FULLNAME", "Tariq Mehmood (Field Auditor)"),
         "role": "auditor",
         "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
@@ -144,12 +144,31 @@ DEFAULT_USERS_DATA = [
     {
         "username": os.environ.get("DEFAULT_VIEWER_USERNAME", "viewer"),
         "email": os.environ.get("DEFAULT_VIEWER_EMAIL", "viewer@epa.punjab.gov.pk"),
-        "password": os.environ.get("DEFAULT_VIEWER_PASSWORD", "EPAviewer2026!"),
+        "password": os.environ.get("DEFAULT_VIEWER_PASSWORD", ""),
         "full_name": os.environ.get("DEFAULT_VIEWER_FULLNAME", "Public Citizen / Observer"),
         "role": "viewer",
         "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
     }
 ]
+
+PUBLISHED_PASSWORDS = frozenset({
+    "EPAadmin2026!",
+    "EPAanalyst2026!",
+    "EPAauditor2026!",
+    "EPAviewer2026!",
+})
+
+OFFICIAL_ACTIVE_QUERY = (
+    '(AQI OR "air quality" OR pollution OR smog OR "clean air") '
+    "(Lahore OR Gujranwala OR Faisalabad OR Multan OR Rawalpindi OR Islamabad OR Sialkot OR Punjab OR Pakistan) "
+    "-Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -india -india's "
+    "-from:DelhiPollution -from:@ANI -from:@EPCCDpunjab -from:@EPAPunjab lang:en"
+)
+
+POST_LIST_DEFAULT_LIMIT = 100
+POST_LIST_MAX_LIMIT = 200
+
+BOOTSTRAP_CREDENTIALS_PATH = os.path.join(DATA_DIR, "bootstrap-credentials.txt")
 
 def _hash_password(password: str, salt: bytes = None) -> tuple:
     """Hashes password with PBKDF2-HMAC-SHA256 (100,000 rounds) using a cryptographically random salt."""
@@ -166,6 +185,70 @@ def _verify_password(password: str, stored_hash_hex: str, salt_hex: str) -> bool
         return hmac.compare_digest(key.hex(), stored_hash_hex)
     except Exception:
         return False
+
+def _password_is_rejected(password) -> bool:
+    if password is None:
+        return True
+    value = str(password).strip()
+    if not value:
+        return True
+    if "CHANGE_ME" in value:
+        return True
+    if value.startswith("YourSecure"):
+        return True
+    return value in PUBLISHED_PASSWORDS
+
+def _append_bootstrap_credentials(username: str, password: str):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(BOOTSTRAP_CREDENTIALS_PATH, "a", encoding="utf-8") as handle:
+        handle.write(f"username: {username}\n")
+        handle.write(f"password: {password}\n")
+
+def _resolve_seed_password(username: str, configured) -> str:
+    if _password_is_rejected(configured):
+        generated = secrets.token_urlsafe(18)
+        _append_bootstrap_credentials(username, generated)
+        return generated
+    return str(configured)
+
+def retire_published_passwords():
+    """Rehash any user whose password is still a published credential."""
+    retired = []
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, username, password_hash, salt FROM users")
+        rows = cursor.fetchall()
+        for row in rows:
+            if not any(
+                _verify_password(published, row["password_hash"], row["salt"])
+                for published in PUBLISHED_PASSWORDS
+            ):
+                continue
+            generated = secrets.token_urlsafe(18)
+            pwd_hash, salt_hex = _hash_password(generated)
+            cursor.execute(
+                "UPDATE users SET password_hash = ?, salt = ?, updated_at = ? WHERE id = ?",
+                (pwd_hash, salt_hex, now_iso, row["id"]),
+            )
+            cursor.execute("DELETE FROM auth_sessions WHERE user_id = ?", (row["id"],))
+            _append_bootstrap_credentials(row["username"], generated)
+            retired.append(row["username"])
+        conn.commit()
+    return retired
+
+def _bounded_post_limit(limit):
+    if limit is None:
+        return POST_LIST_DEFAULT_LIMIT
+    try:
+        parsed = int(limit)
+    except (TypeError, ValueError):
+        return POST_LIST_DEFAULT_LIMIT
+    if parsed < 0:
+        return POST_LIST_DEFAULT_LIMIT
+    if parsed > POST_LIST_MAX_LIMIT:
+        return POST_LIST_MAX_LIMIT
+    return parsed
 
 def _is_safe_avatar_url(url: str) -> bool:
     """Validates that an avatar URL points to an allowed host only.
@@ -193,6 +276,24 @@ def _is_safe_avatar_url(url: str) -> bool:
     except Exception:
         return False
 
+
+def _replace_lowercase_or_query(cursor):
+    """Upgrade a stored active query that still uses lowercase OR."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    cursor.execute("SELECT id, query_text FROM query_versions WHERE is_active = 1")
+    active = cursor.fetchone()
+    if active and active["query_text"] and " or " in active["query_text"]:
+        cursor.execute(
+            "UPDATE query_versions SET query_text = ?, updated_at = ? WHERE id = ?",
+            (OFFICIAL_ACTIVE_QUERY, now_iso, active["id"]),
+        )
+    cursor.execute("SELECT value FROM settings WHERE key = 'default_query'")
+    setting = cursor.fetchone()
+    if setting and setting["value"] and " or " in setting["value"]:
+        cursor.execute(
+            "UPDATE settings SET value = ? WHERE key = 'default_query'",
+            (OFFICIAL_ACTIVE_QUERY,),
+        )
 
 def init_db():
     """Initializes SQLite tables and seeds initial dataset if empty."""
@@ -367,7 +468,7 @@ def init_db():
                 (
                     "v1.1",
                     "Official EPA Punjab Search Constraints",
-                    '(AQI OR "air quality" OR pollution OR smog or "clean air") (Lahore or gujranwala OR Pakistan OR Punjab) -Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -india -india\'s -from:DelhiPollution -from:@ANI -from:@EPCCDpunjab -from:@EPAPunjab lang:en',
+                    OFFICIAL_ACTIVE_QUERY,
                     "Standard production query: incorporates 'clean air', Gujranwala district, -ANI news, and case-insensitive negative Indian exclusions.",
                     1,
                     "2026-11-02T12:00:00Z",
@@ -396,7 +497,7 @@ def init_db():
                 "x_api_key": os.environ.get("X_API_KEY", ""),
                 "x_api_secret": os.environ.get("X_API_SECRET", ""),
                 "x_api_endpoint": os.environ.get("X_API_ENDPOINT", "https://api.twitter.com/2/tweets/search/recent"),
-                "default_query": '(AQI OR "air quality" OR pollution OR smog or "clean air") (Lahore or gujranwala OR Pakistan OR Punjab) -Delhi -dehli -NCR -Haryana -Noida -Gurugram -India -india -india\'s -from:DelhiPollution -from:@ANI -from:@EPCCDpunjab -from:@EPAPunjab lang:en',
+                "default_query": OFFICIAL_ACTIVE_QUERY,
                 "auto_enrich": os.environ.get("AUTO_ENRICH", "true"),
                 "sentiment_engine": os.environ.get("SENTIMENT_ENGINE", "vader"),
                 "turnstile_site_key": os.environ.get("TURNSTILE_SITE_KEY", "1x00000000000000000000AA"),
@@ -546,13 +647,16 @@ def init_db():
                 cursor.execute("SELECT id FROM roles WHERE name = ?", (u["role"],))
                 role_row = cursor.fetchone()
                 if role_row:
-                    pwd_hash, salt_hex = _hash_password(u["password"])
+                    password = _resolve_seed_password(u["username"], u.get("password"))
+                    pwd_hash, salt_hex = _hash_password(password)
                     cursor.execute("""
                         INSERT INTO users (username, email, password_hash, salt, full_name, avatar, role_id, is_active, created_at, updated_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                     """, (u["username"], u["email"], pwd_hash, salt_hex, u["full_name"], u["avatar"], role_row["id"], now_iso, now_iso))
 
+        _replace_lowercase_or_query(cursor)
         conn.commit()
+    retire_published_passwords()
     cleanup_expired_sessions_db()
 
 def row_to_post_dict(row) -> dict:
@@ -666,9 +770,10 @@ def get_all_posts(search=None, city=None, severity=None, category=None, sort_by=
     else:
         query += f" ORDER BY created_at {dir_sql}"
 
-    if limit is not None:
-        query += " LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
+    bounded_limit = _bounded_post_limit(limit)
+    safe_offset = offset if isinstance(offset, int) and offset > 0 else 0
+    query += " LIMIT ? OFFSET ?"
+    params.extend([bounded_limit, safe_offset])
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -1414,6 +1519,18 @@ def toggle_learned_rule(rule_id: int, is_active: bool):
         conn.commit()
         return {"success": True, "ruleId": rule_id, "isActive": bool(is_active)}
 
+def delete_posts_except_ids(keep_ids):
+    """Delete stored posts whose ids are not in the submitted batch."""
+    keep = {str(item) for item in (keep_ids or []) if item is not None and str(item) != ""}
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM posts")
+        stale = [row["id"] for row in cursor.fetchall() if row["id"] not in keep]
+        for pid in stale:
+            cursor.execute("DELETE FROM posts WHERE id = ?", (pid,))
+        conn.commit()
+        return len(stale)
+
 def delete_learned_rule(rule_id: int):
     """Deletes a learned rule."""
     with get_db() as conn:
@@ -1431,11 +1548,11 @@ def get_db_stats():
         total_posts = cursor.fetchone()[0]
 
         cursor.execute("SELECT MAX(aqi_value) FROM posts WHERE aqi_value IS NOT NULL AND aqi_value > 0")
-        max_aqi = cursor.fetchone()[0] or 606
+        max_aqi = cursor.fetchone()[0]
 
         cursor.execute("SELECT AVG(aqi_value) FROM posts WHERE aqi_value IS NOT NULL AND aqi_value > 0")
         avg_row = cursor.fetchone()[0]
-        avg_aqi = round(avg_row, 1) if avg_row else 361.1
+        avg_aqi = round(float(avg_row), 1) if avg_row is not None else None
 
         cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE status = 'DUPLICATE_MERGED'")
         duplicates_merged = cursor.fetchone()[0]
@@ -1907,8 +2024,44 @@ def get_user_by_id_db(user_id: int):
             "updatedAt": row["updated_at"]
         }
 
-def create_user_db(username: str, email: str, password: str, full_name: str, role_id: int = None, is_active: int = 1, avatar: str = None):
+def _role_permission_codes(cursor, role_id):
+    cursor.execute("""
+        SELECT p.code
+        FROM permissions p
+        JOIN role_permissions rp ON p.id = rp.permission_id
+        WHERE rp.role_id = ?
+    """, (role_id,))
+    return {row["code"] for row in cursor.fetchall()}
+
+def _assert_can_assign_role(cursor, current_user_id, role_id):
+    if current_user_id is None:
+        raise ValueError("current_user_id is required.")
+    cursor.execute("""
+        SELECT u.id, r.name AS role_name, r.id AS role_id
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.id = ?
+    """, (int(current_user_id),))
+    caller = cursor.fetchone()
+    if not caller:
+        raise ValueError("current_user_id does not match a user.")
+    cursor.execute("SELECT id, name FROM roles WHERE id = ?", (int(role_id),))
+    role = cursor.fetchone()
+    if not role:
+        raise ValueError(f"Role ID {role_id} does not exist.")
+    if caller["role_name"] == "super_admin":
+        return
+    if role["name"] == "super_admin":
+        raise ValueError("Only a Super Administrator can assign the Super Administrator role.")
+    caller_codes = _role_permission_codes(cursor, caller["role_id"])
+    target_codes = _role_permission_codes(cursor, role["id"])
+    if not target_codes.issubset(caller_codes):
+        raise ValueError("Cannot assign a role whose permissions exceed your own.")
+
+def create_user_db(username: str, email: str, password: str, full_name: str, role_id: int = None, is_active: int = 1, avatar: str = None, current_user_id: int = None):
     """Creates a new user record after uniqueness and role validation."""
+    if current_user_id is None:
+        raise ValueError("current_user_id is required.")
     u_name = (username or "").strip().lower()
     u_email = (email or "").strip().lower()
     u_full = (full_name or "").strip()
@@ -1957,6 +2110,8 @@ def create_user_db(username: str, email: str, password: str, full_name: str, rol
             if not cursor.fetchone():
                 raise ValueError(f"Role ID {role_id} does not exist.")
 
+        _assert_can_assign_role(cursor, current_user_id, role_id)
+
         pwd_hash, salt_hex = _hash_password(u_pass)
         now_iso = datetime.now(timezone.utc).isoformat()
         raw_avatar = avatar or f"https://api.dicebear.com/7.x/initials/svg?seed={u_name}"
@@ -1974,7 +2129,8 @@ def create_user_db(username: str, email: str, password: str, full_name: str, rol
         return get_user_by_id_db(new_id)
 
 def update_user_db(user_id: int, full_name: str = None, email: str = None, role_id: int = None,
-                   is_active: int = None, password: str = None, avatar: str = None, current_user_id: int = None):
+                   is_active: int = None, password: str = None, avatar: str = None, current_user_id: int = None,
+                   current_session_token: str = None):
     """Updates an existing user record with safeguards for the last Super Administrator."""
     with get_db() as conn:
         cursor = conn.cursor()
@@ -2000,6 +2156,21 @@ def update_user_db(user_id: int, full_name: str = None, email: str = None, role_
                     if new_role_row and new_role_row["name"] != "super_admin":
                         raise ValueError("Cannot demote the only remaining active Super Administrator.")
 
+        if current_user_id:
+            cursor.execute("SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", (current_user_id,))
+            cur_role = cursor.fetchone()
+            cur_role_name = cur_role["name"] if cur_role else ""
+            if existing["role_name"] == "super_admin" and cur_role_name != "super_admin":
+                raise ValueError("Only a Super Administrator can modify another Super Administrator account.")
+            if role_id is not None:
+                cursor.execute("SELECT name FROM roles WHERE id = ?", (role_id,))
+                target_role_row = cursor.fetchone()
+                if target_role_row and target_role_row["name"] == "super_admin" and cur_role_name != "super_admin":
+                    raise ValueError("Only a Super Administrator can assign the Super Administrator role.")
+
+        if role_id is not None and int(role_id) != int(existing["role_id"]):
+            _assert_can_assign_role(cursor, current_user_id, int(role_id))
+
         new_email = (email or "").strip().lower() if email is not None else existing["email"]
         if email is not None and new_email != existing["email"]:
             if not new_email or "@" not in new_email:
@@ -2024,6 +2195,13 @@ def update_user_db(user_id: int, full_name: str = None, email: str = None, role_
                     password_hash = ?, salt = ?, updated_at = ?
                 WHERE id = ?
             """, (new_full, new_email, new_role_id, new_active, new_avatar, pwd_hash, salt_hex, now_iso, user_id))
+            if current_session_token:
+                cursor.execute(
+                    "DELETE FROM auth_sessions WHERE user_id = ? AND token != ?",
+                    (user_id, str(current_session_token)),
+                )
+            else:
+                cursor.execute("DELETE FROM auth_sessions WHERE user_id = ?", (user_id,))
         else:
             cursor.execute("""
                 UPDATE users
@@ -2055,6 +2233,13 @@ def delete_user_db(user_id: int, current_user_id: int = None):
             admin_count = cursor.fetchone()[0]
             if admin_count <= 1:
                 raise ValueError("Cannot delete the only remaining Super Administrator.")
+
+            if current_user_id:
+                cursor.execute("SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?", (current_user_id,))
+                cur_role = cursor.fetchone()
+                cur_role_name = cur_role["name"] if cur_role else ""
+                if cur_role_name != "super_admin":
+                    raise ValueError("Only a Super Administrator can delete a Super Administrator account.")
 
         cursor.execute("DELETE FROM auth_sessions WHERE user_id = ?", (user_id,))
         cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
@@ -2251,25 +2436,42 @@ def delete_role_db(role_id: int):
 import urllib.request
 import urllib.parse
 
+_TURNSTILE_BYPASS_TOKENS = frozenset({
+    "DEMO_BYPASS",
+    "TEST_BYPASS",
+    "XXXX.DUMMY.TOKEN.XXXX",
+})
+_TURNSTILE_DUMMY_SECRET = "1x0000000000000000000000000000000AA"
+
+def _turnstile_secret_is_unusable(secret: str) -> bool:
+    if not secret or not str(secret).strip():
+        return True
+    value = str(secret).strip()
+    if "CHANGE_ME" in value or value.startswith("YourSecure"):
+        return True
+    return value == _TURNSTILE_DUMMY_SECRET
+
 def verify_turnstile_token(token: str, remote_ip: str = None) -> tuple:
     """
-    Validates a Cloudflare Turnstile token against the Cloudflare siteverify API.
-    Returns (True, '') on successful verification or test bypass.
-    Returns (False, error_message) on failure.
+    Validates a Cloudflare Turnstile token against the siteverify API.
+    Returns (True, '') only when Cloudflare accepts the token, or when the
+    configured test token matches exactly. Bypass literals never succeed.
     """
-    if not token or not isinstance(token, str):
+    if not token or not isinstance(token, str) or not token.strip():
         return False, "Cloudflare Turnstile token is missing. Please complete the security verification."
 
     clean_token = token.strip()
+    if clean_token in _TURNSTILE_BYPASS_TOKENS:
+        return False, "Turnstile verification failed."
 
-    if clean_token in ("DEMO_BYPASS", "TEST_BYPASS", "XXXX.DUMMY.TOKEN.XXXX"):
+    configured_test = os.environ.get("EPA_TURNSTILE_TEST_TOKEN", "").strip()
+    if configured_test and configured_test not in _TURNSTILE_BYPASS_TOKENS and clean_token == configured_test:
         return True, ""
 
     settings = get_settings()
-    turnstile_secret = settings.get("turnstile_secret_key", "").strip() or os.environ.get("TURNSTILE_SECRET_KEY", "").strip() or "1x0000000000000000000000000000000AA"
-
-    if turnstile_secret == "1x0000000000000000000000000000000AA":
-        return True, ""
+    turnstile_secret = (settings.get("turnstile_secret_key") or "").strip() or os.environ.get("TURNSTILE_SECRET_KEY", "").strip()
+    if _turnstile_secret_is_unusable(turnstile_secret):
+        return False, "Turnstile secret is not configured."
 
     url = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
     payload = {
@@ -2286,10 +2488,9 @@ def verify_turnstile_token(token: str, remote_ip: str = None) -> tuple:
         })
         with urllib.request.urlopen(req, timeout=5.0) as resp:
             body = json.loads(resp.read().decode("utf-8"))
-            if body.get("success"):
+            if body.get("success") is True:
                 return True, ""
-            err_codes = body.get("error-codes", ["turnstile-validation-failed"])
-            return False, f"Turnstile verification failed: {', '.join(err_codes)}"
-    except Exception as e:
-        print(f"[!] Warning: Turnstile validation network error: {e}")
-        return True, ""
+            err_codes = body.get("error-codes") or ["turnstile-validation-failed"]
+            return False, f"Turnstile verification failed: {', '.join(str(code) for code in err_codes)}"
+    except Exception as exc:
+        return False, f"Turnstile verification failed: {exc}"

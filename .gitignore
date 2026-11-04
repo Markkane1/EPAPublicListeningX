@@ -29,6 +29,7 @@ scrapper/release/*.pem
 *.db-wal
 *.db-shm
 data/
+scrapper/sample_data/
 
 # Scratch / temporary working files
 scratch/

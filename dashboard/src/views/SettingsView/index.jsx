@@ -31,6 +31,7 @@ import TableRow from '@mui/material/TableRow';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import { useArgonController } from '../../context';
+import { useAuth } from '../../context/AuthContext';
 
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
@@ -71,6 +72,8 @@ import {
 function SettingsView({ onSettingsSaved, onReloadFromDb }) {
   const [controller] = useArgonController();
   const { darkMode } = controller;
+  const { hasPermission } = useAuth();
+  const canManageSettings = hasPermission('settings.manage');
   const [tabValue, setTabValue] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -858,6 +861,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Typography>
                 </Box>
 
+                {canManageSettings && (
                 <Button
                   variant="outlined"
                   size="small"
@@ -878,6 +882,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 >
                   {reanalyzing ? `Analyzing Posts...` : `Re-analyze All Posts (${sentimentEngineState.toUpperCase()})`}
                 </Button>
+                )}
               </Box>
 
               {reanalyzeResult && (
@@ -887,7 +892,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Alert>
               )}
             </Box>
-<Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9' }}>
+{canManageSettings && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9' }}>
               <Button
                 variant="contained"
                 onClick={handleSave}
@@ -909,6 +915,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 {saving ? 'Saving...' : 'Save Pipeline Configuration'}
               </Button>
             </Box>
+            )}
           </Box>
         )}
 {tabValue === 1 && (
@@ -982,7 +989,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       flexShrink: 0,
                     }}
                   />
-                ) : (
+                ) : canManageSettings ? (
                   <Button
                     size="small"
                     variant="outlined"
@@ -1003,7 +1010,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   >
                     Activate As Default
                   </Button>
-                )}
+                ) : null}
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', flexShrink: 0 }}>
@@ -1026,6 +1033,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   Version History ({queryVersions.length})
                 </Button>
 
+                {canManageSettings && (
                 <Button
                   variant="contained"
                   size="small"
@@ -1046,6 +1054,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 >
                   + Save As New Version
                 </Button>
+                )}
               </Box>
             </Box>
 
@@ -1140,6 +1149,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     {copiedQuery ? 'Copied to Clipboard' : 'Copy Query'}
                   </Button>
 
+                  {canManageSettings && (
                   <Button
                     size="small"
                     variant="contained"
@@ -1160,8 +1170,9 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   >
                     Save Changes to {tagDraft}
                   </Button>
+                  )}
 
-                  {selectedVersionObj && !selectedVersionObj.isActive && queryVersions.length > 1 && (
+                  {canManageSettings && selectedVersionObj && !selectedVersionObj.isActive && queryVersions.length > 1 && (
                     <IconButton
                       size="small"
                       onClick={() => handleDeleteVersion(selectedVersionObj.id)}
@@ -1434,6 +1445,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   {testing ? 'Testing Endpoint...' : 'Test Connection'}
                 </Button>
 
+                {canManageSettings && (
                 <Button
                   variant="contained"
                   onClick={handleSave}
@@ -1457,6 +1469,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 >
                   {saving ? 'Saving...' : 'Save API Settings'}
                 </Button>
+                )}
               </Box>
 
               {testResult && (
@@ -1670,6 +1683,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           >
             Cancel
           </Button>
+          {canManageSettings && (
           <Button
             variant="contained"
             disabled={versionActionLoading || !newTag.trim() || !newQueryText.trim()}
@@ -1687,6 +1701,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           >
             Save Version
           </Button>
+          )}
         </DialogActions>
       </Dialog>
 <Dialog
@@ -1783,7 +1798,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                         >
                           Load
                         </Button>
-                        {!v.isActive && (
+                        {canManageSettings && !v.isActive && (
                           <Button
                             size="small"
                             variant="outlined"

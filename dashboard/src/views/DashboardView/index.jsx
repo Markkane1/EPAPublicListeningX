@@ -29,6 +29,7 @@ import FilterAltOffRoundedIcon from '@mui/icons-material/FilterAltOffRounded';
 import DetailedStatisticsCard from 'examples/Cards/StatisticsCards/DetailedStatisticsCard';
 import PostCard from 'components/PostCard';
 import { useArgonController } from 'context';
+import { useAuth } from 'context/AuthContext';
 
 function DashboardView({
   posts,
@@ -40,6 +41,8 @@ function DashboardView({
 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
+  const { hasPermission } = useAuth();
+  const canIngest = hasPermission('posts.ingest');
   const [dateFilter, setDateFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
 
@@ -96,13 +99,20 @@ function DashboardView({
 
   const totalClean = filteredDashboardPosts.length;
   const aqiValues = filteredDashboardPosts
-    .map((p) => p.aqi_value)
-    .filter((v) => typeof v === 'number' && v > 0 && v <= 1000);
-  const peakAqi = aqiValues.length > 0 ? Math.max(...aqiValues) : (totalClean === 0 ? 'N/A' : 700);
-  const avgAqi =
-    aqiValues.length > 0
-      ? (aqiValues.reduce((a, b) => a + b, 0) / aqiValues.length).toFixed(1)
-      : (totalClean === 0 ? 'N/A' : '361.1');
+    .map((p) => {
+      const raw = p.aqi_value;
+      if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+      if (typeof raw === 'string' && raw.trim() !== '' && Number.isFinite(Number(raw))) return Number(raw);
+      return null;
+    })
+    .filter((v) => v !== null);
+  const hasAqi = aqiValues.length > 0;
+  const peakAqi = hasAqi ? Math.max(...aqiValues) : null;
+  const avgAqi = hasAqi
+    ? (aqiValues.reduce((a, b) => a + b, 0) / aqiValues.length).toFixed(1)
+    : null;
+  const peakIsHazardous = hasAqi && peakAqi >= 301;
+  const avgIsHazardous = hasAqi && Number(avgAqi) >= 301;
 
   const duplicatesMerged = auditLog.filter((a) => a.status === 'DUPLICATE_MERGED').length;
   const noiseRemoved = auditLog.filter((a) => a.status === 'REMOVED').length;
@@ -127,6 +137,7 @@ function DashboardView({
     cityCounts[c] = (cityCounts[c] || 0) + 1;
   });
   const sortedCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]);
+  const topCity = sortedCities.length > 0 ? sortedCities[0][0] : null;
 
   const topInteractionPosts = useMemo(() => {
     const getInteractions = (p) => {
@@ -444,29 +455,29 @@ function DashboardView({
 
         <DetailedStatisticsCard
           title="Peak Recorded AQI"
-          count={String(peakAqi)}
+          count={hasAqi ? String(peakAqi) : '—'}
           icon={{
             color: 'error',
             component: <WarningAmberRoundedIcon />,
           }}
           percentage={{
-            color: 'error',
-            count: typeof peakAqi === 'number' && peakAqi >= 300 ? 'Hazardous' : 'Recorded',
-            text: hasActiveFilters ? 'in selected window' : 'Lahore peak',
+            color: peakIsHazardous ? 'error' : 'secondary',
+            count: hasAqi ? (peakIsHazardous ? 'Hazardous' : 'Recorded') : 'No AQI yet',
+            text: hasActiveFilters ? 'in selected window' : (topCity || 'from posts'),
           }}
         />
 
         <DetailedStatisticsCard
           title="Average Recorded AQI"
-          count={String(avgAqi)}
+          count={hasAqi ? String(avgAqi) : '—'}
           icon={{
             color: 'warning',
             component: <CloudQueueRoundedIcon />,
           }}
           percentage={{
-            color: 'warning',
-            count: typeof avgAqi === 'string' && parseFloat(avgAqi) >= 300 ? 'Hazardous' : 'Severe',
-            text: hasActiveFilters ? 'window baseline' : 'regional baseline',
+            color: avgIsHazardous ? 'warning' : 'secondary',
+            count: hasAqi ? (avgIsHazardous ? 'Hazardous' : 'Recorded') : 'No AQI yet',
+            text: hasActiveFilters ? 'window baseline' : 'from posts with AQI',
           }}
         />
 
@@ -536,7 +547,9 @@ function DashboardView({
                 wordBreak: 'break-word',
               }}
             >
-              Severe Smog & Hazardous Atmospheric AQI Surge in Punjab
+              {hasAqi
+                ? `Peak AQI ${peakAqi}${topCity ? ` in ${topCity}` : ''}`
+                : 'No AQI yet'}
             </Typography>
 
             <Typography
@@ -548,9 +561,9 @@ function DashboardView({
                 mb: 2,
               }}
             >
-              Scraped X.com intelligence confirms peak atmospheric AQI readings crossing <strong style={{ color: '#f5365c' }}>600+</strong> in Lahore.
-              Citizen reports, hospital admissions, anti-smog squad inspections, and satellite stubble fire imagery dominate discussions.
-              All off-topic sports/food noise, Gurmukhi text, and Indian domestic blame campaigns have been eliminated through our dedicated pipeline.
+              {hasAqi
+                ? `Peak recorded AQI is ${peakAqi}${peakIsHazardous ? ' (Hazardous)' : ''}. Average recorded AQI is ${avgAqi}${avgIsHazardous ? ' (Hazardous)' : ''}.${topCity ? ` Most posts in this window name ${topCity}.` : ''}`
+                : 'No post in this window has a numeric AQI.'}
             </Typography>
 
             <Box
@@ -565,13 +578,13 @@ function DashboardView({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <WarningAmberRoundedIcon sx={{ fontSize: '18px', color: '#f5365c', flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                  Peak AQI: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{peakAqi} (Hazardous)</strong>
+                  Peak AQI: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{hasAqi ? `${peakAqi}${peakIsHazardous ? ' (Hazardous)' : ''}` : '—'}</strong>
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <PlaceRoundedIcon sx={{ fontSize: '18px', color: '#5e72e4', flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                  Epicenter: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>Lahore & Gujranwala</strong>
+                  Epicenter: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{topCity || '—'}</strong>
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
@@ -618,29 +631,31 @@ function DashboardView({
               Explore All {totalClean} Posts
             </Button>
 
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={onOpenIngest}
-              startIcon={<CloudUploadRoundedIcon />}
-              sx={{
-                color: darkMode ? '#cbd5e1' : '#344767',
-                borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
-                fontFamily: '"Open Sans", sans-serif',
-                fontWeight: 600,
-                fontSize: '13px',
-                textTransform: 'none',
-                borderRadius: '8px',
-                px: 2,
-                py: 1,
-                '&:hover': {
-                  borderColor: '#94a3b8',
-                  backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.06)' : '#f8fafc',
-                },
-              }}
-            >
-              + Ingest Scraped JSON
-            </Button>
+            {canIngest && (
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={onOpenIngest}
+                startIcon={<CloudUploadRoundedIcon />}
+                sx={{
+                  color: darkMode ? '#cbd5e1' : '#344767',
+                  borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+                  fontFamily: '"Open Sans", sans-serif',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  textTransform: 'none',
+                  borderRadius: '8px',
+                  px: 2,
+                  py: 1,
+                  '&:hover': {
+                    borderColor: '#94a3b8',
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.06)' : '#f8fafc',
+                  },
+                }}
+              >
+                + Ingest Scraped JSON
+              </Button>
+            )}
 
             <Button
               variant="text"
@@ -846,7 +861,7 @@ function DashboardView({
                     fontSize: '11px',
                     fontWeight: 700,
                     backgroundColor: darkMode ? 'rgba(45, 206, 137, 0.2)' : '#e6f8f0',
-                    color: '#2dce89',
+                    color: darkMode ? '#4ade80' : '#0b5d3b',
                     border: '1px solid #bbf7d0',
                   }}
                 />

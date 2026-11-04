@@ -31,7 +31,7 @@ function getStatusBadge(status, darkMode = false) {
         sx={{
           display: 'inline-block',
           backgroundColor: darkMode ? 'rgba(45, 206, 137, 0.2)' : '#e6f8f0',
-          color: darkMode ? '#4ade80' : '#2dce89',
+          color: darkMode ? '#4ade80' : '#0b5d3b',
           border: darkMode ? '1px solid rgba(45, 206, 137, 0.4)' : '1px solid #c2f0dc',
           px: 1,
           py: 0.3,

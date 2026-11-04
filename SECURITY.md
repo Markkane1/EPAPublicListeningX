@@ -31,10 +31,11 @@ We aim to acknowledge all security reports within **48 hours** and provide a res
 
 ### Credential Management
 - Never commit `.env` to version control. It is listed in `.gitignore`.
-- After the first run, **immediately change all default passwords** via the Admin UI.
+- Do not use a published or placeholder password. On first seed, and when an existing hash still matches a retired published password, the server writes a generated password to `data/bootstrap-credentials.txt` and deletes that account's sessions. Change it from the admin UI after you sign in.
+- A password change revokes that account's other sessions.
 - Use strong, unique passwords for each role account (minimum 8 characters, mix of upper/lower/digits/symbols).
 - Rotate the `X_BEARER_TOKEN` and `X_API_SECRET` periodically.
-- Use real Cloudflare Turnstile keys in production — replace the test keys.
+- Use real Cloudflare Turnstile keys. The always-pass test secret and the tokens `DEMO_BYPASS`, `TEST_BYPASS`, and `XXXX.DUMMY.TOKEN.XXXX` do not authenticate. A Turnstile network or parse failure does not authenticate.
 
 ### Deployment
 - By default, the server binds to `127.0.0.1` (loopback only). **Do not expose directly to the public internet.**
@@ -65,13 +66,13 @@ We aim to acknowledge all security reports within **48 hours** and provide a res
 - Timing-safe comparison via `hmac.compare_digest`.
 
 ### Rate Limiting
-- Authentication endpoints (`/api/auth/login`, `/api/auth/signup`, `/api/turnstile/verify`) are limited to **10 requests per IP per 60-second window**.
+- `POST /api/auth/login` and `POST /api/turnstile/verify` are limited to **30 requests per 60 seconds** per connection peer (`RATE_LIMIT_LOGIN_MAX`, `RATE_LIMIT_WINDOW`). `X-Forwarded-For` is ignored unless the peer address is listed in `TRUSTED_PROXIES`.
 
 ### Input Validation
 - Username: 3–64 alphanumeric characters (lowercase, digits, `_`, `-`, `.`)
 - Email: standard format, max 254 characters
 - Password: 8–1024 characters
-- Request body: capped at **2 MB**
+- Request body: capped at **16 MB** (`Content-Length` above the cap is rejected with HTTP 413 before the body is read)
 
 ### HTTP Security Headers
 Every response includes:
@@ -79,12 +80,12 @@ Every response includes:
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`
 - `Referrer-Policy: strict-origin-when-cross-origin`
-- `Content-Security-Policy` (restricts scripts, frames, connections to known-safe origins)
+- `Content-Security-Policy` includes `frame-ancestors 'none'` so an HTML document cannot be framed. `script-src` keeps `'unsafe-inline'` so the built dashboard still runs.
 - `Permissions-Policy` (disables geolocation, camera, microphone)
 
 ### RBAC
 - 4 built-in roles with 20 granular permissions
-- Super Administrator bypass is explicit and logged
+- A role named super_admin skips the permission list at the gateway. Creating that role, or granting permissions the caller does not hold, is rejected for every other caller.
 - System roles cannot be deleted
 
 ---
@@ -97,10 +98,10 @@ Every response includes:
 | 2026-11-04 | Replaced wildcard CORS with explicit origin allowlist |
 | 2026-11-04 | Added HTTP security headers (CSP, X-Frame-Options, etc.) |
 | 2026-11-04 | Fixed incomplete `get_bearer_token_from_credentials` |
-| 2026-11-04 | Fixed SSL CERT_NONE silent fallback — now warns operators |
+| 2026-11-04 | Removed the unverified TLS retry on X API calls |
 | 2026-11-04 | Protected all API endpoints with RBAC permission checks |
 | 2026-11-04 | Stripped raw API secrets from `/api/settings` response |
-| 2026-11-04 | Added request body size cap (2 MB) |
+| 2026-11-04 | Added request body size cap (16 MB) |
 | 2026-11-04 | Increased password minimum length from 6 to 8 characters |
 | 2026-11-04 | Sanitized internal errors — no stack traces exposed to callers |
 | 2026-11-04 | Added avatar URL allowlist to prevent SSRF via avatar fields |
@@ -110,3 +111,4 @@ Every response includes:
 | 2026-11-04 | Removed DB file path from `/api/stats` response |
 | 2026-11-04 | Removed `.env` default passwords; replaced with CHANGE_ME placeholders |
 | 2026-11-04 | Added `data/`, `*.db`, `scratch/` to `.gitignore` |
+| 2026-11-04 | Retired published seed passwords, closed Turnstile bypass and fail-open, stopped unverified TLS retry, framed-denied HTML, bounded post reads, and untracked the live database and scraped corpus |
