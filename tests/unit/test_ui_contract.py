@@ -77,6 +77,20 @@ def test_portal_html_has_no_placeholder_aqi():
     assert ">361.1<" not in text
 
 
+def test_sentiment_engine_switch_requires_settings_manage():
+    text = _read(os.path.join("dashboard", "src", "views", "SettingsView", "index.jsx"))
+    assert "settings.manage" in text
+    assert "onClick={() => handleSwitchEngine(" not in text
+    assert "canManageSettings ? () => handleSwitchEngine('vader')" in text
+    assert "canManageSettings ? () => handleSwitchEngine('transformer')" in text
+    start = text.find("const handleSwitchEngine")
+    end = text.find("const handleReanalyzeAll")
+    body = text[start:end]
+    await_at = body.find("await setSentimentEngine")
+    assert start != -1 and await_at != -1
+    assert "setSentimentEngineState(eng)" not in body[:await_at]
+
+
 def test_mutation_controls_are_permission_gated():
     app = _read(os.path.join("dashboard", "src", "App.jsx"))
     search = _read(os.path.join("dashboard", "src", "views", "SearchView", "index.jsx"))

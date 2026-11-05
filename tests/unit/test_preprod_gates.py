@@ -93,6 +93,43 @@ class TestPreprodGates:
         assert database.validate_auth_token_db(current) is not None
         assert database.validate_auth_token_db(other) is None
 
+    def test_role_editor_cannot_grant_permissions_they_lack(self, temp_db):
+        admin, _err = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
+        assert admin is not None
+        perms = database.get_permissions_list_db()["permissions"]
+        by_code = {item["code"]: item["id"] for item in perms}
+        editor_role = database.create_role_db(
+            name="limited_role_editor",
+            display_name="Limited Role Editor",
+            permission_ids=[by_code["roles.edit"], by_code["roles.create"], by_code["dashboard.view"]],
+            current_user_id=admin["id"],
+        )
+        editor = database.create_user_db(
+            username="role_editor_limited",
+            email="role.editor.limited@epa.punjab.gov.pk",
+            password="RoleEditor#2026",
+            full_name="Limited Role Editor",
+            role_id=editor_role["id"],
+            current_user_id=admin["id"],
+        )
+        with pytest.raises(ValueError, match="Cannot grant a permission you do not hold"):
+            database.update_role_db(
+                editor_role["id"],
+                permission_ids=[by_code["roles.edit"], by_code["settings.manage"]],
+                current_user_id=editor["id"],
+            )
+        saved = database.get_role_by_id_db(editor_role["id"])
+        assert "settings.manage" not in saved["permissionCodes"]
+        with pytest.raises(ValueError, match="Cannot grant a permission you do not hold"):
+            database.create_role_db(
+                name="escalated_role",
+                display_name="Escalated Role",
+                permission_ids=[by_code["settings.manage"]],
+                current_user_id=editor["id"],
+            )
+        names = {role["name"] for role in database.get_roles_list_db()}
+        assert "escalated_role" not in names
+
     def test_analyst_cannot_create_super_admin(self, temp_db):
         analyst, _err = database.authenticate_user_db("analyst", TEST_ANALYST_PASSWORD)
         roles = database.get_roles_list_db()

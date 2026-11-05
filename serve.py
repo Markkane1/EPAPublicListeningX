@@ -545,7 +545,7 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                 if err_resp:
                     self.send_json(err_resp[0], status=err_resp[1])
                     return
-                res = service.create_role_service(body)
+                res = service.create_role_service(body, current_user_id=user["id"])
                 self.send_json(res, status=201)
 
             elif re.match(r'^/api/roles/(\d+)/update$', path) or re.match(r'^/api/roles/(\d+)$', path):
@@ -555,7 +555,7 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 m = re.match(r'^/api/roles/(\d+)', path)
                 target_role_id = int(m.group(1))
-                res = service.update_role_service(target_role_id, body)
+                res = service.update_role_service(target_role_id, body, current_user_id=user["id"])
                 self.send_json(res)
 
             elif re.match(r'^/api/roles/(\d+)/delete$', path):
@@ -797,7 +797,7 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json(err_resp[0], status=err_resp[1])
                     return
                 role_id = int(m_role.group(1))
-                res = service.update_role_service(role_id, body)
+                res = service.update_role_service(role_id, body, current_user_id=user["id"])
                 self.send_json(res)
                 return
 

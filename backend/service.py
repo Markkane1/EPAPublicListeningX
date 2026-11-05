@@ -602,7 +602,7 @@ def get_role_service(role_id: int):
         raise ValueError(f"Role with ID {role_id} not found.")
     return role
 
-def create_role_service(data: dict):
+def create_role_service(data: dict, current_user_id: int = None):
     """Creates a custom role."""
     name = data.get("name")
     display_name = data.get("displayName") or data.get("display_name")
@@ -613,20 +613,22 @@ def create_role_service(data: dict):
         name=name,
         display_name=display_name,
         description=description,
-        permission_ids=permission_ids
+        permission_ids=permission_ids,
+        current_user_id=current_user_id,
     )
 
-def update_role_service(role_id: int, data: dict):
+def update_role_service(role_id: int, data: dict, current_user_id: int = None):
     """Updates role metadata and permission assignments."""
     display_name = data.get("displayName") or data.get("display_name")
     description = data.get("description")
-    permission_ids = data.get("permissionIds") or data.get("permission_ids")
+    permission_ids = data.get("permissionIds") if "permissionIds" in data else data.get("permission_ids")
 
     return database.update_role_db(
         role_id=role_id,
         display_name=display_name,
         description=description,
-        permission_ids=permission_ids
+        permission_ids=permission_ids,
+        current_user_id=current_user_id,
     )
 
 def delete_role_service(role_id: int):

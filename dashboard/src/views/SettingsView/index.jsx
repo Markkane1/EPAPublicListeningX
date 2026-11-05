@@ -186,11 +186,12 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
   };
 
   const handleSwitchEngine = async (eng) => {
-    setSentimentEngineState(eng);
+    if (!canManageSettings) return;
     try {
       await setSentimentEngine(eng);
+      setSentimentEngineState(eng);
     } catch (e) {
-      console.error("Failed to switch sentiment engine:", e);
+      setErrorMessage(`Failed to switch sentiment engine: ${e.message}`);
     }
   };
 
@@ -752,14 +753,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
 <Box
-                  onClick={() => handleSwitchEngine('vader')}
+                  onClick={canManageSettings ? () => handleSwitchEngine('vader') : undefined}
                   sx={{
                     border: '1.5px solid',
                     borderColor: sentimentEngineState === 'vader' ? '#5e72e4' : '#e2e8f0',
                     backgroundColor: sentimentEngineState === 'vader' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
-                    cursor: 'pointer',
+                    cursor: canManageSettings ? 'pointer' : 'default',
                     transition: 'all 0.15s ease',
                     '&:hover': { borderColor: '#818cf8' },
                     display: 'flex',
@@ -790,14 +791,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                 </Box>
 <Box
-                  onClick={() => handleSwitchEngine('transformer')}
+                  onClick={canManageSettings ? () => handleSwitchEngine('transformer') : undefined}
                   sx={{
                     border: '1.5px solid',
                     borderColor: sentimentEngineState === 'transformer' ? '#5e72e4' : '#e2e8f0',
                     backgroundColor: sentimentEngineState === 'transformer' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
-                    cursor: 'pointer',
+                    cursor: canManageSettings ? 'pointer' : 'default',
                     transition: 'all 0.15s ease',
                     '&:hover': { borderColor: '#818cf8' },
                     display: 'flex',

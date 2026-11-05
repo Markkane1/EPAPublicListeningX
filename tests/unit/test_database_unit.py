@@ -146,12 +146,13 @@ class TestDatabaseUnit:
         with pytest.raises(ValueError, match="Cannot delete built-in system role"):
             database.delete_role_db(admin_role["id"])
 
-        # Create custom role
+        admin_user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         custom_role = database.create_role_db(
             name="test_temp_role",
             display_name="Temp Role",
             description="Temporary test role",
-            permission_ids=[1, 2]
+            permission_ids=[1, 2],
+            current_user_id=admin_user["id"],
         )
         assert custom_role["name"] == "test_temp_role"
 

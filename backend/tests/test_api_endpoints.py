@@ -93,7 +93,7 @@ def run_tests():
         "displayName": "Regional Air Monitor",
         "description": "Custom role for district level monitors",
         "permissionIds": perm_ids
-    })
+    }, current_user_id=admin_user["id"])
     assert custom_role["name"] == "custom_monitor"
     assert custom_role["permissionCount"] == 4
     print(f"[PASS] 10. Role CRUD - Created custom role with 4 permissions.")
@@ -101,7 +101,7 @@ def run_tests():
     updated_role = service.update_role_service(custom_role["id"], {
         "displayName": "Senior Regional Air Monitor",
         "permissionIds": perm_ids[:2]
-    })
+    }, current_user_id=admin_user["id"])
     assert updated_role["displayName"] == "Senior Regional Air Monitor"
     assert updated_role["permissionCount"] == 2
     print("[PASS] 11. Role CRUD - Updated role name and permissions.")

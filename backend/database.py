@@ -2349,7 +2349,36 @@ def get_role_by_id_db(role_id: int):
             "updatedAt": r["updated_at"]
         }
 
-def create_role_db(name: str, display_name: str, description: str = None, permission_ids: list = None):
+def _assert_permission_ids_within_caller(cursor, current_user_id, permission_ids):
+    """Reject a permission set the caller does not already hold."""
+    if current_user_id is None:
+        raise ValueError("current_user_id is required.")
+    cursor.execute("""
+        SELECT u.id, r.name AS role_name, r.id AS role_id
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.id = ?
+    """, (int(current_user_id),))
+    caller = cursor.fetchone()
+    if not caller:
+        raise ValueError("current_user_id does not match a user.")
+    if caller["role_name"] == "super_admin":
+        return
+    if not permission_ids:
+        return
+    ids = [int(pid) for pid in permission_ids]
+    cursor.execute(
+        f"SELECT id, code FROM permissions WHERE id IN ({','.join('?' * len(ids))})",
+        ids,
+    )
+    found = {row["id"]: row["code"] for row in cursor.fetchall()}
+    caller_codes = _role_permission_codes(cursor, caller["role_id"])
+    for pid in ids:
+        code = found.get(pid)
+        if code is None or code not in caller_codes:
+            raise ValueError("Cannot grant a permission you do not hold.")
+
+def create_role_db(name: str, display_name: str, description: str = None, permission_ids: list = None, current_user_id: int = None):
     """Creates a custom role and attaches granted permissions."""
     slug = (name or "").strip().lower().replace(" ", "_")
     d_name = (display_name or "").strip()
@@ -2367,6 +2396,11 @@ def create_role_db(name: str, display_name: str, description: str = None, permis
         if cursor.fetchone():
             raise ValueError(f"A role with identifier '{slug}' already exists.")
 
+        if permission_ids and isinstance(permission_ids, list):
+            _assert_permission_ids_within_caller(cursor, current_user_id, permission_ids)
+        elif current_user_id is None:
+            raise ValueError("current_user_id is required.")
+
         cursor.execute("""
             INSERT INTO roles (name, display_name, description, is_system, created_at, updated_at)
             VALUES (?, ?, ?, 0, ?, ?)
@@ -2379,11 +2413,13 @@ def create_role_db(name: str, display_name: str, description: str = None, permis
                     INSERT OR IGNORE INTO role_permissions (role_id, permission_id)
                     VALUES (?, ?)
                 """, (role_id, int(pid)))
+        elif current_user_id is None:
+            raise ValueError("current_user_id is required.")
 
         conn.commit()
         return get_role_by_id_db(role_id)
 
-def update_role_db(role_id: int, display_name: str = None, description: str = None, permission_ids: list = None):
+def update_role_db(role_id: int, display_name: str = None, description: str = None, permission_ids: list = None, current_user_id: int = None):
     """Updates role display properties and granted permissions."""
     with get_db() as conn:
         cursor = conn.cursor()
@@ -2403,10 +2439,18 @@ def update_role_db(role_id: int, display_name: str = None, description: str = No
         """, (new_dname, new_desc, now_iso, role_id))
 
         if permission_ids is not None and isinstance(permission_ids, list):
+            _assert_permission_ids_within_caller(cursor, current_user_id, permission_ids)
             if role["name"] == "super_admin":
+                cursor.execute("""
+                    SELECT r.name FROM users u
+                    JOIN roles r ON u.role_id = r.id
+                    WHERE u.id = ?
+                """, (int(current_user_id),))
+                caller_role = cursor.fetchone()
+                if not caller_role or caller_role["name"] != "super_admin":
+                    raise ValueError("Cannot grant a permission you do not hold.")
                 cursor.execute("SELECT id FROM permissions")
-                all_ids = [row["id"] for row in cursor.fetchall()]
-                permission_ids = all_ids
+                permission_ids = [row["id"] for row in cursor.fetchall()]
 
             cursor.execute("DELETE FROM role_permissions WHERE role_id = ?", (role_id,))
             for pid in permission_ids:
