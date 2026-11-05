@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -10,9 +10,10 @@ import PostCard from 'components/PostCard';
 import FilterBar from 'components/FilterBar';
 
 import { useArgonController } from 'context';
+import { getPosts, getStats, POSTS_CHUNK_SIZE, POSTS_PAGE_SIZE } from '../../services/api';
 
 function PostsView({
-  posts,
+  dataRevision = 0,
   onImageClick,
   dataSource = 'file',
   onFetchSuccess,
@@ -23,7 +24,10 @@ function PostsView({
   const { miniSidenav, darkMode } = controller || {};
 
   const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 12;
+  const postsPerPage = POSTS_PAGE_SIZE;
+  const [chunk, setChunk] = useState({ items: [], total: 0, offset: 0 });
+  const [facets, setFacets] = useState({ cityCounts: {}, categoryCounts: {}, dateCounts: [], archiveTotal: 0 });
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [filters, setFilters] = useState({
     search: '',
@@ -37,245 +41,52 @@ function PostsView({
     sortOrder: 'desc',
   });
 
-  const { availableCities, availableCategories, availableDates } = useMemo(() => {
-    const cityMap = {};
-    const catMap = {};
-    const dateMap = {};
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(filters.search || ''), 300);
+    return () => clearTimeout(t);
+  }, [filters.search]);
 
-    posts.forEach((p) => {
-      const city = p.city_detected || 'Punjab Region';
-      cityMap[city] = (cityMap[city] || 0) + 1;
-      const cat = p.category || 'General';
-      catMap[cat] = (catMap[cat] || 0) + 1;
+  useEffect(() => {
+    getStats()
+      .then((s) => setFacets({
+        cityCounts: s.cityCounts || {},
+        categoryCounts: s.categoryCounts || {},
+        dateCounts: s.dateCounts || [],
+        archiveTotal: s.archiveTotalPosts || 0,
+      }))
+      .catch(() => {});
+  }, [dataRevision]);
 
-      if (p.createdAt) {
-        const d = new Date(p.createdAt);
-        if (!isNaN(d.getTime())) {
-          const key = d.toISOString().slice(0, 10);
-          dateMap[key] = (dateMap[key] || 0) + 1;
-        }
-      }
+  useEffect(() => {
+    let cancelled = false;
+    const chunkOffset = Math.floor(((currentPage - 1) * postsPerPage) / POSTS_CHUNK_SIZE) * POSTS_CHUNK_SIZE;
+    getPosts({
+      search: debouncedSearch,
+      city: filters.city,
+      severity: filters.severity,
+      category: filters.category,
+      media: filters.media,
+      date: filters.date,
+      timeOfDay: filters.timeOfDay,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+      limit: POSTS_CHUNK_SIZE,
+      offset: chunkOffset,
+    }).then((page) => {
+      if (!cancelled) setChunk({ items: page.items, total: page.total, offset: page.offset });
+    }).catch(() => {
+      if (!cancelled) setChunk({ items: [], total: 0, offset: 0 });
     });
+    return () => { cancelled = true; };
+  }, [debouncedSearch, filters.city, filters.severity, filters.category, filters.media, filters.date, filters.timeOfDay, filters.sortBy, filters.sortOrder, currentPage, dataRevision, postsPerPage]);
 
-    const cities = Object.entries(cityMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
-
-    const categories = Object.entries(catMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
-
-    const dates = Object.entries(dateMap)
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([date, count]) => ({ date, count }));
-
-    return { availableCities: cities, availableCategories: categories, availableDates: dates };
-  }, [posts]);
-
-  const filteredPosts = useMemo(() => {
-    let result = [...posts];
-
-    if (filters.search) {
-      const q = filters.search.toLowerCase().trim();
-      result = result.filter(
-        (p) =>
-          (p.text && p.text.toLowerCase().includes(q)) ||
-          (p.authorName && p.authorName.toLowerCase().includes(q)) ||
-          (p.authorUsername && p.authorUsername.toLowerCase().includes(q)) ||
-          (p.city_detected && p.city_detected.toLowerCase().includes(q))
-      );
-    }
-
-    if (filters.city !== 'all') {
-      result = result.filter((p) => p.city_detected === filters.city);
-    }
-
-    if (filters.severity !== 'all') {
-      result = result.filter((p) => p.severity_code === filters.severity);
-    }
-
-    if (filters.category !== 'all') {
-      result = result.filter((p) => p.category === filters.category);
-    }
-
-    if (filters.date && filters.date !== 'all') {
-      result = result.filter((p) => {
-        if (!p.createdAt) return false;
-        const d = new Date(p.createdAt);
-        return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === filters.date;
-      });
-    }
-
-    if (filters.timeOfDay && filters.timeOfDay !== 'all') {
-      result = result.filter((p) => {
-        if (!p.createdAt) return false;
-        const d = new Date(p.createdAt);
-        if (isNaN(d.getTime())) return false;
-        const hours = d.getHours();
-        if (filters.timeOfDay === 'morning') return hours >= 6 && hours < 12;
-        if (filters.timeOfDay === 'afternoon') return hours >= 12 && hours < 18;
-        if (filters.timeOfDay === 'evening') return hours >= 18 && hours < 24;
-        if (filters.timeOfDay === 'night') return hours >= 0 && hours < 6;
-        return true;
-      });
-    }
-
-    if (filters.media === 'media') {
-      result = result.filter((p) => p.has_media);
-    } else if (filters.media === 'text') {
-      result = result.filter((p) => !p.has_media);
-    }
-
-    const mult = filters.sortOrder === 'asc' ? -1 : 1;
-
-    result.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'newest': {
-          const timeA = new Date(a.createdAt || 0).getTime() || 0;
-          const timeB = new Date(b.createdAt || 0).getTime() || 0;
-          return mult * (timeB - timeA);
-        }
-
-        case 'oldest': {
-          const timeA = new Date(a.createdAt || 0).getTime() || 0;
-          const timeB = new Date(b.createdAt || 0).getTime() || 0;
-          return mult * (timeA - timeB);
-        }
-
-        case 'engagement':
-        case 'interactions': {
-          const aEng =
-            (a.total_engagement != null ? a.total_engagement : 0) ||
-            ((parseInt(a.likes, 10) || 0) +
-              (parseInt(a.retweets, 10) || 0) +
-              (parseInt(a.replies, 10) || 0) +
-              (parseInt(a.quotes, 10) || 0) +
-              (parseInt(a.bookmarks, 10) || 0));
-          const bEng =
-            (b.total_engagement != null ? b.total_engagement : 0) ||
-            ((parseInt(b.likes, 10) || 0) +
-              (parseInt(b.retweets, 10) || 0) +
-              (parseInt(b.replies, 10) || 0) +
-              (parseInt(b.quotes, 10) || 0) +
-              (parseInt(b.bookmarks, 10) || 0));
-          if (aEng !== bEng) return mult * (bEng - aEng);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'likes': {
-          const aLikes = parseInt(a.likes, 10) || 0;
-          const bLikes = parseInt(b.likes, 10) || 0;
-          if (aLikes !== bLikes) return mult * (bLikes - aLikes);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'retweets': {
-          const aRt = parseInt(a.retweets, 10) || 0;
-          const bRt = parseInt(b.retweets, 10) || 0;
-          if (aRt !== bRt) return mult * (bRt - aRt);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'replies': {
-          const aRep = parseInt(a.replies, 10) || 0;
-          const bRep = parseInt(b.replies, 10) || 0;
-          if (aRep !== bRep) return mult * (bRep - aRep);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'views': {
-          const aViews = parseInt(a.views, 10) || 0;
-          const bViews = parseInt(b.views, 10) || 0;
-          if (aViews !== bViews) return mult * (bViews - aViews);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'aqi_desc':
-        case 'aqi': {
-          if (a.aqi_value != null && b.aqi_value != null) {
-            if (a.aqi_value !== b.aqi_value) return mult * (b.aqi_value - a.aqi_value);
-            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-          }
-          if (a.aqi_value != null) return -1;
-          if (b.aqi_value != null) return 1;
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'aqi_asc': {
-          if (a.aqi_value != null && b.aqi_value != null) {
-            if (a.aqi_value !== b.aqi_value) return mult * (a.aqi_value - b.aqi_value);
-            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-          }
-          if (a.aqi_value != null) return -1;
-          if (b.aqi_value != null) return 1;
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'severity':
-        case 'severity_desc': {
-          const sevRank = {
-            hazardous: 6,
-            very_unhealthy: 5,
-            unhealthy: 4,
-            sensitive: 3,
-            moderate: 2,
-            good: 1,
-            unspecified: 0,
-          };
-          const rankA = sevRank[a.severity_code] || 0;
-          const rankB = sevRank[b.severity_code] || 0;
-          if (rankA !== rankB) return mult * (rankB - rankA);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'followers':
-        case 'reach': {
-          const aFol = parseInt(a.authorFollowers, 10) || 0;
-          const bFol = parseInt(b.authorFollowers, 10) || 0;
-          if (aFol !== bFol) return mult * (bFol - aFol);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'verified': {
-          const aVer = a.authorVerified ? 1 : 0;
-          const bVer = b.authorVerified ? 1 : 0;
-          if (aVer !== bVer) return mult * (bVer - aVer);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'sentiment_alarm': {
-          
-          const aScore = a.sentiment_score != null ? Number(a.sentiment_score) : 0;
-          const bScore = b.sentiment_score != null ? Number(b.sentiment_score) : 0;
-          if (aScore !== bScore) return mult * (aScore - bScore);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'sentiment_positive': {
-          
-          const aScore = a.sentiment_score != null ? Number(a.sentiment_score) : 0;
-          const bScore = b.sentiment_score != null ? Number(b.sentiment_score) : 0;
-          if (aScore !== bScore) return mult * (bScore - aScore);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        case 'media_count': {
-          const aCount = a.media_count || (Array.isArray(a.mediaUrls) ? a.mediaUrls.length : 0);
-          const bCount = b.media_count || (Array.isArray(b.mediaUrls) ? b.mediaUrls.length : 0);
-          if (aCount !== bCount) return mult * (bCount - aCount);
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
-
-        default: {
-          const timeA = new Date(a.createdAt || 0).getTime() || 0;
-          const timeB = new Date(b.createdAt || 0).getTime() || 0;
-          return mult * (timeB - timeA);
-        }
-      }
-    });
-
-    return result;
-  }, [posts, filters]);
+  const availableCities = Object.entries(facets.cityCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+  const availableCategories = Object.entries(facets.categoryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+  const availableDates = facets.dateCounts || [];
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -297,11 +108,9 @@ function PostsView({
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(filteredPosts.length / postsPerPage) || 1;
-  const paginatedPosts = filteredPosts.slice(
-    (currentPage - 1) * postsPerPage,
-    currentPage * postsPerPage
-  );
+  const totalPages = Math.ceil(chunk.total / postsPerPage) || 1;
+  const pageStart = (currentPage - 1) * postsPerPage;
+  const paginatedPosts = chunk.items.slice(pageStart - chunk.offset, pageStart - chunk.offset + postsPerPage);
 
   return (
     <Box sx={{ py: 2 }}>
@@ -328,8 +137,8 @@ function PostsView({
         filters={filters}
         onFilterChange={handleFilterChange}
         onResetFilters={handleResetFilters}
-        totalResults={filteredPosts.length}
-        totalAvailable={posts.length}
+        totalResults={chunk.total}
+        totalAvailable={facets.archiveTotal}
         availableCities={availableCities}
         availableCategories={availableCategories}
         availableDates={availableDates}
@@ -464,7 +273,7 @@ function PostsView({
 }
 
 PostsView.propTypes = {
-  posts: PropTypes.arrayOf(PropTypes.object).isRequired,
+  dataRevision: PropTypes.number,
   onImageClick: PropTypes.func.isRequired,
   dataSource: PropTypes.string,
   onFetchSuccess: PropTypes.func,

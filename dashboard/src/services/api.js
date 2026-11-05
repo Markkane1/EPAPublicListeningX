@@ -251,6 +251,22 @@ export async function testXConnection(credentials) {
   return await resp.json();
 }
 
+export const POSTS_CHUNK_SIZE = 100;
+export const POSTS_PAGE_SIZE = 12;
+
+export function unwrapList(data) {
+  if (Array.isArray(data)) {
+    return { items: data, total: data.length, limit: data.length, offset: 0 };
+  }
+  const items = Array.isArray(data?.items) ? data.items : [];
+  return {
+    items,
+    total: Number(data?.total) || 0,
+    limit: Number(data?.limit) || items.length,
+    offset: Number(data?.offset) || 0,
+  };
+}
+
 export async function getPosts(params = {}) {
   const query = new URLSearchParams();
   if (params.search) query.set('search', params.search);
@@ -261,32 +277,17 @@ export async function getPosts(params = {}) {
   if (params.sortOrder || params.order) query.set('order', params.sortOrder || params.order);
   if (params.limit) query.set('limit', String(params.limit));
   if (params.offset) query.set('offset', String(params.offset));
+  if (params.date && params.date !== 'all') query.set('date', params.date);
+  if (params.timeOfDay && params.timeOfDay !== 'all') query.set('timeOfDay', params.timeOfDay);
+  if (params.media && params.media !== 'all') query.set('media', params.media);
+  if (params.verified === true || params.verified === 1 || params.verified === '1') {
+    query.set('verified', '1');
+  }
 
   const url = `${API_BASE}/posts${query.toString() ? `?${query.toString()}` : ''}`;
   const resp = await authFetch(url);
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return await resp.json();
-}
-
-export async function getAllStoredPosts() {
-  const pageSize = 2000;
-  const posts = [];
-  const seen = new Set();
-  for (let page = 0; page < 50; page += 1) {
-    const batch = await getPosts({ limit: pageSize, offset: page * pageSize });
-    if (!Array.isArray(batch)) {
-      throw new Error('Verified posts failed to load.');
-    }
-    if (batch.length === 0) break;
-    batch.forEach((post, index) => {
-      const id = String(post.id ?? post.clean_id ?? `${page}-${index}`);
-      if (seen.has(id)) return;
-      seen.add(id);
-      posts.push(post);
-    });
-    if (batch.length < pageSize) break;
-  }
-  return posts;
+  return unwrapList(await resp.json());
 }
 
 export async function searchXApi({ keyword, liveOverride = false, maxResults = 25, simulateIfMissing = true }) {
@@ -317,16 +318,30 @@ export async function ingestPostsBatch(posts, mode = 'merge') {
   return await resp.json();
 }
 
-export async function getStats() {
-  const resp = await authFetch(`${API_BASE}/stats`);
+export async function getStats(params = {}) {
+  const query = new URLSearchParams();
+  if (params.date && params.date !== 'all') query.set('date', params.date);
+  if (params.timeOfDay && params.timeOfDay !== 'all') query.set('timeOfDay', params.timeOfDay);
+  const url = `${API_BASE}/stats${query.toString() ? `?${query.toString()}` : ''}`;
+  const resp = await authFetch(url);
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
   return await resp.json();
 }
 
-export async function getAuditLogs(limit = 250) {
-  const resp = await authFetch(`${API_BASE}/audit?limit=${limit}`);
+export async function getAuditLogs(params = {}) {
+  const query = new URLSearchParams();
+  const limit = typeof params === 'number' ? params : params.limit;
+  const offset = typeof params === 'object' ? params.offset : undefined;
+  const status = typeof params === 'object' ? params.status : undefined;
+  const search = typeof params === 'object' ? params.search : undefined;
+  if (limit) query.set('limit', String(limit));
+  if (offset) query.set('offset', String(offset));
+  if (status && status !== 'all') query.set('status', status);
+  if (search) query.set('search', search);
+  const url = `${API_BASE}/audit${query.toString() ? `?${query.toString()}` : ''}`;
+  const resp = await authFetch(url);
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return await resp.json();
+  return unwrapList(await resp.json());
 }
 
 export async function getNoisePosts(params = {}) {
@@ -342,7 +357,7 @@ export async function getNoisePosts(params = {}) {
   const url = `${API_BASE}/noise${query.toString() ? `?${query.toString()}` : ''}`;
   const resp = await authFetch(url);
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return await resp.json();
+  return unwrapList(await resp.json());
 }
 
 export async function getNoiseStats() {

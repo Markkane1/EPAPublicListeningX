@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -20,11 +20,29 @@ import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';
 import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import { useArgonController } from 'context';
 import { sanitizeUrl } from '../../utils/security';
+import { getStats, getPosts } from '../../services/api';
 
-function AnalyticsView({ posts }) {
+function AnalyticsView({ dataRevision = 0 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
-  
+  const [stats, setStats] = useState(null);
+  const [viralPosts, setViralPosts] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      getStats(),
+      getPosts({ sortBy: 'engagement', limit: 10 }),
+    ]).then(([s, page]) => {
+      if (cancelled) return;
+      setStats(s);
+      setViralPosts(page.items || []);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [dataRevision]);
+
+  const postsTotal = stats?.totalPosts || 0;
+
   const severityStats = useMemo(() => {
     const counts = {
       'Hazardous (300+)': { count: 0, color: '#f5365c', label: 'Hazardous' },
@@ -33,22 +51,12 @@ function AnalyticsView({ posts }) {
       'Moderate / Good (<150)': { count: 0, color: '#2dce89', label: 'Moderate / Good' },
       'Unspecified Alert': { count: 0, color: '#adb5bd', label: 'General Alert' },
     };
-
-    posts.forEach((p) => {
-      const aqi = p.aqi_value;
-      if (aqi && aqi >= 300) counts['Hazardous (300+)'].count++;
-      else if (aqi && aqi >= 201) counts['Very Unhealthy (201-300)'].count++;
-      else if (aqi && aqi >= 151) counts['Unhealthy (151-200)'].count++;
-      else if (aqi && aqi > 0) counts['Moderate / Good (<150)'].count++;
-      else if (p.severity_code === 'hazardous') counts['Hazardous (300+)'].count++;
-      else if (p.severity_code === 'very_unhealthy') counts['Very Unhealthy (201-300)'].count++;
-      else if (p.severity_code === 'unhealthy') counts['Unhealthy (151-200)'].count++;
-      else if (p.severity_code === 'moderate' || p.severity_code === 'good') counts['Moderate / Good (<150)'].count++;
-      else counts['Unspecified Alert'].count++;
+    Object.entries(stats?.aqiBucketCounts || {}).forEach(([key, count]) => {
+      if (counts[key]) counts[key].count = count;
     });
 
     const items = Object.entries(counts).filter(([, v]) => v.count > 0);
-    const total = posts.length || 1;
+    const total = postsTotal || 1;
 
     const chartData = {
       labels: items.map(([k]) => k),
@@ -71,14 +79,10 @@ function AnalyticsView({ posts }) {
     }));
 
     return { chartData, legendItems };
-  }, [posts]);
+  }, [stats, postsTotal, darkMode]);
 
   const cityStats = useMemo(() => {
-    const cityCounts = {};
-    posts.forEach((p) => {
-      const c = p.city_detected || 'Punjab Region';
-      cityCounts[c] = (cityCounts[c] || 0) + 1;
-    });
+    const cityCounts = stats?.cityCounts || {};
 
     const sorted = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]);
     const labels = sorted.map((s) => s[0]);
@@ -98,14 +102,10 @@ function AnalyticsView({ posts }) {
     };
 
     return { chartData, sorted };
-  }, [posts]);
+  }, [stats]);
 
   const categoryStats = useMemo(() => {
-    const catCounts = {};
-    posts.forEach((p) => {
-      const cat = p.category || 'General Smog Discussion';
-      catCounts[cat] = (catCounts[cat] || 0) + 1;
-    });
+    const catCounts = stats?.categoryCounts || {};
 
     const sorted = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
     const labels = sorted.map((s) => s[0]);
@@ -125,7 +125,7 @@ function AnalyticsView({ posts }) {
     };
 
     return { chartData, sorted };
-  }, [posts]);
+  }, [stats]);
 
   const sentimentStats = useMemo(() => {
     const sMap = {
@@ -135,14 +135,13 @@ function AnalyticsView({ posts }) {
       'Positive / Solution-Oriented': { count: 0, color: '#2dce89' },
     };
 
-    posts.forEach((p) => {
-      const s = p.sentiment || 'Informative / Neutral';
-      if (sMap[s]) sMap[s].count++;
-      else sMap['Informative / Neutral'].count++;
+    Object.entries(stats?.sentimentCounts || {}).forEach(([s, count]) => {
+      if (sMap[s]) sMap[s].count = count;
+      else sMap['Informative / Neutral'].count += count;
     });
 
     const items = Object.entries(sMap).filter(([, v]) => v.count > 0);
-    const total = posts.length || 1;
+    const total = postsTotal || 1;
 
     const chartData = {
       labels: items.map(([k]) => k),
@@ -165,13 +164,7 @@ function AnalyticsView({ posts }) {
     }));
 
     return { chartData, legendItems };
-  }, [posts]);
-
-  const viralPosts = useMemo(() => {
-    return [...posts]
-      .sort((a, b) => (b.total_engagement || 0) - (a.total_engagement || 0))
-      .slice(0, 10);
-  }, [posts]);
+  }, [stats, postsTotal, darkMode]);
 
   return (
     <Box sx={{ py: 2 }}>
@@ -695,7 +688,7 @@ function AnalyticsView({ posts }) {
 }
 
 AnalyticsView.propTypes = {
-  posts: PropTypes.arrayOf(PropTypes.object).isRequired,
+  dataRevision: PropTypes.number,
 };
 
 export default AnalyticsView;

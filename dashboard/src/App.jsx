@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 import { ThemeProvider } from '@mui/material/styles';
@@ -19,23 +19,23 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 
 import brand from 'assets/images/logo-epa-mark.png';
 import brandDark from 'assets/images/logo-epa-mark.png';
-
-import DashboardView from './views/DashboardView';
-import SearchView from './views/SearchView';
-import PostsView from './views/PostsView';
-import AnalyticsView from './views/AnalyticsView';
-import AuditView from './views/AuditView';
-import NoiseView from './views/NoiseView';
-import SettingsView from './views/SettingsView';
-import UsersView from './views/UsersView';
-import RolesView from './views/RolesView';
 import LoginView from './views/LoginView';
+
+const DashboardView = lazy(() => import('./views/DashboardView'));
+const SearchView = lazy(() => import('./views/SearchView'));
+const PostsView = lazy(() => import('./views/PostsView'));
+const AnalyticsView = lazy(() => import('./views/AnalyticsView'));
+const AuditView = lazy(() => import('./views/AuditView'));
+const NoiseView = lazy(() => import('./views/NoiseView'));
+const SettingsView = lazy(() => import('./views/SettingsView'));
+const UsersView = lazy(() => import('./views/UsersView'));
+const RolesView = lazy(() => import('./views/RolesView'));
 
 import Lightbox from './components/Lightbox';
 import IngestModal from './components/IngestModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getRoutes } from './routes';
-import { getSettings, getAllStoredPosts, getNoisePosts, getAuditLogs, ingestPostsBatch, excludePost } from './services/api';
+import { getSettings, getStats, ingestPostsBatch, excludePost } from './services/api';
 
 function AppContent() {
   const [controller] = useArgonController();
@@ -44,9 +44,8 @@ function AppContent() {
   const canIngest = hasPermission('posts.ingest');
   const canExclude = hasPermission('posts.exclude');
 
-  const [posts, setPosts] = useState([]);
-  const [auditLog, setAuditLog] = useState([]);
-  const [noisePosts, setNoisePosts] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [dataRevision, setDataRevision] = useState(0);
   const [loadErrors, setLoadErrors] = useState([]);
   const [dataSource, setDataSource] = useState('file');
 
@@ -77,11 +76,9 @@ function AppContent() {
 
     async function initSync() {
       const errors = [];
-      const [settingsResult, postsResult, noiseResult, auditResult] = await Promise.all([
+      const [settingsResult, statsResult] = await Promise.all([
         getSettings().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
-        getAllStoredPosts().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
-        getNoisePosts({ status: 'EXCLUDED', limit: 250 }).then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
-        getAuditLogs().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
+        getStats().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
       ]);
       if (cancelled) return;
 
@@ -89,25 +86,11 @@ function AppContent() {
         setDataSource(settingsResult.value.data_source);
       }
 
-      if (postsResult.ok && Array.isArray(postsResult.value)) {
-        setPosts(postsResult.value);
+      if (statsResult.ok && statsResult.value) {
+        setStats(statsResult.value);
       } else {
-        setPosts([]);
-        errors.push('Verified posts failed to load. Refresh the page after the API is reachable.');
-      }
-
-      if (noiseResult.ok && Array.isArray(noiseResult.value)) {
-        setNoisePosts(noiseResult.value);
-      } else {
-        setNoisePosts([]);
-        errors.push('Noise posts failed to load. Refresh the page after the API is reachable.');
-      }
-
-      if (auditResult.ok && Array.isArray(auditResult.value)) {
-        setAuditLog(auditResult.value);
-      } else {
-        setAuditLog([]);
-        errors.push('The audit log failed to load. Refresh the page after the API is reachable.');
+        setStats(null);
+        errors.push('Dashboard totals failed to load. Refresh the page after the API is reachable.');
       }
 
       setLoadErrors(errors);
@@ -117,7 +100,7 @@ function AppContent() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, dataRevision]);
 
   useEffect(() => {
     if (!canIngest) return undefined;
@@ -145,38 +128,26 @@ function AppContent() {
     }));
   };
 
+  const bumpData = () => setDataRevision((n) => n + 1);
+
   const handleIngestSuccess = async (result, mode, rawData) => {
     if (rawData) {
-      ingestPostsBatch(rawData, mode).catch((e) => console.warn('DB ingestion persist error:', e));
-    }
-
-    if (mode === 'replace') {
-      setPosts(result.cleanPosts);
-      setAuditLog(result.auditLog);
-      if (result.noisePosts && Array.isArray(result.noisePosts)) {
-        setNoisePosts(result.noisePosts);
-      }
-      setSnackbar({
-        open: true,
-        message: `Dataset replaced! Loaded ${result.cleanPosts.length} verified posts (${result.stats.duplicatesMerged} duplicates merged, ${result.stats.removedCount} noise excluded).`,
-        severity: 'success'
-      });
+      ingestPostsBatch(rawData, mode)
+        .then(() => bumpData())
+        .catch((e) => console.warn('DB ingestion persist error:', e));
     } else {
-      setPosts(result.cleanPosts);
-      setAuditLog((prev) => [...result.auditLog, ...prev]);
-      if (result.noisePosts && Array.isArray(result.noisePosts)) {
-        setNoisePosts((prev) => {
-          const seen = new Set(prev.map((p) => String(p.id)));
-          const uniqueNew = result.noisePosts.filter((p) => !seen.has(String(p.id)));
-          return [...uniqueNew, ...prev];
-        });
-      }
-      setSnackbar({
-        open: true,
-        message: `Successfully ingested ${result.newlyAddedPosts.length} new verified posts (${result.stats.duplicatesMerged} duplicates merged, ${result.stats.removedCount} noise excluded)!`,
-        severity: 'success'
-      });
+      bumpData();
     }
+    const added = result?.newlyAddedPosts?.length || result?.cleanPosts?.length || 0;
+    const duplicates = result?.stats?.duplicatesMerged || 0;
+    const removed = result?.stats?.removedCount || 0;
+    setSnackbar({
+      open: true,
+      message: mode === 'replace'
+        ? `Dataset replaced. ${added} verified posts in this file (${duplicates} duplicates merged, ${removed} noise excluded).`
+        : `Ingested ${added} new verified posts (${duplicates} duplicates merged, ${removed} noise excluded).`,
+      severity: 'success'
+    });
   };
 
   const handleExcludeFromVerified = async (post) => {
@@ -185,7 +156,7 @@ function AppContent() {
     try {
       const pid = post.id || post.clean_id;
       await excludePost({ postId: pid, reason: 'Manually excluded by operator from verified feed' });
-      setPosts((prev) => prev.filter((p) => String(p.id) !== String(pid) && String(p.clean_id) !== String(pid)));
+      bumpData();
       setSnackbar({
         open: true,
         message: `Post ${author} moved to Noise Pool.`,
@@ -234,7 +205,7 @@ function AppContent() {
       />
 
       <DashboardLayout>
-        <DashboardNavbar dataSource={dataSource} posts={posts} />
+        <DashboardNavbar dataSource={dataSource} stats={stats} />
 
         {loadErrors.length > 0 && (
           <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
@@ -242,6 +213,7 @@ function AppContent() {
           </Alert>
         )}
 
+        <Suspense fallback={<p style={{ fontWeight: 600, fontSize: '14px', color: '#64748b', padding: '24px' }}>Loading view...</p>}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Navigate to="/dashboard" replace />} />
@@ -252,9 +224,7 @@ function AppContent() {
                 element={
                   <ProtectedRoute requiredPermission="dashboard.view" moduleName="Dashboard Overview">
                     <DashboardView
-                      posts={posts}
-                      auditLog={auditLog}
-                      noisePosts={noisePosts}
+                      dataRevision={dataRevision}
                       dataSource={dataSource}
                       onNavigate={(routeKey) => navigate(`/${routeKey}`)}
                       onOpenIngest={() => setIsIngestOpen(true)}
@@ -269,23 +239,13 @@ function AppContent() {
                 element={
                   <ProtectedRoute requiredPermission="posts.view" moduleName="Keyword Search & Fetch">
                     <SearchView
-                      posts={posts}
+                      archiveTotal={stats?.archiveTotalPosts || 0}
                       dataSource={dataSource}
                       onImageClick={handleOpenLightbox}
                       onNavigateSettings={() => navigate('/settings')}
                       onNavigatePosts={() => navigate('/posts')}
                       onFetchSuccess={(res) => {
-                        if (res.allPosts && res.allPosts.length > 0) {
-                          setPosts(res.allPosts);
-                        } else if (res.newPosts && res.newPosts.length > 0) {
-                          setPosts((prev) => [...res.newPosts, ...prev]);
-                        }
-                        if (res.noisePosts && res.noisePosts.length > 0) {
-                          setNoisePosts((prev) => [...res.noisePosts, ...prev]);
-                        }
-                        if (res.auditLog && res.auditLog.length > 0) {
-                          setAuditLog((prev) => [...res.auditLog, ...prev]);
-                        }
+                        bumpData();
                         const duplicatesCount = res.duplicatesMerged || 0;
                         const noiseCount = res.noiseRemoved || 0;
                         const verifiedCount = res.verifiedCount || res.newPosts?.length || 0;
@@ -305,23 +265,13 @@ function AppContent() {
                 element={
                   <ProtectedRoute requiredPermission="posts.view" moduleName="Posts Feed">
                     <PostsView
-                      posts={posts}
+                      dataRevision={dataRevision}
                       dataSource={dataSource}
                       onImageClick={handleOpenLightbox}
                       onNavigateSettings={() => navigate('/settings')}
                       onExcludePost={canExclude ? handleExcludeFromVerified : undefined}
                       onFetchSuccess={(res) => {
-                        if (res.allPosts && res.allPosts.length > 0) {
-                          setPosts(res.allPosts);
-                        } else if (res.newPosts && res.newPosts.length > 0) {
-                          setPosts((prev) => [...res.newPosts, ...prev]);
-                        }
-                        if (res.noisePosts && res.noisePosts.length > 0) {
-                          setNoisePosts((prev) => [...res.noisePosts, ...prev]);
-                        }
-                        if (res.auditLog && res.auditLog.length > 0) {
-                          setAuditLog((prev) => [...res.auditLog, ...prev]);
-                        }
+                        bumpData();
                         const duplicatesCount = res.duplicatesMerged || 0;
                         const noiseCount = res.noiseRemoved || 0;
                         const verifiedCount = res.verifiedCount || res.newPosts?.length || 0;
@@ -340,7 +290,7 @@ function AppContent() {
                 path="/analytics"
                 element={
                   <ProtectedRoute requiredPermission="analytics.view" moduleName="Analytics & Charts">
-                    <AnalyticsView posts={posts} />
+                    <AnalyticsView dataRevision={dataRevision} />
                   </ProtectedRoute>
                 }
               />
@@ -349,7 +299,7 @@ function AppContent() {
                 path="/audit"
                 element={
                   <ProtectedRoute requiredPermission="audit.view" moduleName="Deduplication Audit">
-                    <AuditView auditLog={auditLog} />
+                    <AuditView dataRevision={dataRevision} />
                   </ProtectedRoute>
                 }
               />
@@ -359,10 +309,9 @@ function AppContent() {
                 element={
                   <ProtectedRoute requiredPermission="noise.view" moduleName="Noise & Learning Engine">
                     <NoiseView
-                      noisePosts={noisePosts}
-                      onPostRestored={(restoredPost, restoredId) => {
-                        setPosts((prev) => [restoredPost, ...prev]);
-                        setNoisePosts((prev) => prev.filter((p) => String(p.id) !== String(restoredId || restoredPost.id)));
+                      dataRevision={dataRevision}
+                      onPostRestored={(restoredPost) => {
+                        bumpData();
                         setSnackbar({
                           open: true,
                           message: `Post @${restoredPost.authorUsername || ''} restored and added to Verified Feed!`,
@@ -370,7 +319,7 @@ function AppContent() {
                         });
                       }}
                       onPostExcluded={(excludedId, authorUsername) => {
-                        setPosts((prev) => prev.filter((p) => String(p.id) !== String(excludedId) && String(p.clean_id) !== String(excludedId)));
+                        bumpData();
                         setSnackbar({
                           open: true,
                           message: `Post ${authorUsername ? `@${authorUsername}` : ''} re-excluded as noise and removed from Verified Feed.`,
@@ -416,26 +365,15 @@ function AppContent() {
                       }}
                       onReloadFromDb={async () => {
                         try {
-                          const freshPosts = await getAllStoredPosts();
-                          if (!Array.isArray(freshPosts)) {
-                            setPosts([]);
-                            setSnackbar({
-                              open: true,
-                              message: 'Verified posts failed to load. Refresh the page after the API is reachable.',
-                              severity: 'error'
-                            });
-                            return;
-                          }
-                          setPosts(freshPosts);
+                          const fresh = await getStats();
+                          setStats(fresh);
+                          bumpData();
                           setSnackbar({
                             open: true,
-                            message: freshPosts.length
-                              ? `Reloaded ${freshPosts.length} verified posts from SQLite database!`
-                              : 'Reloaded verified posts. The database returned none.',
+                            message: `Reloaded totals from SQLite (${fresh.archiveTotalPosts || 0} verified posts).`,
                             severity: 'success'
                           });
                         } catch (e) {
-                          setPosts([]);
                           setSnackbar({
                             open: true,
                             message: `Verified posts failed to load. Refresh the page after the API is reachable. ${e.message}`,
@@ -450,6 +388,7 @@ function AppContent() {
 
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
+            </Suspense>
 
             <Footer
               company={{ href: 'https://epd.punjab.gov.pk/', name: 'EPA Punjab Social Listening' }}
@@ -473,7 +412,6 @@ function AppContent() {
             <IngestModal
               open={isIngestOpen}
               onClose={() => setIsIngestOpen(false)}
-              currentPosts={posts}
               onIngestSuccess={handleIngestSuccess}
             />
           )}

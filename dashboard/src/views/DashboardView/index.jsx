@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -30,11 +30,10 @@ import DetailedStatisticsCard from 'examples/Cards/StatisticsCards/DetailedStati
 import PostCard from 'components/PostCard';
 import { useArgonController } from 'context';
 import { useAuth } from 'context/AuthContext';
+import { getStats, getPosts, getAuditLogs, POSTS_CHUNK_SIZE } from '../../services/api';
 
 function DashboardView({
-  posts,
-  auditLog,
-  noisePosts = [],
+  dataRevision = 0,
   dataSource = 'file',
   onNavigate,
   onOpenIngest,
@@ -46,51 +45,50 @@ function DashboardView({
   const canIngest = hasPermission('posts.ingest');
   const [dateFilter, setDateFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
+  const [stats, setStats] = useState(null);
+  const [recentPosts, setRecentPosts] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
 
-  const { availableDates } = useMemo(() => {
-    const dateMap = {};
-    posts.forEach((p) => {
-      if (p.createdAt) {
-        const d = new Date(p.createdAt);
-        if (!isNaN(d.getTime())) {
-          const key = d.toISOString().slice(0, 10);
-          dateMap[key] = (dateMap[key] || 0) + 1;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const statsParams = {};
+      const postParams = { sortBy: 'newest', limit: POSTS_CHUNK_SIZE, offset: 0 };
+      if (dateFilter !== 'all') {
+        statsParams.date = dateFilter;
+        postParams.date = dateFilter;
+      }
+      if (timeFilter !== 'all') {
+        statsParams.timeOfDay = timeFilter;
+        postParams.timeOfDay = timeFilter;
+      }
+      try {
+        const [statsRes, postsRes, auditRes] = await Promise.all([
+          getStats(statsParams),
+          getPosts(postParams),
+          getAuditLogs({ limit: 5 }).catch(() => ({ items: [] })),
+        ]);
+        if (cancelled) return;
+        setStats(statsRes);
+        setRecentPosts(postsRes.items || []);
+        setAuditLog(auditRes.items || []);
+      } catch {
+        if (!cancelled) {
+          setStats(null);
+          setRecentPosts([]);
         }
       }
-    });
-    const dates = Object.entries(dateMap)
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([date, count]) => ({ date, count }));
-    return { availableDates: dates };
-  }, [posts]);
-
-  const filteredDashboardPosts = useMemo(() => {
-    let result = [...posts];
-
-    if (dateFilter !== 'all') {
-      result = result.filter((p) => {
-        if (!p.createdAt) return false;
-        const d = new Date(p.createdAt);
-        return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === dateFilter;
-      });
     }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [dateFilter, timeFilter, dataRevision]);
 
-    if (timeFilter !== 'all') {
-      result = result.filter((p) => {
-        if (!p.createdAt) return false;
-        const d = new Date(p.createdAt);
-        if (isNaN(d.getTime())) return false;
-        const hours = d.getHours();
-        if (timeFilter === 'morning') return hours >= 6 && hours < 12;
-        if (timeFilter === 'afternoon') return hours >= 12 && hours < 18;
-        if (timeFilter === 'evening') return hours >= 18 && hours < 24;
-        if (timeFilter === 'night') return hours >= 0 && hours < 6;
-        return true;
-      });
-    }
-
-    return result;
-  }, [posts, dateFilter, timeFilter]);
+  const availableDates = stats?.dateCounts || [];
+  const filteredDashboardPosts = recentPosts;
+  const posts = recentPosts;
+  const archiveTotal = stats?.archiveTotalPosts || 0;
 
   const hasActiveFilters = dateFilter !== 'all' || timeFilter !== 'all';
   const handleResetFilters = () => {
@@ -98,26 +96,16 @@ function DashboardView({
     setTimeFilter('all');
   };
 
-  const totalClean = filteredDashboardPosts.length;
-  const aqiValues = filteredDashboardPosts
-    .map((p) => {
-      const raw = p.aqi_value;
-      if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-      if (typeof raw === 'string' && raw.trim() !== '' && Number.isFinite(Number(raw))) return Number(raw);
-      return null;
-    })
-    .filter((v) => v !== null);
-  const hasAqi = aqiValues.length > 0;
-  const peakAqi = hasAqi ? Math.max(...aqiValues) : null;
-  const avgAqi = hasAqi
-    ? (aqiValues.reduce((a, b) => a + b, 0) / aqiValues.length).toFixed(1)
-    : null;
+  const totalClean = stats?.totalPosts || 0;
+  const peakAqi = stats?.peakAqi ?? null;
+  const avgAqi = stats?.avgAqi ?? null;
+  const hasAqi = peakAqi != null;
   const peakIsHazardous = hasAqi && peakAqi >= 301;
   const avgIsHazardous = hasAqi && Number(avgAqi) >= 301;
 
-  const duplicatesMerged = auditLog.filter((a) => a.status === 'DUPLICATE_MERGED').length;
-  const noiseRemoved = auditLog.filter((a) => a.status === 'REMOVED').length;
-  const totalNoise = (noisePosts && noisePosts.length) || noiseRemoved || 0;
+  const duplicatesMerged = stats?.duplicatesMerged || 0;
+  const noiseRemoved = stats?.noiseRemoved || 0;
+  const totalNoise = stats?.activeNoiseCount || noiseRemoved || 0;
   const precisionRate = (totalClean + totalNoise > 0)
     ? ((totalClean / (totalClean + totalNoise)) * 100).toFixed(1)
     : '100.0';
@@ -136,13 +124,9 @@ function DashboardView({
     return auditLog.slice(0, 3);
   }, [auditLog]);
 
-  const cityCounts = {};
-  filteredDashboardPosts.forEach((p) => {
-    const c = p.city_detected || 'Punjab Region';
-    cityCounts[c] = (cityCounts[c] || 0) + 1;
-  });
+  const cityCounts = stats?.cityCounts || {};
   const sortedCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]);
-  const topCity = sortedCities.length > 0 ? sortedCities[0][0] : null;
+  const topCity = stats?.peakAqiCity || (sortedCities.length > 0 ? sortedCities[0][0] : null);
 
   const topInteractionPosts = useMemo(() => {
     const getInteractions = (p) => {
@@ -246,8 +230,8 @@ function DashboardView({
                 }}
               />
               {hasActiveFilters
-                ? `Showing ${totalClean} of ${posts.length} posts`
-                : `All Time Scope (${posts.length} posts)`}
+                ? `Showing ${totalClean} of ${archiveTotal} posts`
+                : `All Time Scope (${archiveTotal} posts)`}
             </Box>
 
             {hasActiveFilters && (
@@ -315,7 +299,7 @@ function DashboardView({
                 },
               }}
             >
-              <MenuItem value="all">All Dates ({posts.length} total)</MenuItem>
+              <MenuItem value="all">All Dates ({archiveTotal} total)</MenuItem>
               {availableDates.map((item) => {
                 const [y, m, d] = item.date.split('-');
                 const dateObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
@@ -453,7 +437,7 @@ function DashboardView({
           }}
           percentage={{
             color: hasActiveFilters ? 'info' : 'success',
-            count: hasActiveFilters ? `${Math.round((totalClean / (posts.length || 1)) * 100)}%` : `+${precisionRate}%`,
+            count: hasActiveFilters ? `${Math.round((totalClean / (archiveTotal || 1)) * 100)}%` : `+${precisionRate}%`,
             text: hasActiveFilters ? 'of total posts' : 'precision rate',
           }}
         />
@@ -792,7 +776,7 @@ function DashboardView({
                 },
               }}
             >
-              View Full Audit ({auditLog.length})
+              View Full Audit ({stats?.auditStatusCounts ? Object.values(stats.auditStatusCounts).reduce((a, b) => a + b, 0) : auditLog.length})
             </Button>
           </Box>
 
@@ -1163,9 +1147,7 @@ function DashboardView({
 }
 
 DashboardView.propTypes = {
-  posts: PropTypes.arrayOf(PropTypes.object).isRequired,
-  auditLog: PropTypes.arrayOf(PropTypes.object).isRequired,
-  noisePosts: PropTypes.arrayOf(PropTypes.object),
+  dataRevision: PropTypes.number,
   dataSource: PropTypes.string,
   onNavigate: PropTypes.func.isRequired,
   onOpenIngest: PropTypes.func.isRequired,

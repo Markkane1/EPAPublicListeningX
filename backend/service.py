@@ -260,7 +260,6 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
         if audit_log:
             database.save_audit_logs_batch(audit_log)
 
-        all_posts = database.get_all_posts()
         stats = database.get_db_stats()
 
         return {
@@ -277,12 +276,12 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
             "newPosts": valid_posts,
             "noisePosts": [format_noise_post_for_client(np) for np in noise_posts],
         "noiseExcluded": len(noise_posts),
-            "allPosts": all_posts,
+            "allPosts": [],
             "auditLog": audit_log,
             "stats": stats
         }
     else:
-        posts = database.get_all_posts(search=keyword)
+        posts = database.get_all_posts(search=keyword, limit=50)
         stats = database.get_db_stats()
         return {
             "success": True,
@@ -290,9 +289,9 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
             "isSimulated": False,
             "fetchedCount": len(posts),
             "verifiedCount": len(posts),
-            "newPosts": [],
+            "newPosts": posts,
             "noisePosts": [],
-            "allPosts": posts,
+            "allPosts": [],
             "auditLog": [],
             "stats": stats
         }
@@ -332,13 +331,12 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
         if str(post.get("id") or post.get("clean_id") or "") in kept_ids
     ]
 
-    all_posts = database.get_all_posts()
     stats = database.get_db_stats()
 
     return {
         "success": True,
         "mode": mode,
-        "cleanPosts": all_posts,
+        "cleanPosts": [],
         "newlyAddedPosts": newly_added,
         "noisePosts": [format_noise_post_for_client(np) for np in noise_posts],
         "noiseExcluded": len(noise_posts),
@@ -353,13 +351,41 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
         }
     }
 
-def get_all_posts_service(search=None, city=None, severity=None, category=None, sort_by="newest", sort_order="desc", limit=None, offset=0):
+def get_all_posts_service(search=None, city=None, severity=None, category=None, sort_by="newest", sort_order="desc", limit=None, offset=0, date=None, time_of_day=None, media=None, verified=None):
     """Returns posts from DB."""
-    return database.get_all_posts(search=search, city=city, severity=severity, category=category, sort_by=sort_by, sort_order=sort_order, limit=limit, offset=offset)
+    return database.get_all_posts(
+        search=search, city=city, severity=severity, category=category, sort_by=sort_by,
+        sort_order=sort_order, limit=limit, offset=offset, date=date, time_of_day=time_of_day,
+        media=media, verified=verified,
+    )
 
-def get_all_audit_logs_service(limit=1000):
+def get_posts_page_service(search=None, city=None, severity=None, category=None, sort_by="newest", sort_order="desc", limit=None, offset=0, date=None, time_of_day=None, media=None, verified=None):
+    bounded = database._bounded_post_limit(limit)
+    safe_offset = offset if isinstance(offset, int) and offset > 0 else 0
+    filters = dict(
+        search=search, city=city, severity=severity, category=category,
+        date=date, time_of_day=time_of_day, media=media, verified=verified,
+    )
+    items = database.get_all_posts(
+        sort_by=sort_by, sort_order=sort_order, limit=bounded, offset=safe_offset, **filters
+    )
+    total = database.count_posts(**filters)
+    return {"items": items, "total": total, "limit": bounded, "offset": safe_offset}
+
+def get_all_audit_logs_service(limit=50, offset=0, status=None, search=None):
     """Returns audit log entries from DB."""
-    return database.get_audit_logs(limit=limit)
+    return database.get_audit_logs(limit=limit, offset=offset, status=status, search=search)
+
+def get_audit_page_service(limit=50, offset=0, status=None, search=None):
+    try:
+        bounded = max(0, int(limit))
+    except (TypeError, ValueError):
+        bounded = 50
+    bounded = min(bounded, 500)
+    safe_offset = offset if isinstance(offset, int) and offset > 0 else 0
+    items = database.get_audit_logs(limit=bounded, offset=safe_offset, status=status, search=search)
+    total = database.count_audit_logs(status=status, search=search)
+    return {"items": items, "total": total, "limit": bounded, "offset": safe_offset}
 
 def get_noise_posts_service(search=None, category=None, status="EXCLUDED", sort_by="newest", sort_order="desc", limit=250, offset=0):
     """Returns noise posts from DB with sorting support (defaults to newest/latest)."""
@@ -372,6 +398,20 @@ def get_noise_posts_service(search=None, category=None, status="EXCLUDED", sort_
         limit=limit,
         offset=offset
     )
+
+def get_noise_page_service(search=None, category=None, status="EXCLUDED", sort_by="newest", sort_order="desc", limit=100, offset=0):
+    try:
+        bounded = max(0, int(limit))
+    except (TypeError, ValueError):
+        bounded = 100
+    bounded = min(bounded, 500)
+    safe_offset = offset if isinstance(offset, int) and offset > 0 else 0
+    items = database.get_noise_posts(
+        search=search, category=category, status=status,
+        sort_by=sort_by, sort_order=sort_order, limit=bounded, offset=safe_offset,
+    )
+    total = database.count_noise_posts(search=search, category=category, status=status)
+    return {"items": items, "total": total, "limit": bounded, "offset": safe_offset}
 
 def get_noise_stats_service():
     """Returns summary metrics and breakdown of noise posts."""

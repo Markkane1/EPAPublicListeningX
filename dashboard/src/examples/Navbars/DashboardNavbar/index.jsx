@@ -43,7 +43,7 @@ function readNumericAqi(post) {
   return null;
 }
 
-function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
+function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) {
   const [controller, dispatch] = useArgonController();
   const { miniSidenav, darkMode } = controller;
   const { user, logout, hasPermission } = useAuth();
@@ -94,18 +94,13 @@ function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
   const canIngest = hasPermission("posts.ingest");
 
   const computedAlerts = [];
-  const aqiReadings = posts
-    .map((post) => ({ post, aqi: readNumericAqi(post) }))
-    .filter((item) => item.aqi !== null);
-  if (aqiReadings.length > 0) {
-    const peak = aqiReadings.reduce((best, item) => (item.aqi > best.aqi ? item : best));
-    if (peak.aqi >= 301) {
-      const city = peak.post.city_detected || peak.post.city || "the loaded posts";
-      computedAlerts.push({
-        title: `Hazardous AQI ${peak.aqi} in ${city}`,
-        detail: "Computed from posts that include a numeric AQI.",
-      });
-    }
+  const peakAqi = stats?.peakAqi;
+  if (typeof peakAqi === "number" && peakAqi >= 301) {
+    const city = stats?.peakAqiCity || "Punjab";
+    computedAlerts.push({
+      title: `Hazardous AQI ${peakAqi} in ${city}`,
+      detail: "Computed from posts that include a numeric AQI.",
+    });
   }
 
   const getRoleBadgeColor = () => {
@@ -537,7 +532,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
 DashboardNavbar.propTypes = {
   isMini: PropTypes.bool,
   dataSource: PropTypes.string,
-  posts: PropTypes.arrayOf(PropTypes.object),
+  stats: PropTypes.object,
 };
 
 export default DashboardNavbar;

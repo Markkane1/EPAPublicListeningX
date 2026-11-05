@@ -62,6 +62,7 @@ export default function LoginView() {
       navigate(from, { replace: true });
     } catch (err) {
       setErrorMsg(err.message || 'Login failed. Please check your credentials.');
+      setTurnstileToken('');
     } finally {
       setLoading(false);
     }
@@ -256,10 +257,22 @@ export default function LoginView() {
 
           <Box sx={{ my: 1.5 }}>
             <TurnstileWidget
-              onVerify={(token) => setTurnstileToken(token)}
+              onVerify={(token) => {
+                setTurnstileToken(token);
+                if (errorMsg && errorMsg.includes('Cloudflare Turnstile')) {
+                  setErrorMsg('');
+                }
+              }}
+              onError={() => setErrorMsg('Cloudflare Turnstile security check failed. Please refresh or verify connection.')}
               action="login"
             />
           </Box>
+
+          {errorMsg && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: '10px', fontSize: '13px' }}>
+              {errorMsg}
+            </Alert>
+          )}
 
           <Button
             type="submit"
@@ -286,6 +299,22 @@ export default function LoginView() {
           >
             {loading ? 'Authenticating...' : 'Sign In to Portal'}
           </Button>
+
+          <Box
+            sx={{
+              mt: 2.5,
+              pt: 2,
+              borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}
+          >
+            <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#475569', fontWeight: 500 }}>
+              Default Administrator: <strong>admin</strong> &bull; Password: <code>EPAadmin2026!</code>
+            </Typography>
+            <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', mt: 0.5 }}>
+              (Or active password from data/bootstrap-credentials.txt)
+            </Typography>
+          </Box>
         </Box>
       </Card>
     </Box>

@@ -3,6 +3,7 @@ import os
 import json
 import re
 import time
+import gzip
 import threading
 import urllib.parse
 import http.server
@@ -135,13 +136,53 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+    _GZIP_STATIC_EXT = {".js", ".css", ".html", ".json", ".svg", ".mjs"}
+
+    def _send_gzip_static(self, path):
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in self._GZIP_STATIC_EXT:
+            return False
+        accept = (self.headers.get("Accept-Encoding") or "").lower()
+        if "gzip" not in accept:
+            return False
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            return False
+        if size < 1024:
+            return False
+        try:
+            with open(path, "rb") as handle:
+                raw = handle.read()
+        except OSError:
+            return False
+        compressed = gzip.compress(raw, compresslevel=6)
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(path))
+        self.send_header("Content-Encoding", "gzip")
+        self.send_header("Vary", "Accept-Encoding")
+        self.send_header("Content-Length", str(len(compressed)))
+        self._set_cors_headers()
+        self._set_security_headers()
+        self.end_headers()
+        self.wfile.write(compressed)
+        self.wfile.flush()
+        return True
+
     def send_json(self, data, status=200):
         """Helper to send a JSON response with CORS and security headers."""
         payload = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        accept = (self.headers.get("Accept-Encoding") or "").lower()
+        use_gzip = "gzip" in accept and len(payload) >= 1024
+        if use_gzip:
+            payload = gzip.compress(payload, compresslevel=6)
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self._set_cors_headers()
         self._set_security_headers()
+        if use_gzip:
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
@@ -343,11 +384,16 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     sort_order = qs.get('order', [qs.get('sortOrder', ['desc'])[0]])[0]
                     limit = int(qs.get('limit')[0]) if 'limit' in qs else None
                     offset = int(qs.get('offset')[0]) if 'offset' in qs else 0
-                    posts = service.get_all_posts_service(
+                    date = qs.get('date', [None])[0]
+                    time_of_day = qs.get('timeOfDay', [None])[0]
+                    media = qs.get('media', [None])[0]
+                    verified = qs.get('verified', [None])[0]
+                    page = service.get_posts_page_service(
                         search=search, city=city, severity=severity, category=category, sort_by=sort_by,
-                        sort_order=sort_order, limit=limit, offset=offset
+                        sort_order=sort_order, limit=limit, offset=offset, date=date,
+                        time_of_day=time_of_day, media=media, verified=verified,
                     )
-                    self.send_json(posts)
+                    self.send_json(page)
                     return
 
                 # --- Audit log (requires auth + audit.view) ---
@@ -356,8 +402,11 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     if err_resp:
                         self.send_json(err_resp[0], status=err_resp[1])
                         return
-                    limit = int(qs.get('limit', [1000])[0]) if 'limit' in qs else 1000
-                    logs = service.get_all_audit_logs_service(limit=limit)
+                    limit = int(qs.get('limit', [50])[0]) if 'limit' in qs else 50
+                    offset = int(qs.get('offset')[0]) if 'offset' in qs else 0
+                    status = qs.get('status', [None])[0]
+                    search = qs.get('search', [None])[0]
+                    logs = service.get_audit_page_service(limit=limit, offset=offset, status=status, search=search)
                     self.send_json(logs)
                     return
 
@@ -367,7 +416,9 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     if err_resp:
                         self.send_json(err_resp[0], status=err_resp[1])
                         return
-                    stats = database.get_db_stats()
+                    date = qs.get('date', [None])[0]
+                    time_of_day = qs.get('timeOfDay', [None])[0]
+                    stats = database.get_db_stats(date=date, time_of_day=time_of_day)
                     self.send_json(stats)
                     return
 
@@ -384,12 +435,12 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     offset = int(qs.get('offset')[0]) if 'offset' in qs else 0
                     sort_by = qs.get('sortBy', ['newest'])[0]
                     sort_order = qs.get('sortOrder', [qs.get('order', ['desc'])[0]])[0]
-                    noise_posts = service.get_noise_posts_service(
+                    noise_page = service.get_noise_page_service(
                         search=search, category=category, status=status,
                         sort_by=sort_by, sort_order=sort_order,
                         limit=limit, offset=offset
                     )
-                    self.send_json(noise_posts)
+                    self.send_json(noise_page)
                     return
 
                 elif path == '/api/noise/stats':
@@ -461,6 +512,9 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
         translated = self.translate_path(self.path)
         if not os.path.exists(translated) and not os.path.splitext(self.path)[1]:
             self.path = '/index.html'
+            translated = self.translate_path(self.path)
+        if self._send_gzip_static(translated):
+            return
         return super().do_GET()
 
     # -----------------------------------------------------------------------

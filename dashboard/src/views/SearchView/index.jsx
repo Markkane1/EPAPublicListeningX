@@ -33,7 +33,7 @@ import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
 
 import { useArgonController } from 'context';
 import { useAuth } from 'context/AuthContext';
-import { searchXApi, getQueryVersions } from '../../services/api';
+import { searchXApi, getQueryVersions, getPosts } from '../../services/api';
 import PostCard from 'components/PostCard';
 
 const TRENDING_TOPICS = [
@@ -53,7 +53,7 @@ const SEARCH_TABS = [
 ];
 
 function SearchView({
-  posts = [],
+  archiveTotal = 0,
   dataSource = 'file',
   onImageClick,
   onNavigateSettings,
@@ -98,23 +98,24 @@ function SearchView({
     setLastSearchedTerm(term);
 
     if (searchMode === 'db') {
-      const lower = term.toLowerCase();
-      const matched = posts.filter((p) => {
-        const textMatch = (p.text || '').toLowerCase().includes(lower);
-        const authorMatch = (p.author_name || p.authorName || '').toLowerCase().includes(lower) ||
-                            (p.author_username || p.authorUsername || '').toLowerCase().includes(lower);
-        const cityMatch = (p.city_detected || p.city || '').toLowerCase().includes(lower);
-        const catMatch = (p.category || '').toLowerCase().includes(lower);
-        return textMatch || authorMatch || cityMatch || catMatch;
-      });
-
-      setSearchResults(matched);
+      try {
+        const tabParams = { search: term, limit: 50, offset: 0 };
+        if (activeTab === 'top') tabParams.sortBy = 'engagement';
+        else if (activeTab === 'latest') tabParams.sortBy = 'newest';
+        else if (activeTab === 'people') tabParams.verified = 1;
+        else if (activeTab === 'media') tabParams.media = 'media';
+        const page = await getPosts(tabParams);
+        setSearchResults(page.items || []);
+        setFeedback({
+          type: 'success',
+          message: `Found ${page.total} posts in local database matching "${term}".`,
+          count: page.total,
+        });
+      } catch (e) {
+        setSearchResults([]);
+        setFeedback({ type: 'error', message: e.message || 'Database search failed.', count: 0 });
+      }
       setIsFetching(false);
-      setFeedback({
-        type: 'success',
-        message: `Found ${matched.length} posts in local database matching "${term}".`,
-        count: matched.length,
-      });
       return;
     }
 
@@ -130,8 +131,6 @@ function SearchView({
         let results = [];
         if (res.newPosts && res.newPosts.length > 0) {
           results = res.newPosts;
-        } else if (res.allPosts && res.allPosts.length > 0) {
-          results = res.allPosts;
         }
 
         setSearchResults(results);
@@ -164,15 +163,15 @@ function SearchView({
     } finally {
       setIsFetching(false);
     }
-  }, [batchLimit, canSearchLive, keyword, onFetchSuccess, posts, searchMode]);
+  }, [activeTab, batchLimit, canSearchLive, keyword, onFetchSuccess, searchMode]);
 
   useEffect(() => {
     const q = searchParams.get('q') || searchParams.get('keyword');
-    if (q && q !== lastSearchedTerm && posts.length > 0) {
+    if (q && q !== lastSearchedTerm) {
       setKeyword(q);
       handleSearch(q);
     }
-  }, [searchParams, posts.length, handleSearch, lastSearchedTerm]);
+  }, [searchParams, handleSearch, lastSearchedTerm]);
 
   const handleClear = () => {
     setKeyword('');
@@ -279,7 +278,7 @@ function SearchView({
                   '&:hover': { backgroundColor: searchMode === 'db' ? (darkMode ? '#334155' : '#ffffff') : 'transparent' },
                 }}
               >
-                Database ({posts.length})
+                Database ({archiveTotal})
               </Button>
 
               {canSearchLive && (
@@ -790,7 +789,7 @@ function SearchView({
                   },
                 }}
               >
-                Go to Verified Posts Feed ({posts.length})
+                Go to Verified Posts Feed ({archiveTotal})
               </Button>
             </Box>
           </Card>
@@ -801,7 +800,7 @@ function SearchView({
 }
 
 SearchView.propTypes = {
-  posts: PropTypes.array,
+  archiveTotal: PropTypes.number,
   dataSource: PropTypes.string,
   onImageClick: PropTypes.func,
   onNavigateSettings: PropTypes.func,

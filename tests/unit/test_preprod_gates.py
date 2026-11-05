@@ -27,7 +27,8 @@ def _post_ids():
 
 
 class TestPreprodGates:
-    def test_published_passwords_fail_on_seeded_db(self, temp_db):
+    def test_published_passwords_fail_on_seeded_db(self, temp_db, monkeypatch):
+        monkeypatch.setenv("RETIRE_PUBLISHED_PASSWORDS", "true")
         for username, password in PUBLISHED:
             user, _err = database.authenticate_user_db(username, password)
             assert user is None
