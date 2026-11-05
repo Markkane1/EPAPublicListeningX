@@ -5,6 +5,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 import theme from 'assets/theme';
 import themeDark from 'assets/theme-dark';
@@ -35,7 +37,7 @@ import Lightbox from './components/Lightbox';
 import IngestModal from './components/IngestModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getRoutes } from './routes';
-import { getSettings, getStats, ingestPostsBatch, excludePost } from './services/api';
+import { getSettings, getStats, ingestPostsBatch, excludePost, invalidateApiCache } from './services/api';
 
 function AppContent() {
   const [controller] = useArgonController();
@@ -128,7 +130,27 @@ function AppContent() {
     }));
   };
 
-  const bumpData = () => setDataRevision((n) => n + 1);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const preloadViews = () => {
+      import('./views/DashboardView');
+      import('./views/PostsView');
+      import('./views/AnalyticsView');
+      import('./views/NoiseView');
+      import('./views/AuditView');
+      import('./views/SearchView');
+    };
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(preloadViews);
+    } else {
+      setTimeout(preloadViews, 1000);
+    }
+  }, [isAuthenticated]);
+
+  const bumpData = () => {
+    invalidateApiCache();
+    setDataRevision((n) => n + 1);
+  };
 
   const handleIngestSuccess = async (result, mode, rawData) => {
     if (rawData) {
@@ -213,8 +235,41 @@ function AppContent() {
           </Alert>
         )}
 
-        <Suspense fallback={<p style={{ fontWeight: 600, fontSize: '14px', color: '#64748b', padding: '24px' }}>Loading view...</p>}>
-        <Routes>
+        <Suspense
+          fallback={
+            <Box
+              sx={{
+                p: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: '12px',
+                backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                minHeight: '280px',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#64748b' }}>
+                Loading view...
+              </Typography>
+            </Box>
+          }
+        >
+          <Box
+            key={location.pathname}
+            sx={{
+              animation: 'viewFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+              '@keyframes viewFadeIn': {
+                from: { opacity: 0, transform: 'translateY(4px)' },
+                to: { opacity: 1, transform: 'translateY(0)' },
+              },
+              '@media (prefers-reduced-motion: reduce)': {
+                animation: 'none',
+              },
+            }}
+          >
+            <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Navigate to="/dashboard" replace />} />
           <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
@@ -388,7 +443,8 @@ function AppContent() {
 
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
-            </Suspense>
+          </Box>
+        </Suspense>
 
             <Footer
               company={{ href: 'https://epd.punjab.gov.pk/', name: 'EPA Punjab Social Listening' }}

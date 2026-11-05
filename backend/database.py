@@ -64,6 +64,11 @@ def parse_post_datetime(value):
 
 
 def _sql_post_date(value):
+    if not value:
+        return None
+    if isinstance(value, str) and len(value) >= 10 and value[4] == '-' and value[7] == '-':
+        if value.endswith('Z') or '+00:00' in value or len(value) == 10:
+            return value[:10]
     dt = parse_post_datetime(value)
     return dt.strftime("%Y-%m-%d") if dt else None
 
@@ -1728,19 +1733,34 @@ def get_db_stats(date=None, time_of_day=None):
     with get_db() as conn:
         cursor = conn.cursor()
 
-        cursor.execute("SELECT COUNT(*) FROM posts")
-        archive_total = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM posts" + scope_sql, scope_params)
-        total_posts = cursor.fetchone()[0]
-
         aqi_sql = scope_sql + " AND aqi_value IS NOT NULL AND aqi_value > 0"
-        cursor.execute("SELECT MAX(aqi_value) FROM posts" + aqi_sql, scope_params)
-        max_aqi = cursor.fetchone()[0]
+        if not scope_params:
+            cursor.execute("""
+                SELECT 
+                    COUNT(*),
+                    MAX(CASE WHEN aqi_value > 0 THEN aqi_value END),
+                    AVG(CASE WHEN aqi_value > 0 THEN aqi_value END)
+                FROM posts
+            """)
+            row_agg = cursor.fetchone()
+            total_posts = row_agg[0]
+            archive_total = total_posts
+            max_aqi = row_agg[1]
+            avg_row = row_agg[2]
+            avg_aqi = round(float(avg_row), 1) if avg_row is not None else None
+        else:
+            cursor.execute("SELECT COUNT(*) FROM posts")
+            archive_total = cursor.fetchone()[0]
 
-        cursor.execute("SELECT AVG(aqi_value) FROM posts" + aqi_sql, scope_params)
-        avg_row = cursor.fetchone()[0]
-        avg_aqi = round(float(avg_row), 1) if avg_row is not None else None
+            cursor.execute("SELECT COUNT(*) FROM posts" + scope_sql, scope_params)
+            total_posts = cursor.fetchone()[0]
+
+            cursor.execute("SELECT MAX(aqi_value) FROM posts" + aqi_sql, scope_params)
+            max_aqi = cursor.fetchone()[0]
+
+            cursor.execute("SELECT AVG(aqi_value) FROM posts" + aqi_sql, scope_params)
+            avg_row = cursor.fetchone()[0]
+            avg_aqi = round(float(avg_row), 1) if avg_row is not None else None
 
         cursor.execute(
             "SELECT city_detected FROM posts" + aqi_sql + " ORDER BY aqi_value DESC, created_at DESC LIMIT 1",
@@ -1749,17 +1769,15 @@ def get_db_stats(date=None, time_of_day=None):
         peak_row = cursor.fetchone()
         peak_aqi_city = (peak_row["city_detected"] or "Punjab Region") if peak_row else None
 
-        cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE status = 'DUPLICATE_MERGED'")
-        duplicates_merged = cursor.fetchone()[0]
+        cursor.execute("SELECT status, COUNT(*) FROM audit_logs GROUP BY status")
+        _audit_counts = {r[0]: r[1] for r in cursor.fetchall()}
+        duplicates_merged = _audit_counts.get("DUPLICATE_MERGED", 0)
+        noise_removed = _audit_counts.get("REMOVED", 0)
 
-        cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE status = 'REMOVED'")
-        noise_removed = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM noise_posts WHERE status = 'EXCLUDED'")
-        active_noise_count = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM noise_posts WHERE status = 'RESTORED'")
-        restored_posts_count = cursor.fetchone()[0]
+        cursor.execute("SELECT status, COUNT(*) FROM noise_posts GROUP BY status")
+        _noise_counts = {r[0]: r[1] for r in cursor.fetchall()}
+        active_noise_count = _noise_counts.get("EXCLUDED", 0)
+        restored_posts_count = _noise_counts.get("RESTORED", 0)
 
         cursor.execute("SELECT COUNT(*) FROM learned_rules WHERE is_active = 1")
         learned_rules_count = cursor.fetchone()[0]

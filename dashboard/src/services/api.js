@@ -28,6 +28,41 @@ export function clearAuthToken() {
   } catch (e) {
     console.warn('localStorage error:', e);
   }
+  invalidateApiCache();
+}
+
+const _apiCache = new Map();
+
+export function invalidateApiCache(prefix = null) {
+  if (!prefix) {
+    _apiCache.clear();
+  } else {
+    for (const key of _apiCache.keys()) {
+      if (key.startsWith(prefix)) _apiCache.delete(key);
+    }
+  }
+}
+
+function cachedApiCall(key, fetcher, ttlMs = 15000) {
+  const now = Date.now();
+  const entry = _apiCache.get(key);
+  if (entry && (now - entry.time < ttlMs)) {
+    return Promise.resolve(entry.data);
+  }
+  if (entry && entry.promise) {
+    return entry.promise;
+  }
+  const promise = fetcher()
+    .then((data) => {
+      _apiCache.set(key, { data, time: Date.now() });
+      return data;
+    })
+    .finally(() => {
+      const e = _apiCache.get(key);
+      if (e) delete e.promise;
+    });
+  _apiCache.set(key, { ...(entry || {}), promise });
+  return promise;
 }
 
 export async function authFetch(url, options = {}) {
@@ -226,9 +261,11 @@ export async function getPermissions() {
 }
 
 export async function getSettings() {
-  const resp = await authFetch(`${API_BASE}/settings`);
-  if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return await resp.json();
+  return cachedApiCall('settings', async () => {
+    const resp = await authFetch(`${API_BASE}/settings`);
+    if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+    return await resp.json();
+  }, 30000);
 }
 
 export async function updateSettings(settings) {
@@ -238,6 +275,8 @@ export async function updateSettings(settings) {
     body: JSON.stringify(settings)
   });
   if (!resp.ok) throw new Error(`Failed to update settings: HTTP ${resp.status}`);
+  invalidateApiCache('settings');
+  invalidateApiCache('stats');
   return await resp.json();
 }
 
@@ -284,10 +323,13 @@ export async function getPosts(params = {}) {
     query.set('verified', '1');
   }
 
-  const url = `${API_BASE}/posts${query.toString() ? `?${query.toString()}` : ''}`;
-  const resp = await authFetch(url);
-  if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return unwrapList(await resp.json());
+  const cacheKey = `posts:${query.toString()}`;
+  return cachedApiCall(cacheKey, async () => {
+    const url = `${API_BASE}/posts${query.toString() ? `?${query.toString()}` : ''}`;
+    const resp = await authFetch(url);
+    if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+    return unwrapList(await resp.json());
+  }, 10000);
 }
 
 export async function searchXApi({ keyword, liveOverride = false, maxResults = 25, simulateIfMissing = true }) {
@@ -315,6 +357,7 @@ export async function ingestPostsBatch(posts, mode = 'merge') {
     body: JSON.stringify({ posts, mode })
   });
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+  invalidateApiCache();
   return await resp.json();
 }
 
@@ -322,10 +365,13 @@ export async function getStats(params = {}) {
   const query = new URLSearchParams();
   if (params.date && params.date !== 'all') query.set('date', params.date);
   if (params.timeOfDay && params.timeOfDay !== 'all') query.set('timeOfDay', params.timeOfDay);
-  const url = `${API_BASE}/stats${query.toString() ? `?${query.toString()}` : ''}`;
-  const resp = await authFetch(url);
-  if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
-  return await resp.json();
+  const cacheKey = `stats:${query.toString()}`;
+  return cachedApiCall(cacheKey, async () => {
+    const url = `${API_BASE}/stats${query.toString() ? `?${query.toString()}` : ''}`;
+    const resp = await authFetch(url);
+    if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+    return await resp.json();
+  }, 15000);
 }
 
 export async function getAuditLogs(params = {}) {
@@ -373,6 +419,7 @@ export async function restoreNoisePost(postId, learnedRules = []) {
     body: JSON.stringify({ postId, learnedRules })
   });
   if (!resp.ok) throw new Error(`Failed to restore post: HTTP ${resp.status}`);
+  invalidateApiCache();
   return await resp.json();
 }
 
@@ -386,6 +433,7 @@ export async function excludePost({ postId, reason = '', category = 'MANUAL_EXCL
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error || `Failed to exclude post: HTTP ${resp.status}`);
   }
+  invalidateApiCache();
   return await resp.json();
 }
 
