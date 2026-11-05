@@ -63,11 +63,23 @@ def parse_post_datetime(value):
     return dt.astimezone(timezone.utc)
 
 
+_X_MONTH_MAP = {
+    "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+    "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+    "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
+}
+
 def _sql_post_date(value):
-    if not value:
+    if not value or not isinstance(value, str):
         return None
-    if isinstance(value, str) and len(value) >= 10 and value[4] == '-' and value[7] == '-':
-        if value.endswith('Z') or '+00:00' in value or len(value) == 10:
+    # Fast path for X/Twitter format: "Wed Nov 04 19:17:03 +0000 2026"
+    if len(value) == 30 and value[3] == " " and value[7] == " ":
+        m = _X_MONTH_MAP.get(value[4:7])
+        if m:
+            return f"{value[-4:]}-{m}-{value[8:10]}"
+    # Fast path for ISO format: "2026-11-04T19:17:03Z" or "2026-11-04"
+    if len(value) >= 10 and value[4] == "-" and value[7] == "-":
+        if value.endswith("Z") or "+00:00" in value or len(value) == 10:
             return value[:10]
     dt = parse_post_datetime(value)
     return dt.strftime("%Y-%m-%d") if dt else None
