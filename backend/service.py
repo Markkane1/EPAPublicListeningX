@@ -243,7 +243,7 @@ def execute_search_and_fetch(keyword: str, live_override: bool = False, max_resu
         is_simulated = False
 
         # Load existing posts from database so deduplication and duplicate merging apply to API-fetched posts!
-        existing_posts = database.get_all_posts()
+        existing_posts = database.get_posts_for_dedup()
         learned_rules = database.get_active_learned_rules()
 
         valid_posts, audit_log, noise_posts = pipeline.process_dataset(
@@ -307,7 +307,7 @@ def ingest_raw_batch(raw_posts: list, mode: str = "merge"):
     query_constraints = parse_query_constraints(active_query_text)
 
     learned_rules = database.get_active_learned_rules()
-    existing_posts = database.get_all_posts() if mode == "merge" else []
+    existing_posts = database.get_posts_for_dedup() if mode == "merge" else []
 
     valid_posts, audit_log, noise_posts = pipeline.process_dataset(
         raw_posts,

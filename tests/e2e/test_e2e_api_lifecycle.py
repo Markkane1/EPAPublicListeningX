@@ -2,6 +2,7 @@ import urllib.request
 import urllib.error
 import json
 import pytest
+from tests.conftest import TEST_ADMIN_PASSWORD, TEST_TURNSTILE_TOKEN
 
 def http_json(url, method="GET", data=None, token=None):
     headers = {"Content-Type": "application/json"}
@@ -28,8 +29,8 @@ class TestE2EApiLifecycle:
         # 1. Admin Login
         status, login_res = http_json(f"{base_url}/auth/login", method="POST", data={
             "username": "admin",
-            "password": "EPAadmin2026!",
-            "turnstileToken": "DEMO_BYPASS"
+            "password": TEST_ADMIN_PASSWORD,
+            "turnstileToken": TEST_TURNSTILE_TOKEN
         })
         assert status == 200
         admin_token = login_res["token"]
@@ -76,7 +77,7 @@ class TestE2EApiLifecycle:
         status, kamran_login = http_json(f"{base_url}/auth/login", method="POST", data={
             "username": "e2e_officer_kamran",
             "password": "KamranPass2026!",
-            "turnstileToken": "DEMO_BYPASS"
+            "turnstileToken": TEST_TURNSTILE_TOKEN
         })
         assert status == 200
         kamran_token = kamran_login["token"]
@@ -105,7 +106,7 @@ class TestE2EApiLifecycle:
         status, bad_login = http_json(f"{base_url}/auth/login", method="POST", data={
             "username": "e2e_officer_kamran",
             "password": "KamranPass2026!",
-            "turnstileToken": "DEMO_BYPASS"
+            "turnstileToken": TEST_TURNSTILE_TOKEN
         })
         assert status == 400
 

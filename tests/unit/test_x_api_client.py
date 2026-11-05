@@ -1,4 +1,5 @@
 import json
+import ssl
 import urllib.error
 import pytest
 from unittest.mock import MagicMock, patch
@@ -168,7 +169,7 @@ class TestXApiClient:
         # Verify duplicate injection
         assert mock_data["data"][3]["id"] == "prev_id_999"
 
-    def test_ssl_context_verify_false_warning(self):
-        with pytest.warns(RuntimeWarning, match="SSL certificate verification disabled"):
-            ctx = x_api_client._get_ssl_context(verify=False)
-            assert ctx.check_hostname is False
+    def test_ssl_context_verifies_certificates(self):
+        ctx = x_api_client._get_ssl_context()
+        assert ctx.verify_mode == ssl.CERT_REQUIRED
+        assert ctx.check_hostname is True

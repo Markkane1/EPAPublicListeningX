@@ -57,9 +57,19 @@ class TestServerHardening:
                 assert False, f"Expected 413 or connection reset, got status {resp.status}"
         except urllib.error.HTTPError as exc:
             assert exc.code in (400, 413)
-        except (ConnectionResetError, http.client.RemoteDisconnected):
+        except (ConnectionResetError, ConnectionAbortedError, http.client.RemoteDisconnected):
             # On Windows TCP stack, rejecting 16MB stream before EOF triggers RST
             pass
+
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        conn.putrequest("POST", "/api/auth/login")
+        conn.putheader("Content-Type", "application/json")
+        conn.putheader("Content-Length", str(MAX_REQUEST_BODY_BYTES + 1))
+        conn.endheaders()
+        resp = conn.getresponse()
+        assert resp.status == 413
+        resp.read()
+        conn.close()
 
     def test_malformed_json_body_rejected_400(self, ephemeral_server):
         base_url, port = ephemeral_server

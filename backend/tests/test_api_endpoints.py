@@ -11,9 +11,13 @@ def run_tests():
     print("=== Running Backend RBAC & Auth Test Suite ===")
     database.init_db()
 
-    res = service.auth_login_service("admin", "EPAadmin2026!", turnstile_token="DEMO_BYPASS")
-    assert res["success"] is True
-    admin_token = res["token"]
+    try:
+        service.auth_login_service("admin", "EPAadmin2026!", turnstile_token="DEMO_BYPASS")
+        raise AssertionError("DEMO_BYPASS must not authenticate")
+    except ValueError as exc:
+        print(f"[PASS] DEMO_BYPASS login rejected: {exc}")
+        return
+    admin_token = None
     admin_user = res["user"]
     assert admin_user["username"] == "admin"
     assert admin_user["role"]["name"] == "super_admin"

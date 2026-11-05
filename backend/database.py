@@ -168,7 +168,7 @@ OFFICIAL_ACTIVE_QUERY = (
 POST_LIST_DEFAULT_LIMIT = 100
 POST_LIST_MAX_LIMIT = 200
 
-BOOTSTRAP_CREDENTIALS_PATH = os.path.join(DATA_DIR, "bootstrap-credentials.txt")
+BOOTSTRAP_CREDENTIALS_PATH = os.environ.get("EPA_BOOTSTRAP_CREDENTIALS_PATH") or os.path.join(DATA_DIR, "bootstrap-credentials.txt")
 
 def _hash_password(password: str, salt: bytes = None) -> tuple:
     """Hashes password with PBKDF2-HMAC-SHA256 (100,000 rounds) using a cryptographically random salt."""
@@ -780,6 +780,13 @@ def get_all_posts(search=None, city=None, severity=None, category=None, sort_by=
         cursor.execute(query, params)
         rows = cursor.fetchall()
         return [row_to_post_dict(r) for r in rows]
+
+def get_posts_for_dedup():
+    """Every stored post, for duplicate merging. The public list cap does not apply."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM posts")
+        return [row_to_post_dict(r) for r in cursor.fetchall()]
 
 def save_posts_batch(posts_list, source="file", conn=None):
     """Saves a batch of post dictionaries into SQLite using INSERT OR REPLACE."""
@@ -2186,7 +2193,7 @@ def update_user_db(user_id: int, full_name: str = None, email: str = None, role_
         now_iso = datetime.now(timezone.utc).isoformat()
 
         if password and password.strip():
-            if len(password.strip()) < 6:
+            if len(password.strip()) < 8:
                 raise ValueError("Password must be at least 8 characters long.")
             pwd_hash, salt_hex = _hash_password(password.strip())
             cursor.execute("""

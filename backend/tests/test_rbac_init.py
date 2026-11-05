@@ -31,5 +31,5 @@ assert val_user is not None, "Session validation failed"
 print(f"Session OK: {val_user['username']} token: {token[:8]}...")
 
 ok, msg = database.verify_turnstile_token("DEMO_BYPASS")
-assert ok, f"Turnstile failed: {msg}"
-print("Turnstile verification OK")
+assert not ok, f"Turnstile bypass must fail: {msg}"
+print(f"Turnstile bypass rejected: {msg}")

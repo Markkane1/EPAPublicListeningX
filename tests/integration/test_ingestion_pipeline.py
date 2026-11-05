@@ -50,7 +50,7 @@ class TestIngestionPipelineIntegration:
         assert res["stats"]["cleanCount"] == 2
 
         # Verify posts appear in database
-        post1 = next((p for p in database.get_all_posts() if p["id"] == "new_integ_post_001"), None)
+        post1 = next((p for p in database.get_all_posts(search="emergency smog levels") if p["id"] == "new_integ_post_001"), None)
         assert post1 is not None
         assert post1["city_detected"] == "Lahore"
         assert "Hazardous" in post1["severity"]
@@ -92,8 +92,9 @@ class TestIngestionPipelineIntegration:
             max_results=10,
             simulate_if_missing=True
         )
-        assert res["success"] is True
-        assert res["fetchedCount"] == 10
+        assert res["success"] is False
+        assert res["fetchedCount"] == 0
         assert res["mode"] == "x_api"
-        assert res["isSimulated"] is True
+        assert res["isSimulated"] is False
+        assert res["newPosts"] == []
         assert "stats" in res

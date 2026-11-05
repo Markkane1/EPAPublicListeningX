@@ -20,7 +20,8 @@ class TestNoiseAndRulesIntegration:
         assert exc_res["success"] is True
 
         # Check post is removed from verified clean posts
-        current_active = database.get_all_posts()
+        needle = " ".join(target_text.split()[:6])
+        current_active = database.get_all_posts(search=needle)
         assert not any(p["id"] == target_id for p in current_active)
 
         # Check post is in noise posts
@@ -64,7 +65,7 @@ class TestNoiseAndRulesIntegration:
         assert restore_res["success"] is True
 
         # Verify post is back in verified posts
-        restored_active = database.get_all_posts()
+        restored_active = database.get_all_posts(search=needle)
         assert any(p["id"] == target_id for p in restored_active)
 
         # 6. Toggle and delete learned rule

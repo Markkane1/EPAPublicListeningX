@@ -265,7 +265,7 @@ class TestDatabaseUnit:
         assert exc_res["success"] is True
 
         # Check post is excluded from verified feed
-        active = database.get_all_posts()
+        active = database.get_all_posts(search="Please wear masks")
         assert not any(p["id"] == post_id for p in active)
 
         # Check post is in noise pool
@@ -276,7 +276,7 @@ class TestDatabaseUnit:
         rest_res = database.restore_noise_post(post_id)
         assert rest_res["success"] is True
 
-        active_restored = database.get_all_posts()
+        active_restored = database.get_all_posts(search="Please wear masks")
         assert any(p["id"] == post_id for p in active_restored)
 
     def test_learned_rules_crud(self, temp_db):

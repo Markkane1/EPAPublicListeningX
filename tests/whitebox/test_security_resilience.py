@@ -1,5 +1,6 @@
 import pytest
 from backend import database
+from tests.conftest import TEST_ADMIN_PASSWORD
 
 class TestSecurityResilience:
     @pytest.mark.parametrize("sqli_payload", [
@@ -31,7 +32,7 @@ class TestSecurityResilience:
         assert len(database.get_all_posts()) >= 3
 
     def test_last_super_admin_protection(self, temp_db):
-        admin_user, _ = database.authenticate_user_db("admin", "EPAadmin2026!")
+        admin_user, _ = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         assert admin_user is not None
         admin_id = admin_user["id"]
 

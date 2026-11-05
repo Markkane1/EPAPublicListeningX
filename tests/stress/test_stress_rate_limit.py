@@ -72,9 +72,10 @@ class TestRateLimiterStress:
         assert allowed_count == serve.RATE_MAX_REQUESTS
         assert blocked_count == 50 - serve.RATE_MAX_REQUESTS
 
-    def test_e2e_http_login_rate_limiting_triggers_429(self, ephemeral_server):
+    def test_e2e_http_login_rate_limiting_triggers_429(self, ephemeral_server, monkeypatch):
         """Send rapid HTTP requests through ephemeral_server to verify HTTP 429 response."""
         base_url, _ = ephemeral_server
+        monkeypatch.setenv("TRUSTED_PROXIES", "127.0.0.1")
         stress_ip = "198.51.100.88"
         with serve._rate_lock:
             serve._rate_buckets.pop(stress_ip, None)
