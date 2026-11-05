@@ -20,22 +20,20 @@
 
 # Extension build packages & binaries
 *.crx
-scrapper/release/*.zip
-scrapper/release/*.crx
-scrapper/release/*.pem
+scrapper/release/
 
 # SQLite database files and WAL artifacts (may contain PII / API keys)
 *.db
 *.db-wal
 *.db-shm
 data/
-!backend/data/vader_lexicon.txt
 scrapper/sample_data/
 
 # Scratch / temporary working files
 scratch/
 .test_data/
 *.mjs
+!tests/**/*.mjs
 *_dom.html
 
 # Python artifacts
@@ -85,6 +83,13 @@ lerna-debug.log*
 # Logs & Temporary files
 logs/
 *.log
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Local browser profiles created while checking the app
+.chrome-tmp/
 
 # IDE & OS Metadata
 .DS_Store

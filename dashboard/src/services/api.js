@@ -268,6 +268,27 @@ export async function getPosts(params = {}) {
   return await resp.json();
 }
 
+export async function getAllStoredPosts() {
+  const pageSize = 200;
+  const posts = [];
+  const seen = new Set();
+  for (let page = 0; page < 50; page += 1) {
+    const batch = await getPosts({ limit: pageSize, offset: page * pageSize });
+    if (!Array.isArray(batch)) {
+      throw new Error('Verified posts failed to load.');
+    }
+    if (batch.length === 0) break;
+    batch.forEach((post, index) => {
+      const id = String(post.id ?? post.clean_id ?? `${page}-${index}`);
+      if (seen.has(id)) return;
+      seen.add(id);
+      posts.push(post);
+    });
+    if (batch.length < pageSize) break;
+  }
+  return posts;
+}
+
 export async function searchXApi({ keyword, liveOverride = false, maxResults = 25, simulateIfMissing = true }) {
   const resp = await authFetch(`${API_BASE}/x/search`, {
     method: 'POST',

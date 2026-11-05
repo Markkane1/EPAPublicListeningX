@@ -216,12 +216,16 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
     # Suppress verbose request logging in production
     # -----------------------------------------------------------------------
     def log_message(self, fmt, *args):
-        # Only log errors/warnings; suppress routine 2xx GET noise
-        if args and len(args) >= 2:
-            code = str(args[1]) if len(args) > 1 else ""
-            if code.startswith(("4", "5")):
-                super().log_message(fmt, *args)
-        # Silently drop 2xx / 3xx log lines
+        # Only log errors/warnings. A failed write must not abort the response:
+        # send_response logs before it writes the status line, and a closed
+        # console was dropping every 4xx login reply.
+        try:
+            if args and len(args) >= 2:
+                code = str(args[1]) if len(args) > 1 else ""
+                if code.startswith(("4", "5")):
+                    super().log_message(fmt, *args)
+        except Exception:
+            return
 
     # -----------------------------------------------------------------------
     # GET handler
@@ -239,7 +243,10 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
 
                 # --- Auth endpoints ---
                 if path == '/api/auth/turnstile-key':
-                    site_key = os.environ.get("TURNSTILE_SITE_KEY", "")
+                    site_key = database.turnstile_site_key_for_request(
+                        self.headers.get("Host", ""),
+                        self.headers.get("Origin", ""),
+                    )
                     self.send_json({"siteKey": site_key})
                     return
 

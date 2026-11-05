@@ -62,7 +62,8 @@ class TestPreprodGates:
         assert "username: admin" in written
         assert "password:" in written
 
-    def test_bypass_tokens_fail(self, temp_db):
+    def test_bypass_tokens_fail(self, temp_db, monkeypatch):
+        monkeypatch.delenv("EPA_TURNSTILE_LOCAL_TEST", raising=False)
         for token in ("DEMO_BYPASS", "TEST_BYPASS", "XXXX.DUMMY.TOKEN.XXXX"):
             ok, _msg = database.verify_turnstile_token(token)
             assert ok is False

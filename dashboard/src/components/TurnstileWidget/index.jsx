@@ -8,6 +8,14 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 
 import { getTurnstileSiteKey } from '../../services/api';
 
+const LOCAL_TEST_SITE_KEY = '1x00000000000000000000AA';
+
+function localDevHost() {
+  if (!import.meta.env.DEV) return false;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 export default function TurnstileWidget({
   siteKey: propSiteKey,
   onVerify,
@@ -27,24 +35,41 @@ export default function TurnstileWidget({
       setSiteKey(propSiteKey);
       return;
     }
+    if (localDevHost()) {
+      setSiteKey(LOCAL_TEST_SITE_KEY);
+      return;
+    }
     let isMounted = true;
     getTurnstileSiteKey().then((key) => {
-      if (isMounted && key) setSiteKey(key);
-    }).catch(() => {});
+      if (!isMounted) return;
+      if (key) setSiteKey(key);
+      else setLoadError(true);
+    }).catch(() => {
+      if (isMounted) setLoadError(true);
+    });
     return () => { isMounted = false; };
   }, [propSiteKey]);
 
   useEffect(() => {
+    let cancelled = false;
+    const markLoaded = () => {
+      if (!cancelled) setIsScriptLoaded(true);
+    };
     if (window.turnstile) {
-      setIsScriptLoaded(true);
-      return;
+      markLoaded();
+      return () => { cancelled = true; };
     }
 
-    const existingScript = document.getElementById('cf-turnstile-script');
+    const existingScript = document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]');
     if (existingScript) {
-      existingScript.addEventListener('load', () => setIsScriptLoaded(true));
-      existingScript.addEventListener('error', () => setLoadError(true));
-      return;
+      existingScript.addEventListener('load', markLoaded);
+      existingScript.addEventListener('error', () => {
+        if (!cancelled) setLoadError(true);
+      });
+      return () => {
+        cancelled = true;
+        existingScript.removeEventListener('load', markLoaded);
+      };
     }
 
     const script = document.createElement('script');
@@ -52,38 +77,44 @@ export default function TurnstileWidget({
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     script.async = true;
     script.defer = true;
-    script.onload = () => setIsScriptLoaded(true);
+    script.onload = markLoaded;
     script.onerror = () => {
-      console.warn('Cloudflare Turnstile script blocked or unreachable. Fallback bypass available.');
-      setLoadError(true);
+      if (!cancelled) setLoadError(true);
     };
-
     document.head.appendChild(script);
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     if (!isScriptLoaded || !containerRef.current || !window.turnstile || !siteKey) return;
+    const node = containerRef.current;
+    setLoadError(false);
 
     try {
-      
       if (widgetIdRef.current !== null) {
         try {
           window.turnstile.remove(widgetIdRef.current);
         } catch {
-          
+          // A previous strict-mode mount may already have removed it.
         }
+        widgetIdRef.current = null;
       }
+      node.replaceChildren();
 
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+      widgetIdRef.current = window.turnstile.render(node, {
         sitekey: siteKey,
         theme: theme,
         action: action,
+        appearance: 'always',
         callback: (token) => {
           setVerifiedToken(token);
+          setLoadError(false);
           if (onVerify) onVerify(token);
         },
         'error-callback': () => {
+          setVerifiedToken(null);
           setLoadError(true);
+          if (onVerify) onVerify(null);
           if (onError) onError();
         },
         'expired-callback': () => {
@@ -97,11 +128,13 @@ export default function TurnstileWidget({
     }
 
     return () => {
-      if (widgetIdRef.current !== null && window.turnstile) {
+      const widgetId = widgetIdRef.current;
+      widgetIdRef.current = null;
+      if (widgetId !== null && window.turnstile) {
         try {
-          window.turnstile.remove(widgetIdRef.current);
+          window.turnstile.remove(widgetId);
         } catch {
-          
+          // Ignore a widget that strict mode already removed.
         }
       }
     };
@@ -125,7 +158,9 @@ export default function TurnstileWidget({
       <Box
         ref={containerRef}
         sx={{
-          minHeight: verifiedToken ? 0 : '65px',
+          minHeight: verifiedToken ? 0 : '70px',
+          minWidth: verifiedToken ? 0 : '300px',
+          width: '100%',
           display: verifiedToken ? 'none' : 'flex',
           justifyContent: 'center',
           alignItems: 'center'
@@ -166,7 +201,7 @@ export default function TurnstileWidget({
       {loadError && (
         <Box sx={{ textAlign: 'center', mt: 1 }}>
           <Typography sx={{ fontSize: '12px', color: '#dc2626' }}>
-            Security check could not load. Please check your network connection or ad-blocker.
+            Security check could not load. Refresh the page and try again.
           </Typography>
         </Box>
       )}

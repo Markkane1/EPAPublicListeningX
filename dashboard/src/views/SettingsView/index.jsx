@@ -85,7 +85,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
   const [showBearer, setShowBearer] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
-  const [endpoint, setEndpoint] = useState('https://api.twitter.com/2/tweets/search/recent');
+  const [endpoint, setEndpoint] = useState('');
   const [defaultQuery, setDefaultQuery] = useState('');
   const [dbInfo, setDbInfo] = useState({ totalPosts: 0, lastSync: '' });
 
@@ -129,7 +129,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           getQueryVersions().catch(() => [])
         ]);
         setDataSource(data.data_source || 'file');
-        setEndpoint(data.x_api_endpoint || 'https://api.twitter.com/2/tweets/search/recent');
+        setEndpoint(data.x_api_endpoint || '');
         setDefaultQuery(data.default_query || '');
         setSentimentEngineState(sStatus.activeEngine || 'vader');
         setTransformerAvailable(Boolean(sStatus.transformerAvailable));
@@ -166,10 +166,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
     try {
       const payload = {
         data_source: dataSource,
-        x_api_endpoint: endpoint,
         default_query: defaultQuery,
         sentiment_engine: sentimentEngineState,
       };
+      if (endpoint) payload.x_api_endpoint = endpoint;
       if (bearerToken) payload.x_bearer_token = bearerToken;
       if (apiKey) payload.x_api_key = apiKey;
       if (apiSecret) payload.x_api_secret = apiSecret;
@@ -191,7 +191,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
       await setSentimentEngine(eng);
       setSentimentEngineState(eng);
     } catch (e) {
-      setErrorMessage(`Failed to switch sentiment engine: ${e.message}`);
+      setErrorMessage(`Could not change how posts are scored: ${e.message}`);
     }
   };
 
@@ -426,6 +426,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
     return queryVersions.find(v => v.isActive) || queryVersions[0];
   }, [queryVersions]);
 
+  const sentimentModeLabel = sentimentEngineState === 'transformer' ? 'Detailed' : 'Standard';
+
   return (
     <Box sx={{ py: 1 }}>
 {saveSuccess && (
@@ -434,7 +436,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           icon={<CheckCircleRoundedIcon />}
           sx={{ mb: 2.5, borderRadius: '10px' }}
         >
-          Settings successfully updated and saved into local SQLite database!
+          Settings saved.
         </Alert>
       )}
 
@@ -492,8 +494,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               iconPosition="start"
               label={
                 <Box component="span" sx={{ display: 'inline' }}>
-                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Pipeline &amp; NLP Engine</Box>
-                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Pipeline &amp; AI</Box>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Collection</Box>
+                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Collection</Box>
                 </Box>
               }
             />
@@ -512,8 +514,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               iconPosition="start"
               label={
                 <Box component="span" sx={{ display: 'inline' }}>
-                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>X (Twitter) API v2</Box>
-                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>X / Twitter API</Box>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>X access</Box>
+                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>X access</Box>
                 </Box>
               }
             />
@@ -522,17 +524,17 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               iconPosition="start"
               label={
                 <Box component="span" sx={{ display: 'inline' }}>
-                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Storage &amp; Persistence</Box>
-                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Database</Box>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Storage</Box>
+                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Storage</Box>
                 </Box>
               }
             />
           </Tabs>
 <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', flexWrap: 'wrap', gap: 1, py: 1 }}>
-            <Tooltip title="Data Source: Click to switch pipeline mode" arrow>
+            <Tooltip title="Click to choose where posts come from" arrow>
               <Chip
                 icon={<HubRoundedIcon sx={{ fontSize: '14px !important' }} />}
-                label={dataSource === 'x_api' ? 'Live X API' : 'File Ingestion'}
+                label={dataSource === 'x_api' ? 'Live X' : 'Saved files'}
                 onClick={() => setTabValue(0)}
                 size="small"
                 sx={{
@@ -549,10 +551,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               />
             </Tooltip>
 
-            <Tooltip title="NLP Model: Click to configure sentiment engine" arrow>
+            <Tooltip title="Click to choose how posts are scored" arrow>
               <Chip
                 icon={<TuneRoundedIcon sx={{ fontSize: '14px !important' }} />}
-                label={sentimentEngineState === 'transformer' ? 'RoBERTa NLP' : 'VADER Lexicon'}
+                label={sentimentEngineState === 'transformer' ? 'Detailed sentiment' : 'Standard sentiment'}
                 onClick={() => setTabValue(0)}
                 size="small"
                 sx={{
@@ -613,14 +615,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                 <Box>
                   <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-                    Data Ingestion Source
+                    Where posts come from
                   </Typography>
                   <Typography sx={{ fontSize: '12.5px', color: '#64748b' }}>
-                    Choose whether the monitoring pipeline ingests local batch scrape files or queries live X.com API.
+                    Choose whether posts come from saved files or from live X.
                   </Typography>
                 </Box>
                 <Chip
-                  label={dataSource === 'x_api' ? 'Live X Stream Active' : 'File Ingestion Active'}
+                  label={dataSource === 'x_api' ? 'Live X in use' : 'Saved files in use'}
                   size="small"
                   sx={{
                     fontWeight: 700,
@@ -662,12 +664,12 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <FolderZipRoundedIcon sx={{ fontSize: '18px', color: dataSource === 'file' ? '#5e72e4' : '#64748b' }} />
                       <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
-                        File Ingestion Mode (Batch Scrapes)
+                        Saved files
                       </Typography>
-                      <Chip label="Offline Safe" size="small" sx={{ height: '18px', fontSize: '10px', fontWeight: 600, bgcolor: '#f1f5f9', color: '#475569' }} />
+                      <Chip label="Offline" size="small" sx={{ height: '18px', fontSize: '10px', fontWeight: 600, bgcolor: '#f1f5f9', color: '#475569' }} />
                     </Box>
                     <Typography sx={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
-                      Ingests batch JSON scrape archives (e.g. <code>batch1.json</code>) via drag-and-drop or local file directory import. Runs offline against historical scrapes with zero API rate-limits.
+                      Imports posts from files you already have. No live connection is used.
                     </Typography>
                   </Box>
                 </Box>
@@ -698,12 +700,12 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <LanguageRoundedIcon sx={{ fontSize: '18px', color: dataSource === 'x_api' ? '#059669' : '#64748b' }} />
                       <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
-                        Live X (Twitter) API v2
+                        Live X
                       </Typography>
-                      <Chip label="Real-Time" size="small" sx={{ height: '18px', fontSize: '10px', fontWeight: 600, bgcolor: '#dcfce7', color: '#15803d' }} />
+                      <Chip label="Real-time" size="small" sx={{ height: '18px', fontSize: '10px', fontWeight: 600, bgcolor: '#dcfce7', color: '#15803d' }} />
                     </Box>
                     <Typography sx={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
-                      Executes live queries against X API v2 (<code>/2/tweets/search/recent</code>). Fetches real-time smog emergencies and citizen reports directly into the local SQLite database.
+                      Collects new posts from X as they are published.
                     </Typography>
                   </Box>
                 </Box>
@@ -715,12 +717,12 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   icon={<KeyRoundedIcon />}
                   action={
                     <Button color="inherit" size="small" onClick={() => setTabValue(2)} sx={{ textTransform: 'none', fontWeight: 600, fontSize: '12px' }}>
-                      Configure Keys &rarr;
+                      Add token &rarr;
                     </Button>
                   }
                   sx={{ mt: 2, borderRadius: '10px', fontSize: '12px' }}
                 >
-                  Live X API mode requires a valid Twitter Bearer Token to connect and query live streams.
+                  Live X needs an access token before it can collect posts.
                 </Alert>
               )}
             </Box>
@@ -730,14 +732,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                 <Box>
                   <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-                    Sentiment Analysis NLP Engine
+                    Sentiment Analysis
                   </Typography>
                   <Typography sx={{ fontSize: '12.5px', color: '#64748b' }}>
-                    Select between high-speed regional rule-based scoring or deep RoBERTa transformer neural models.
+                    Choose how reactions in posts are scored.
                   </Typography>
                 </Box>
                 <Chip
-                  label={sentimentEngineState === 'transformer' ? 'Transformer Active' : 'VADER Active'}
+                  label={sentimentEngineState === 'transformer' ? 'Detailed in use' : 'Standard in use'}
                   size="small"
                   sx={{
                     fontWeight: 700,
@@ -780,13 +782,12 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <SpeedRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'vader' ? '#5e72e4' : '#64748b' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
-                          VADER + Regional Lexicon
+                          Standard
                         </Typography>
                       </Box>
-                      <Chip label="Ultra-Fast (<1ms)" size="small" sx={{ height: '18px', fontSize: '10px', fontWeight: 600, bgcolor: '#f1f5f9', color: '#475569' }} />
                     </Box>
                     <Typography sx={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
-                      Sub-millisecond latency. Calibrated with <strong>Roman Urdu</strong> (<em>tabahi, ghutan, zehreela</em>), Urdu script keywords, Punjab EPA smog terms, and contextual negation modifiers.
+                      Scores each post as alarmed, concerned, neutral, or positive.
                     </Typography>
                   </Box>
                 </Box>
@@ -818,11 +819,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AutoAwesomeRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'transformer' ? '#5e72e4' : '#64748b' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
-                          Local Transformer (RoBERTa)
+                          Detailed
                         </Typography>
                       </Box>
                       <Chip
-                        label={transformerAvailable ? "Model Ready" : "Offline"}
+                        label={transformerAvailable ? "Available" : "Unavailable"}
                         size="small"
                         sx={{
                           height: '18px',
@@ -834,7 +835,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       />
                     </Box>
                     <Typography sx={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>
-                      Deep neural model (<code>cardiffnlp/twitter-roberta</code>). Trained on 124M tweets with self-attention for complex sentence structures, irony, and deep public alarm detection.
+                      Reads mixed or indirect wording before assigning the same reaction labels.
                     </Typography>
                   </Box>
                 </Box>
@@ -855,10 +856,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               >
                 <Box sx={{ flex: 1, minWidth: '240px' }}>
                   <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
-                    Recalibrate Database Sentiment
+                    Score posts again
                   </Typography>
                   <Typography sx={{ fontSize: '12px', color: '#64748b' }}>
-                    Re-runs <strong>{sentimentEngineState === 'transformer' ? 'RoBERTa Transformer' : 'VADER + Regional Lexicon'}</strong> across all verified posts in your local SQLite store.
+                    Scores every verified post again with the option selected above.
                   </Typography>
                 </Box>
 
@@ -881,14 +882,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     '&:hover': { borderColor: '#3730a3', backgroundColor: '#eef2ff' }
                   }}
                 >
-                  {reanalyzing ? `Analyzing Posts...` : `Re-analyze All Posts (${sentimentEngineState.toUpperCase()})`}
+                  {reanalyzing ? 'Analyzing posts...' : 'Re-analyze all posts'}
                 </Button>
                 )}
               </Box>
 
               {reanalyzeResult && (
                 <Alert severity="success" sx={{ borderRadius: '10px', mt: 2, fontSize: '12.5px' }}>
-                  Re-analyzed <strong>{reanalyzeResult.totalReanalyzed}</strong> posts with {reanalyzeResult.engine.toUpperCase()}. Average Polarity: <strong>{reanalyzeResult.averageScore}</strong>.
+                  Re-analyzed <strong>{reanalyzeResult.totalReanalyzed}</strong> posts with {sentimentModeLabel}. Average score: <strong>{reanalyzeResult.averageScore}</strong>.
                   {' '}(Critical: {reanalyzeResult.distribution["Critical / Alarmed"] || 0}, Concerned: {reanalyzeResult.distribution["Concerned"] || 0}, Neutral: {reanalyzeResult.distribution["Informative / Neutral"] || 0}, Positive: {reanalyzeResult.distribution["Positive / Solution-Oriented"] || 0})
                 </Alert>
               )}
@@ -913,7 +914,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
                 }}
               >
-                {saving ? 'Saving...' : 'Save Pipeline Configuration'}
+                {saving ? 'Saving...' : 'Save settings'}
               </Button>
             </Box>
             )}
@@ -1071,7 +1072,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
 <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                  Boolean Search String (X API / Pipeline Query Syntax)
+                  Search terms
                 </Typography>
                 <Typography sx={{ fontSize: '11px', color: '#94a3b8' }}>
                   Updated: {selectedVersionObj ? new Date(selectedVersionObj.updatedAt).toLocaleDateString() : ''}
@@ -1116,7 +1117,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 }}
               >
                 <Typography sx={{ fontSize: '11.5px', color: '#64748b' }}>
-                  Length: <strong>{queryDraft.length}</strong> characters • Estimated cost: <strong>~{Math.round(queryDraft.split(/\s+/).length * 1.3)}</strong> API tokens
+                  Length: <strong>{queryDraft.length}</strong> characters
                 </Typography>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1290,10 +1291,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-                X (Twitter) API v2 Credentials
+                X access
               </Typography>
               <Typography sx={{ fontSize: '12.5px', color: '#64748b', mt: 0.3 }}>
-                Configure App-Only Bearer Token or Developer Keys to query real-time tweets and surveillance streams.
+                Add the token used to collect new posts from X.
               </Typography>
             </Box>
 
@@ -1301,7 +1302,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
 <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
                   <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                    X API Bearer Token (App-Only Recommended)
+                    Access token
                   </Typography>
                   {bearerToken ? (
                     <Chip label="Configured" size="small" sx={{ height: '18px', fontSize: '10px', bgcolor: '#dcfce7', color: '#15803d', fontWeight: 600 }} />
@@ -1311,7 +1312,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Box>
                 <OutlinedInput
                   type={showBearer ? 'text' : 'password'}
-                  placeholder="Paste your Twitter Bearer Token (AAAA...)"
+                  placeholder="Paste access token"
                   value={bearerToken}
                   onChange={(e) => setBearerToken(e.target.value)}
                   fullWidth
@@ -1352,41 +1353,20 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   }}
                 />
                 <Typography sx={{ fontSize: '11.5px', color: '#64748b', mt: 0.5 }}>
-                  Found under Twitter Developer Portal → Projects & Apps → Keys and Tokens → Bearer Token.
-                </Typography>
-              </Box>
-<Box>
-                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155', mb: 0.8 }}>
-                  API Endpoint Base URL
-                </Typography>
-                <OutlinedInput
-                  value={endpoint}
-                  onChange={(e) => setEndpoint(e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={{
-                    fontSize: '13px',
-                    borderRadius: '8px',
-                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
-                    color: darkMode ? '#ffffff' : '#1e293b',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' }
-                  }}
-                />
-                <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#64748b', mt: 0.5 }}>
-                  Standard recent search endpoint: <code>https://api.twitter.com/2/tweets/search/recent</code>
+                  The token from your X developer account.
                 </Typography>
               </Box>
 <Box sx={{ pt: 1 }}>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155', mb: 1 }}>
-                  OAuth 1.0a Consumer Credentials (Optional)
+                  Optional extra keys
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                   <Box>
                     <Typography sx={{ fontSize: '12px', color: '#64748b', mb: 0.5 }}>
-                      Consumer API Key
+                      Access key
                     </Typography>
                     <OutlinedInput
-                      placeholder="API Key"
+                      placeholder="Access key"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       fullWidth
@@ -1402,11 +1382,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#64748b', mb: 0.5 }}>
-                      Consumer API Secret
+                      Access secret
                     </Typography>
                     <OutlinedInput
                       type="password"
-                      placeholder="API Secret Key"
+                      placeholder="Access secret"
                       value={apiSecret}
                       onChange={(e) => setApiSecret(e.target.value)}
                       fullWidth
@@ -1443,7 +1423,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     }
                   }}
                 >
-                  {testing ? 'Testing Endpoint...' : 'Test Connection'}
+                  {testing ? 'Checking connection...' : 'Test connection'}
                 </Button>
 
                 {canManageSettings && (
@@ -1468,7 +1448,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     }
                   }}
                 >
-                  {saving ? 'Saving...' : 'Save API Settings'}
+                  {saving ? 'Saving...' : 'Save connection'}
                 </Button>
                 )}
               </Box>
@@ -1488,53 +1468,29 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-                Local SQLite Database Telemetry
+                Saved posts
               </Typography>
               <Typography sx={{ fontSize: '12.5px', color: '#64748b', mt: 0.3 }}>
-                Underlying persistence engine, verified posts store, and background synchronization state.
+                How many verified posts are stored, and when they were last refreshed.
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
               <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
                 <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Engine
-                </Typography>
-                <Typography sx={{ fontSize: '15px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', mt: 0.5 }}>
-                  SQLite 3
-                </Typography>
-                <Typography sx={{ fontSize: '11px', color: '#059669', fontWeight: 600, mt: 0.3 }}>
-                  WAL Mode Active
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
-                <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Database Path
-                </Typography>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', mt: 0.5, wordBreak: 'break-all' }}>
-                  data/epa_intelligence.db
-                </Typography>
-                <Typography sx={{ fontSize: '11px', color: '#64748b', mt: 0.3 }}>
-                  Local Storage
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
-                <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Verified Posts
+                  Verified posts
                 </Typography>
                 <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#2dce89', mt: 0.5 }}>
                   {dbInfo.totalPosts}
                 </Typography>
                 <Typography sx={{ fontSize: '11px', color: '#64748b', mt: 0.3 }}>
-                  Stored & Deduplicated
+                  Ready to review
                 </Typography>
               </Box>
 
               <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
                 <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Last Synchronized
+                  Last refreshed
                 </Typography>
                 <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f172a', mt: 0.5 }}>
                   {new Date(dbInfo.lastSync).toLocaleDateString()}
@@ -1561,10 +1517,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               >
                 <Box sx={{ flex: 1, minWidth: '240px' }}>
                   <Typography sx={{ fontSize: '13.5px', fontWeight: 700, color: darkMode ? '#2dce89' : '#166534' }}>
-                    Sync Frontend State with SQLite Store
+                    Refresh the dashboard
                   </Typography>
                   <Typography sx={{ fontSize: '12px', color: darkMode ? '#cbd5e1' : '#15803d', mt: 0.3 }}>
-                    Reload latest verified posts, sentiment labels, and deduplication states from disk into dashboard memory.
+                    Load the latest saved posts into the dashboard.
                   </Typography>
                 </Box>
 
@@ -1588,7 +1544,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     }
                   }}
                 >
-                  Sync App Feed With Database
+                  Refresh feed
                 </Button>
               </Box>
             )}

@@ -299,7 +299,8 @@ class TestDatabaseUnit:
         assert del_res["success"] is True
         assert not any(r["id"] == rule_id for r in database.get_learned_rules())
 
-    def test_turnstile_verification_tokens(self, temp_db):
+    def test_turnstile_verification_tokens(self, temp_db, monkeypatch):
+        monkeypatch.delenv("EPA_TURNSTILE_LOCAL_TEST", raising=False)
         ok, _ = database.verify_turnstile_token("DEMO_BYPASS")
         assert ok is False
 
@@ -307,6 +308,12 @@ class TestDatabaseUnit:
         assert ok is False
 
         ok, _ = database.verify_turnstile_token("XXXX.DUMMY.TOKEN.XXXX")
+        assert ok is False
+
+        monkeypatch.setenv("EPA_TURNSTILE_LOCAL_TEST", "1")
+        ok, _ = database.verify_turnstile_token("XXXX.DUMMY.TOKEN.XXXX")
+        assert ok is True
+        ok, _ = database.verify_turnstile_token("DEMO_BYPASS")
         assert ok is False
 
         ok, err = database.verify_turnstile_token("")

@@ -766,9 +766,9 @@ def get_all_posts(search=None, city=None, severity=None, category=None, sort_by=
     elif sort_by == "media_count":
         query += f" ORDER BY media_count {dir_sql}, created_at DESC"
     elif sort_by == "oldest":
-        query += " ORDER BY created_at ASC"
+        query += " ORDER BY created_at ASC, id ASC"
     else:
-        query += f" ORDER BY created_at {dir_sql}"
+        query += f" ORDER BY created_at {dir_sql}, id {dir_sql}"
 
     bounded_limit = _bounded_post_limit(limit)
     safe_offset = offset if isinstance(offset, int) and offset > 0 else 0
@@ -1757,6 +1757,13 @@ def _sync_query_file(query_text: str):
         except Exception:
             pass
 
+def _safe_print(message: str):
+    """Log without letting a closed console abort the request."""
+    try:
+        print(message, flush=True)
+    except Exception:
+        return
+
 def authenticate_user_db(username_or_email: str, password: str):
     """
     Authenticates a user by username or email.
@@ -1781,14 +1788,14 @@ def authenticate_user_db(username_or_email: str, password: str):
         user_row = cursor.fetchone()
 
         if not user_row:
-            print(f"[SECURITY] Failed login attempt for identifier: {identifier[:3]}*** from authentication check")
+            _safe_print(f"[SECURITY] Failed login attempt for identifier: {identifier[:3]}*** from authentication check")
             return None, "Invalid username or password."
 
         if not user_row["is_active"]:
             return None, "This account is inactive. Please contact your system administrator."
 
         if not _verify_password(password, user_row["password_hash"], user_row["salt"]):
-            print(f"[SECURITY] Failed password verification for user: {user_row['username']}")
+            _safe_print(f"[SECURITY] Failed password verification for user: {user_row['username']}")
             return None, "Invalid username or password."
 
         cursor.execute("""
@@ -2492,7 +2499,25 @@ _TURNSTILE_BYPASS_TOKENS = frozenset({
     "TEST_BYPASS",
     "XXXX.DUMMY.TOKEN.XXXX",
 })
+_TURNSTILE_CLOUDFLARE_TEST_TOKEN = "XXXX.DUMMY.TOKEN.XXXX"
+_TURNSTILE_LOCAL_SITE_KEY = "1x00000000000000000000AA"
 _TURNSTILE_DUMMY_SECRET = "1x0000000000000000000000000000000AA"
+
+def local_turnstile_test_enabled() -> bool:
+    """True only when this process is explicitly marked as local development."""
+    return os.environ.get("EPA_TURNSTILE_LOCAL_TEST", "").strip() == "1"
+
+def turnstile_site_key_for_request(host: str = "", origin: str = "") -> str:
+    """Return the public site key. Local development uses Cloudflare's visible test key."""
+    configured = os.environ.get("TURNSTILE_SITE_KEY", "").strip()
+    if not local_turnstile_test_enabled():
+        return configured
+    host_name = (host or "").split(":")[0].strip("[]").lower()
+    origin_l = (origin or "").lower()
+    local = host_name in {"localhost", "127.0.0.1", "::1"} or "localhost" in origin_l or "127.0.0.1" in origin_l
+    if local:
+        return _TURNSTILE_LOCAL_SITE_KEY
+    return configured
 
 def _turnstile_secret_is_unusable(secret: str) -> bool:
     if not secret or not str(secret).strip():
@@ -2513,6 +2538,11 @@ def verify_turnstile_token(token: str, remote_ip: str = None) -> tuple:
 
     clean_token = token.strip()
     if clean_token in _TURNSTILE_BYPASS_TOKENS:
+        # Cloudflare's localhost test widget returns this one token. Accept it
+        # only when local testing is explicitly enabled. Any other token,
+        # including the old bypass literals, still fails.
+        if clean_token == _TURNSTILE_CLOUDFLARE_TEST_TOKEN and local_turnstile_test_enabled():
+            return True, ""
         return False, "Turnstile verification failed."
 
     configured_test = os.environ.get("EPA_TURNSTILE_TEST_TOKEN", "").strip()

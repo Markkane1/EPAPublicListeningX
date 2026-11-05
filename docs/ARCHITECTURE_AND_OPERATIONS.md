@@ -87,20 +87,17 @@ The system strictly follows Clean Architecture principles with complete decoupli
 
 ## 4. Verification & Automated Test Suites
 
-The repository contains 113 automated tests organized across unit, integration, and HTTP end-to-end tiers:
+Automated tests live under `tests/` and are collected by pytest. They use temporary databases. Do not point them at the live database.
 
-| Test Suite | Location | Checks | Scope |
-| :--- | :--- | :--- | :--- |
-| **Comprehensive RBAC Audit** | `backend/tests/comprehensive_rbac_audit.py` | 40 | Schema, password hashing, 4-tier roles, session lifecycle, endpoint access gates, public signup prohibition |
-| **Backend API Endpoints** | `backend/tests/test_api_endpoints.py` | 13 | Admin/analyst/viewer logins, CRUD operations, Turnstile token validation |
-| **HTTP E2E Suite** | `backend/tests/test_e2e_http.py` | 14 | Real HTTP loopback requests against `127.0.0.1:8080`, session invalidation |
-| **Pytest Unit Suite** | `tests/unit/` | 46 | Database unit tests, pipeline unit tests, sentiment engine, X API client mock and real handlers |
+| Folder | Scope |
+| :--- | :--- |
+| `tests/unit/` | Single modules |
+| `tests/integration/` | Database and service flows |
+| `tests/e2e/` | Request lifecycles |
+| `tests/stress/` | Concurrency and limits |
+| `tests/whitebox/` | Boundary and hardening checks |
 
-To run all test suites simultaneously:
 ```bash
-python backend/tests/comprehensive_rbac_audit.py
-python backend/tests/test_api_endpoints.py
-python backend/tests/test_e2e_http.py
 python -m pytest tests
 ```
 

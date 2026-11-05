@@ -35,7 +35,7 @@ import Lightbox from './components/Lightbox';
 import IngestModal from './components/IngestModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getRoutes } from './routes';
-import { getSettings, getPosts, getNoisePosts, getAuditLogs, ingestPostsBatch, excludePost } from './services/api';
+import { getSettings, getAllStoredPosts, getNoisePosts, getAuditLogs, ingestPostsBatch, excludePost } from './services/api';
 
 function AppContent() {
   const [controller] = useArgonController();
@@ -79,7 +79,7 @@ function AppContent() {
       const errors = [];
       const [settingsResult, postsResult, noiseResult, auditResult] = await Promise.all([
         getSettings().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
-        getPosts().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
+        getAllStoredPosts().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
         getNoisePosts({ status: 'EXCLUDED', limit: 250 }).then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
         getAuditLogs().then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error })),
       ]);
@@ -415,7 +415,7 @@ function AppContent() {
                       }}
                       onReloadFromDb={async () => {
                         try {
-                          const freshPosts = await getPosts();
+                          const freshPosts = await getAllStoredPosts();
                           if (!Array.isArray(freshPosts)) {
                             setPosts([]);
                             setSnackbar({

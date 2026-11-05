@@ -255,14 +255,9 @@ class StandaloneVaderAnalyzer:
         # Attempt to load standard vader_lexicon.txt from paths
         paths_to_try = lexicon_paths or [
             os.path.join(os.path.dirname(__file__), "lexicons", "vader_lexicon.txt"),
-            os.path.join(os.path.dirname(__file__), "data", "vader_lexicon.txt"),
             os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend", "lexicons", "vader_lexicon.txt"),
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend", "data", "vader_lexicon.txt"),
             os.path.join(os.getcwd(), "backend", "lexicons", "vader_lexicon.txt"),
-            os.path.join(os.getcwd(), "backend", "data", "vader_lexicon.txt"),
-            os.path.join(os.getcwd(), "data", "vader_lexicon.txt"),
             "/var/www/apps/epasocialx/backend/lexicons/vader_lexicon.txt",
-            "/var/www/apps/epasocialx/backend/data/vader_lexicon.txt"
         ]
 
         for p in paths_to_try:

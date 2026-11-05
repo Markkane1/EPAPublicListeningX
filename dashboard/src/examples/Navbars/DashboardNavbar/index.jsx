@@ -65,7 +65,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
     noise: "Noise & Learning Engine",
     users: "User Management & Credentials",
     roles: "Role & Permission Policies",
-    settings: "System Settings & X API",
+    settings: "Settings",
   };
 
   const pageTitle = routeTitles[currentRoute] || currentRoute.toUpperCase();
@@ -205,7 +205,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
         </Box>
 <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap", ml: "auto" }}>
           
-          <Tooltip title="Click to change source or configure X API credentials in Settings" arrow>
+          <Tooltip title="Click to choose where posts come from" arrow>
             <Box
               onClick={() => navigate("/settings")}
               sx={{
@@ -238,7 +238,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", posts = [] }) {
                   boxShadow: dataSource === "x_api" ? "0 0 0 2px rgba(34, 197, 94, 0.25)" : "none",
                 }}
               />
-              {dataSource === "x_api" ? "Mode: Live X API" : "Mode: File Ingestion"}
+              {dataSource === "x_api" ? "Live X" : "Saved files"}
             </Box>
           </Tooltip>
 
