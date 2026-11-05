@@ -76,6 +76,8 @@ import {
   addLearnedRule,
   toggleLearnedRule,
   deleteLearnedRule,
+  POSTS_CHUNK_SIZE,
+  POSTS_PAGE_SIZE,
 } from '../../services/api';
 import { extractLearningCandidates } from '../../services/pipeline';
 
@@ -890,15 +892,16 @@ export const NOISE_QUICK_SORTS = [
   { id: 'media_count', label: 'Photo Evidence', icon: '📸' },
 ];
 
-function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcluded, onImageClick }) {
+function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageClick }) {
   const [controller] = useArgonController();
   const { miniSidenav, darkMode } = controller || {};
   const { hasPermission } = useAuth();
   const canManageNoise = hasPermission('noise.manage');
 
   const [activeTab, setActiveTab] = useState(0); 
-  const [noisePostsList, setNoisePostsList] = useState(propNoisePosts);
+  const [noisePostsList, setNoisePostsList] = useState([]);
   const [restoredPostsList, setRestoredPostsList] = useState([]);
+  const [chunk, setChunk] = useState({ items: [], total: 0, offset: 0 });
   const [learnedRulesList, setLearnedRulesList] = useState([]);
   const [noiseStats, setNoiseStats] = useState({
     totalNoise: 0,
@@ -918,8 +921,9 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
     sortBy: 'newest',
     sortOrder: 'desc',
   });
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 12;
+  const postsPerPage = POSTS_PAGE_SIZE;
 
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -941,12 +945,28 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
   const [newManualValue, setNewManualValue] = useState('');
   const [newManualDesc, setNewManualDesc] = useState('');
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(filters.search || ''), 300);
+    return () => clearTimeout(t);
+  }, [filters.search]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [excluded, restored, rules, stats] = await Promise.all([
-        getNoisePosts({ status: 'EXCLUDED', limit: 250, sortBy: 'newest', sortOrder: 'desc' }).catch(() => []),
-        getNoisePosts({ status: 'RESTORED', limit: 100, sortBy: 'newest', sortOrder: 'desc' }).catch(() => []),
+      const status = activeTab === 2 ? 'RESTORED' : 'EXCLUDED';
+      const chunkOffset = Math.floor(((currentPage - 1) * postsPerPage) / POSTS_CHUNK_SIZE) * POSTS_CHUNK_SIZE;
+      const [page, rules, stats] = await Promise.all([
+        activeTab === 1
+          ? Promise.resolve({ items: [], total: 0, offset: 0 })
+          : getNoisePosts({
+              status,
+              search: debouncedSearch,
+              category: filters.category,
+              sortBy: filters.sortBy,
+              sortOrder: filters.sortOrder,
+              limit: POSTS_CHUNK_SIZE,
+              offset: chunkOffset,
+            }).catch(() => ({ items: [], total: 0, offset: 0 })),
         getLearnedRules().catch(() => []),
         getNoiseStats().catch(() => ({
           totalNoise: 0,
@@ -957,63 +977,31 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
         })),
       ]);
 
-      const existingIds = new Set(excluded.map((p) => String(p.id)));
-      const mergedExcluded = [...excluded];
-      if (Array.isArray(propNoisePosts)) {
-        propNoisePosts.forEach((p) => {
-          const pid = String(p.id);
-          if (p.status !== 'RESTORED' && !existingIds.has(pid)) {
-            existingIds.add(pid);
-            mergedExcluded.unshift(p);
-          }
-        });
+      const items = page.items || [];
+      if (activeTab === 2) {
+        setRestoredPostsList(items);
+      } else if (activeTab === 0) {
+        setNoisePostsList(items);
       }
-
-      setNoisePostsList(mergedExcluded);
-      setRestoredPostsList(restored);
-      setLearnedRulesList(rules);
-      setNoiseStats({
-        ...stats,
-        totalNoise: Math.max(stats.totalNoise || 0, mergedExcluded.length),
-        activeNoise: Math.max(stats.activeNoise || 0, mergedExcluded.length),
-      });
+      setChunk({ items, total: page.total || 0, offset: page.offset || 0 });
+      setLearnedRulesList(Array.isArray(rules) ? rules : []);
+      setNoiseStats(stats);
     } catch (err) {
       console.error('Error fetching noise data:', err);
     } finally {
       setLoading(false);
     }
-  }, [propNoisePosts]);
+  }, [activeTab, currentPage, debouncedSearch, filters.category, filters.sortBy, filters.sortOrder, postsPerPage]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (propNoisePosts && propNoisePosts.length > 0) {
-      setNoisePostsList((prev) => {
-        const seen = new Set(prev.map((p) => String(p.id)));
-        const next = [...prev];
-        propNoisePosts.forEach((p) => {
-          const pid = String(p.id);
-          if (!seen.has(pid) && p.status !== 'RESTORED') {
-            seen.add(pid);
-            next.unshift(p);
-          }
-        });
-        return next;
-      });
-    }
-  }, [propNoisePosts]);
+  }, [fetchData, dataRevision]);
 
   const { availableCategories, availableDates } = useMemo(() => {
     const list = activeTab === 2 ? restoredPostsList : noisePostsList;
-    const catMap = {};
     const dateMap = {};
 
     list.forEach((p) => {
-      const cat = p.exclusionCategory || p.exclusion_category || 'OFF_TOPIC';
-      catMap[cat] = (catMap[cat] || 0) + 1;
-
       const dateStr = p.createdAt || p.created_at;
       if (dateStr) {
         const d = new Date(dateStr);
@@ -1024,7 +1012,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
       }
     });
 
-    const categories = Object.entries(catMap)
+    const categories = Object.entries(noiseStats.categoryBreakdown || {})
       .sort((a, b) => b[1] - a[1])
       .map(([id, count]) => ({ id, count }));
 
@@ -1033,7 +1021,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
       .map(([date, count]) => ({ date, count }));
 
     return { availableCategories: categories, availableDates: dates };
-  }, [noisePostsList, restoredPostsList, activeTab]);
+  }, [noisePostsList, restoredPostsList, activeTab, noiseStats.categoryBreakdown]);
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
@@ -1070,31 +1058,13 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
     filters.sortBy !== 'newest' ||
     filters.sortOrder !== 'desc';
 
+  const extraFiltersActive =
+    filters.media !== 'all' || filters.verified !== 'all' || filters.date !== 'all';
+
   const filteredNoisePosts = useMemo(() => {
     const list = activeTab === 2 ? restoredPostsList : noisePostsList;
     let result = [...list];
 
-    // 1. Keyword search (post text, author username, author display name, exclusion reason)
-    if (filters.search && filters.search.trim()) {
-      const q = filters.search.toLowerCase().trim();
-      result = result.filter((p) => {
-        const textMatch = (p.text || '').toLowerCase().includes(q);
-        const authorMatch = (p.authorUsername || p.author_username || '').toLowerCase().includes(q);
-        const nameMatch = (p.authorName || p.author_name || '').toLowerCase().includes(q);
-        const reasonMatch = (p.exclusionReason || p.exclusion_reason || '').toLowerCase().includes(q);
-        return textMatch || authorMatch || nameMatch || reasonMatch;
-      });
-    }
-
-    // 2. Exclusion category filter
-    if (filters.category !== 'all') {
-      result = result.filter((p) => {
-        const cat = p.exclusionCategory || p.exclusion_category;
-        return cat === filters.category;
-      });
-    }
-
-    // 3. Media filter
     if (filters.media === 'media') {
       result = result.filter((p) => {
         const urls = p.mediaUrls || p.media_urls || [];
@@ -1107,14 +1077,12 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
       });
     }
 
-    // 4. Verified author filter
     if (filters.verified === 'verified') {
       result = result.filter((p) => Boolean(p.authorVerified ?? p.author_verified));
     } else if (filters.verified === 'unverified') {
       result = result.filter((p) => !Boolean(p.authorVerified ?? p.author_verified));
     }
 
-    // 5. Calendar date filter
     if (filters.date !== 'all') {
       result = result.filter((p) => {
         const dateStr = p.createdAt || p.created_at;
@@ -1124,93 +1092,15 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
       });
     }
 
-    // 6. Comprehensive sorting (Defaults to latest posts first)
-    const mult = filters.sortOrder === 'asc' ? -1 : 1;
-
-    result.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'newest': {
-          const timeA = new Date(a.createdAt || a.created_at || a.ingestedAt || a.ingested_at || 0).getTime() || 0;
-          const timeB = new Date(b.createdAt || b.created_at || b.ingestedAt || b.ingested_at || 0).getTime() || 0;
-          if (timeA !== timeB) return mult * (timeB - timeA);
-          return mult * String(b.id || '').localeCompare(String(a.id || ''));
-        }
-        case 'oldest': {
-          const timeA = new Date(a.createdAt || a.created_at || a.ingestedAt || a.ingested_at || 0).getTime() || 0;
-          const timeB = new Date(b.createdAt || b.created_at || b.ingestedAt || b.ingested_at || 0).getTime() || 0;
-          if (timeA !== timeB) return mult * (timeA - timeB);
-          return mult * String(a.id || '').localeCompare(String(b.id || ''));
-        }
-        case 'recently_ingested': {
-          const timeA = new Date(a.ingestedAt || a.ingested_at || a.createdAt || a.created_at || 0).getTime() || 0;
-          const timeB = new Date(b.ingestedAt || b.ingested_at || b.createdAt || b.created_at || 0).getTime() || 0;
-          if (timeA !== timeB) return mult * (timeB - timeA);
-          return mult * String(b.id || '').localeCompare(String(a.id || ''));
-        }
-        case 'engagement': {
-          const aEng = (parseInt(a.likes, 10) || 0) + (parseInt(a.retweets, 10) || 0) + (parseInt(a.replies, 10) || 0) + (parseInt(a.quotes, 10) || 0);
-          const bEng = (parseInt(b.likes, 10) || 0) + (parseInt(b.retweets, 10) || 0) + (parseInt(b.replies, 10) || 0) + (parseInt(b.quotes, 10) || 0);
-          if (aEng !== bEng) return mult * (bEng - aEng);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'likes': {
-          const aL = parseInt(a.likes, 10) || 0;
-          const bL = parseInt(b.likes, 10) || 0;
-          if (aL !== bL) return mult * (bL - aL);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'retweets': {
-          const aR = parseInt(a.retweets, 10) || 0;
-          const bR = parseInt(b.retweets, 10) || 0;
-          if (aR !== bR) return mult * (bR - aR);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'replies': {
-          const aRep = parseInt(a.replies, 10) || 0;
-          const bRep = parseInt(b.replies, 10) || 0;
-          if (aRep !== bRep) return mult * (bRep - aRep);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'views': {
-          const aV = parseInt(a.views, 10) || 0;
-          const bV = parseInt(b.views, 10) || 0;
-          if (aV !== bV) return mult * (bV - aV);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'followers': {
-          const aF = parseInt(a.authorFollowers || a.author_followers, 10) || 0;
-          const bF = parseInt(b.authorFollowers || b.author_followers, 10) || 0;
-          if (aF !== bF) return mult * (bF - aF);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'verified': {
-          const aV = (a.authorVerified || a.author_verified) ? 1 : 0;
-          const bV = (b.authorVerified || b.author_verified) ? 1 : 0;
-          if (aV !== bV) return mult * (bV - aV);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        case 'media_count': {
-          const aM = (a.mediaUrls || a.media_urls || []).length;
-          const bM = (b.mediaUrls || b.media_urls || []).length;
-          if (aM !== bM) return mult * (bM - aM);
-          return (new Date(b.createdAt || b.created_at || 0).getTime() || 0) - (new Date(a.createdAt || a.created_at || 0).getTime() || 0);
-        }
-        default: {
-          const timeA = new Date(a.createdAt || a.created_at || 0).getTime() || 0;
-          const timeB = new Date(b.createdAt || b.created_at || 0).getTime() || 0;
-          return mult * (timeB - timeA);
-        }
-      }
-    });
-
     return result;
-  }, [noisePostsList, restoredPostsList, activeTab, filters]);
+  }, [noisePostsList, restoredPostsList, activeTab, filters.media, filters.verified, filters.date]);
 
-  const totalPages = Math.ceil(filteredNoisePosts.length / postsPerPage) || 1;
-  const paginatedPosts = filteredNoisePosts.slice(
-    (currentPage - 1) * postsPerPage,
-    currentPage * postsPerPage
-  );
+  const totalForPaging = extraFiltersActive ? filteredNoisePosts.length : chunk.total;
+  const totalPages = Math.ceil(totalForPaging / postsPerPage) || 1;
+  const pageStart = (currentPage - 1) * postsPerPage;
+  const paginatedPosts = extraFiltersActive
+    ? filteredNoisePosts.slice(pageStart, pageStart + postsPerPage)
+    : filteredNoisePosts.slice(pageStart - chunk.offset, pageStart - chunk.offset + postsPerPage);
 
   const handleOpenRestoreDialog = async (post) => {
     setSelectedPost(post);
@@ -1549,7 +1439,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
       >
         <DetailedStatisticsCard
           title="Total Filtered Noise"
-          count={String(noiseStats.totalNoise || noisePostsList.length)}
+          count={String(noiseStats.totalNoise || 0)}
           icon={{
             color: 'error',
             component: <CleaningServicesRoundedIcon />,
@@ -1559,7 +1449,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
 
         <DetailedStatisticsCard
           title="Active in Noise Pool"
-          count={String(noiseStats.activeNoise || noisePostsList.length)}
+          count={String(noiseStats.activeNoise || 0)}
           icon={{
             color: 'warning',
             component: <WarningAmberRoundedIcon />,
@@ -1569,7 +1459,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
 
         <DetailedStatisticsCard
           title="Rescued to Feed"
-          count={`+${noiseStats.restoredCount || restoredPostsList.length}`}
+          count={`+${noiseStats.restoredCount || 0}`}
           icon={{
             color: 'success',
             component: <CheckCircleRoundedIcon />,
@@ -1627,7 +1517,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
             }}
           >
             <Tab
-              label={`Noise Ingested Feed (${noisePostsList.length})`}
+              label={`Noise Ingested Feed (${noiseStats.activeNoise || 0})`}
               icon={<CleaningServicesRoundedIcon sx={{ fontSize: '18px' }} />}
               iconPosition="start"
             />
@@ -1637,7 +1527,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
               iconPosition="start"
             />
             <Tab
-              label={`Restored Posts Ledger (${restoredPostsList.length})`}
+              label={`Restored Posts Ledger (${noiseStats.restoredCount || 0})`}
               icon={<CheckCircleRoundedIcon sx={{ fontSize: '18px' }} />}
               iconPosition="start"
             />
@@ -1736,7 +1626,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                   }}
                 >
                   <MenuItem value="all">
-                    All Categories ({activeTab === 2 ? restoredPostsList.length : noisePostsList.length})
+                    All Categories ({chunk.total})
                   </MenuItem>
                   {availableCategories.map((c) => {
                     const badge = getCategoryBadge(c.id);
@@ -2090,10 +1980,10 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
                   }}
                 >
                   <Typography component="span" sx={{ fontSize: '12px', fontWeight: 700, color: '#5e72e4' }}>
-                    {filteredNoisePosts.length}
+                    {extraFiltersActive ? filteredNoisePosts.length : chunk.total}
                   </Typography>
                   <Typography component="span" sx={{ fontSize: '12px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                    / {activeTab === 2 ? restoredPostsList.length : noisePostsList.length} posts
+                    / {activeTab === 2 ? (noiseStats.restoredCount || 0) : (noiseStats.activeNoise || 0)} posts
                   </Typography>
                 </Box>
               </Box>
@@ -2104,7 +1994,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
 
       {(activeTab === 0 || activeTab === 2) && (
         <>
-          {loading && (activeTab === 2 ? restoredPostsList.length === 0 : noisePostsList.length === 0) ? (
+          {loading && chunk.items.length === 0 ? (
             <Box display="flex" justifyContent="center" alignItems="center" py={8}>
               <CircularProgress size={36} sx={{ color: '#5e72e4' }} />
             </Box>
@@ -2876,7 +2766,7 @@ function NoiseView({ noisePosts: propNoisePosts = [], onPostRestored, onPostExcl
 }
 
 NoiseView.propTypes = {
-  noisePosts: PropTypes.arrayOf(PropTypes.object),
+  dataRevision: PropTypes.number,
   onPostRestored: PropTypes.func,
   onPostExcluded: PropTypes.func,
   onImageClick: PropTypes.func,

@@ -87,7 +87,6 @@ function DashboardView({
 
   const availableDates = stats?.dateCounts || [];
   const filteredDashboardPosts = recentPosts;
-  const posts = recentPosts;
   const archiveTotal = stats?.archiveTotalPosts || 0;
 
   const hasActiveFilters = dateFilter !== 'all' || timeFilter !== 'all';

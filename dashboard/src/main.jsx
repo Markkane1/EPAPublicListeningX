@@ -2,9 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
-import { Chart as ChartJS, registerables } from 'chart.js';
-ChartJS.register(...registerables);
-
 import { ArgonControllerProvider } from './context';
 
 import './assets/css/nucleo-icons.css';

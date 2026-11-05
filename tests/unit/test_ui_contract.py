@@ -119,3 +119,65 @@ def test_portal_lightbox_controls_stay_inside_the_viewport():
     text = _read(os.path.join("portal", "styles.css"))
     assert "left: -3.5rem" not in text
     assert "right: -3.5rem" not in text
+
+
+def test_login_bundle_does_not_register_chartjs():
+    main = _read(os.path.join("dashboard", "src", "main.jsx"))
+    analytics = _read(os.path.join("dashboard", "src", "views", "AnalyticsView", "index.jsx"))
+    assert "chart.js" not in main
+    assert "ChartJS.register" in analytics
+
+
+def test_app_does_not_prefetch_the_archive():
+    app = _read(os.path.join("dashboard", "src", "App.jsx"))
+    api = _read(os.path.join("dashboard", "src", "services", "api.js"))
+    assert "getAllStoredPosts" not in app
+    assert "getAllStoredPosts" not in api
+    assert "getPosts(" not in app
+    assert "getNoisePosts(" not in app
+    assert "getAuditLogs(" not in app
+    assert "getSettings" in app
+    assert "getStats" in app
+    assert "lazy(" in app
+    assert "Suspense" in app
+
+
+def test_posts_view_pages_latest_chunk():
+    text = _read(os.path.join("dashboard", "src", "views", "PostsView", "index.jsx"))
+    api = _read(os.path.join("dashboard", "src", "services", "api.js"))
+    assert "POSTS_CHUNK_SIZE = 100" in api
+    assert "POSTS_PAGE_SIZE = 12" in api
+    assert "POSTS_CHUNK_SIZE" in text
+    assert "POSTS_PAGE_SIZE" in text
+    assert "getStats" in text
+    assert "getPosts" in text
+
+
+def test_audit_view_fetches_its_own_page():
+    text = _read(os.path.join("dashboard", "src", "views", "AuditView", "index.jsx"))
+    assert "getAuditLogs" in text
+    assert "auditStatusCounts" in text
+    assert "auditLog:" not in text
+
+
+def test_noise_view_uses_list_envelope():
+    text = _read(os.path.join("dashboard", "src", "views", "NoiseView", "index.jsx"))
+    assert "getNoisePosts" in text
+    assert "POSTS_CHUNK_SIZE" in text
+    assert "noisePosts:" not in text
+    assert "propNoisePosts" not in text
+
+
+def test_ingest_modal_previews_file_only():
+    text = _read(os.path.join("dashboard", "src", "components", "IngestModal", "index.jsx"))
+    assert "currentPosts" not in text
+    assert "processRawPosts(" in text
+    assert "[]" in text
+    assert "live archive" in text.lower() or "on confirm" in text.lower()
+
+
+def test_search_db_tabs_are_server_queries():
+    text = _read(os.path.join("dashboard", "src", "views", "SearchView", "index.jsx"))
+    assert "verified: 1" in text or "verified = 1" in text
+    assert "media = 'media'" in text or 'media: "media"' in text or "media: 'media'" in text
+    assert "sortBy = 'engagement'" in text or "sortBy: 'engagement'" in text

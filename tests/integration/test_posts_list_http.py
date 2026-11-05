@@ -99,3 +99,26 @@ class TestPostsListHttp:
         assert "gzip" not in encoding.lower()
         payload = json.loads(raw.decode("utf-8"))
         assert "items" in payload
+
+    def test_audit_returns_envelope(self, ephemeral_server, auth_tokens, seeded_db):
+        base_url, _ = ephemeral_server
+        status, body = http_get(f"{base_url}/audit?limit=1&offset=0", token=auth_tokens["admin"])
+        assert status == 200
+        assert set(body) >= {"items", "total", "limit", "offset"}
+        assert isinstance(body["items"], list)
+        assert body["limit"] == 1
+        assert body["total"] >= len(body["items"])
+        assert len(body["items"]) <= 1
+        if body["total"] > 1:
+            assert len(body["items"]) == 1
+            assert body["total"] != len(body["items"])
+
+    def test_noise_returns_envelope(self, ephemeral_server, auth_tokens, seeded_db):
+        base_url, _ = ephemeral_server
+        status, body = http_get(f"{base_url}/noise?limit=1&offset=0", token=auth_tokens["admin"])
+        assert status == 200
+        assert set(body) >= {"items", "total", "limit", "offset"}
+        assert isinstance(body["items"], list)
+        assert body["limit"] == 1
+        assert body["total"] >= len(body["items"])
+        assert len(body["items"]) <= 1

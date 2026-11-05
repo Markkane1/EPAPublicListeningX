@@ -20,7 +20,7 @@ import ArgonAlert from 'components/ArgonAlert';
 import { useArgonController } from 'context';
 import { processRawPosts } from '../../services/pipeline';
 
-function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
+function IngestModal({ open, onClose, onIngestSuccess }) {
   const [controller] = useArgonController();
   const { darkMode } = controller;
   const [dragActive, setDragActive] = useState(false);
@@ -86,10 +86,7 @@ function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
 
         setFileData(postsArray);
 
-        const result = processRawPosts(
-          postsArray,
-          ingestMode === 'replace' ? [] : currentPosts
-        );
+        const result = processRawPosts(postsArray, []);
         setProcessingResult(result);
       } catch (err) {
         setErrorMessage(`Invalid JSON syntax: ${err.message}`);
@@ -104,10 +101,7 @@ function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
   const handleModeChange = (newMode) => {
     setIngestMode(newMode);
     if (fileData) {
-      const result = processRawPosts(
-        fileData,
-        newMode === 'replace' ? [] : currentPosts
-      );
+      const result = processRawPosts(fileData, []);
       setProcessingResult(result);
     }
   };
@@ -320,7 +314,7 @@ function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
               </ArgonTypography>
               <ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : '#475569', fontWeight: 600 }}>
                 <strong>{processingResult.newlyAddedPosts.length}</strong> Clean +{' '}
-                <strong>{processingResult.stats.duplicatesMerged}</strong> Duplicates ({processingResult.stats.exactDuplicates || 0} existing in DB + {processingResult.stats.semanticDuplicates || 0} merged) +{' '}
+                <strong>{processingResult.stats.duplicatesMerged}</strong> Duplicates ({processingResult.stats.exactDuplicates || 0} in this file + {processingResult.stats.semanticDuplicates || 0} merged) +{' '}
                 <strong>{processingResult.stats.removedCount}</strong> Noise ={' '}
                 <strong>{processingResult.stats.totalIngested}</strong> Total Raw
               </ArgonTypography>
@@ -338,7 +332,7 @@ function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
                 <FormControlLabel
                   value="merge"
                   control={<Radio size="small" />}
-                  label={<ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : undefined }}>Merge into existing dataset (Deduplicate against current)</ArgonTypography>}
+                  label={<ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : undefined }}>Merge into existing dataset (archive matches applied on confirm)</ArgonTypography>}
                 />
                 <FormControlLabel
                   value="replace"
@@ -348,24 +342,22 @@ function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
               </RadioGroup>
             </ArgonBox>
 
-            {ingestMode === 'merge' && (processingResult.stats.exactDuplicates || 0) > 0 && (
-              <ArgonBox
-                mt={1.5}
-                p={1.5}
-                borderRadius="8px"
-                sx={{
-                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.12)' : 'rgba(94, 114, 228, 0.06)',
-                  border: darkMode ? '1px dashed rgba(94, 114, 228, 0.35)' : '1px dashed #b8c4f9'
-                }}
-              >
-                <ArgonTypography variant="caption" fontWeight="bold" sx={{ color: darkMode ? '#a5b4fc' : '#5e72e4', display: 'block' }}>
-                  ℹ️ {processingResult.stats.exactDuplicates} posts are already indexed in your verified database.
-                </ArgonTypography>
-                <ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : '#475569', display: 'block', mt: 0.3, lineHeight: 1.5 }}>
-                  The merge strategy skips existing post IDs to prevent duplicating records, appending only the <strong>+{processingResult.newlyAddedPosts.length} new unique posts</strong>. Switch to &quot;Replace entire dataset&quot; if you want to overwrite all records with this file.
-                </ArgonTypography>
-              </ArgonBox>
-            )}
+            <ArgonBox
+              mt={1.5}
+              p={1.5}
+              borderRadius="8px"
+              sx={{
+                backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.12)' : 'rgba(94, 114, 228, 0.06)',
+                border: darkMode ? '1px dashed rgba(94, 114, 228, 0.35)' : '1px dashed #b8c4f9'
+              }}
+            >
+              <ArgonTypography variant="caption" fontWeight="bold" sx={{ color: darkMode ? '#a5b4fc' : '#5e72e4', display: 'block' }}>
+                Preview de-duplicates inside this file only.
+              </ArgonTypography>
+              <ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : '#475569', display: 'block', mt: 0.3, lineHeight: 1.5 }}>
+                Matches against the live archive are applied on confirm. Merge keeps existing SQLite rows and appends new unique posts; replace overwrites the verified table with this file.
+              </ArgonTypography>
+            </ArgonBox>
 
             {processingResult.stats.removedCount > 0 && (
               <ArgonBox mt={1.5} p={1.5} borderRadius="8px" sx={{ backgroundColor: darkMode ? 'rgba(245, 54, 92, 0.15)' : 'rgba(245, 54, 92, 0.05)', border: darkMode ? '1px dashed rgba(245, 54, 92, 0.4)' : '1px dashed #fca5a5' }} display="flex" alignItems="center" gap={1}>
@@ -403,7 +395,6 @@ function IngestModal({ open, onClose, currentPosts, onIngestSuccess }) {
 IngestModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  currentPosts: PropTypes.arrayOf(PropTypes.object).isRequired,
   onIngestSuccess: PropTypes.func.isRequired
 };
 

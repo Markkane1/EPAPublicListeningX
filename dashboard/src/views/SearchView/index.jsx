@@ -77,6 +77,7 @@ function SearchView({
   const [hasSearched, setHasSearched] = useState(false);
   const [lastSearchedTerm, setLastSearchedTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [matchTotal, setMatchTotal] = useState(0);
   const [savedQueries, setSavedQueries] = useState([]);
 
   useEffect(() => {
@@ -87,10 +88,11 @@ function SearchView({
       .catch(() => {});
   }, []);
 
-  const handleSearch = useCallback(async (overrideTerm) => {
+  const handleSearch = useCallback(async (overrideTerm, overrideTab) => {
     const term = (typeof overrideTerm === 'string' ? overrideTerm : keyword).trim();
     if (!term) return;
     if (searchMode === 'live' && !canSearchLive) return;
+    const tab = overrideTab || activeTab;
 
     setIsFetching(true);
     setFeedback(null);
@@ -100,12 +102,13 @@ function SearchView({
     if (searchMode === 'db') {
       try {
         const tabParams = { search: term, limit: 50, offset: 0 };
-        if (activeTab === 'top') tabParams.sortBy = 'engagement';
-        else if (activeTab === 'latest') tabParams.sortBy = 'newest';
-        else if (activeTab === 'people') tabParams.verified = 1;
-        else if (activeTab === 'media') tabParams.media = 'media';
+        if (tab === 'top') tabParams.sortBy = 'engagement';
+        else if (tab === 'latest') tabParams.sortBy = 'newest';
+        else if (tab === 'people') tabParams.verified = 1;
+        else if (tab === 'media') tabParams.media = 'media';
         const page = await getPosts(tabParams);
         setSearchResults(page.items || []);
+        setMatchTotal(page.total || 0);
         setFeedback({
           type: 'success',
           message: `Found ${page.total} posts in local database matching "${term}".`,
@@ -113,6 +116,7 @@ function SearchView({
         });
       } catch (e) {
         setSearchResults([]);
+        setMatchTotal(0);
         setFeedback({ type: 'error', message: e.message || 'Database search failed.', count: 0 });
       }
       setIsFetching(false);
@@ -134,6 +138,7 @@ function SearchView({
         }
 
         setSearchResults(results);
+        setMatchTotal(results.length);
         const dupCount = res.duplicatesMerged || 0;
         const noiseCount = res.noiseRemoved || 0;
         const verCount = res.verifiedCount || results.length;
@@ -177,6 +182,7 @@ function SearchView({
     setKeyword('');
     setHasSearched(false);
     setSearchResults([]);
+    setMatchTotal(0);
     setFeedback(null);
     setLastSearchedTerm('');
     if (searchParams.get('q') || searchParams.get('keyword')) {
@@ -185,6 +191,7 @@ function SearchView({
   };
 
   const filteredResults = useMemo(() => {
+    if (searchMode === 'db') return searchResults;
     let list = [...searchResults];
     if (activeTab === 'top') {
       list.sort((a, b) => (b.total_engagement || b.totalEngagement || 0) - (a.total_engagement || a.totalEngagement || 0));
@@ -199,7 +206,7 @@ function SearchView({
       });
     }
     return list;
-  }, [searchResults, activeTab]);
+  }, [searchResults, activeTab, searchMode]);
 
   return (
     <Box sx={{ py: 1.5, maxWidth: '1000px', mx: 'auto' }}>
@@ -443,7 +450,13 @@ function SearchView({
             return (
               <Box
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  if (tab.key === activeTab) return;
+                  setActiveTab(tab.key);
+                  if (searchMode === 'db' && lastSearchedTerm) {
+                    handleSearch(lastSearchedTerm, tab.key);
+                  }
+                }}
                 sx={{
                   flex: 1,
                   display: 'flex',
@@ -526,7 +539,7 @@ function SearchView({
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Typography sx={{ fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#0f1419' }}>
-              Results for &quot;{lastSearchedTerm}&quot; ({filteredResults.length} posts)
+              Results for &quot;{lastSearchedTerm}&quot; ({searchMode === 'db' ? matchTotal : filteredResults.length} posts)
             </Typography>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -36,13 +36,6 @@ import {
 } from "context";
 import { useAuth } from "../../../context/AuthContext";
 
-function readNumericAqi(post) {
-  const raw = post?.aqi_value;
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string" && raw.trim() !== "" && Number.isFinite(Number(raw))) return Number(raw);
-  return null;
-}
-
 function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) {
   const [controller, dispatch] = useArgonController();
   const { miniSidenav, darkMode } = controller;

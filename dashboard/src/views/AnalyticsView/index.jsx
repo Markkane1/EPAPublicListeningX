@@ -13,7 +13,10 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 
+import { Chart as ChartJS, registerables } from 'chart.js';
 import { Doughnut, Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(...registerables);
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';

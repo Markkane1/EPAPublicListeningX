@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -23,6 +23,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import { useArgonController } from 'context';
 import { sanitizeUrl } from '../../utils/security';
+import { getAuditLogs, getStats } from '../../services/api';
 
 function getStatusBadge(status, darkMode = false) {
   if (status === 'KEPT') {
@@ -85,48 +86,56 @@ function getStatusBadge(status, darkMode = false) {
   );
 }
 
-function AuditView({ auditLog }) {
+const TAB_STATUS = [null, 'KEPT', 'DUPLICATE_MERGED', 'REMOVED'];
+
+function AuditView({ dataRevision = 0 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
   const [tabIndex, setTabIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+  const [page, setPage] = useState({ items: [], total: 0 });
+  const [statusCounts, setStatusCounts] = useState({ KEPT: 0, DUPLICATE_MERGED: 0, REMOVED: 0 });
 
-  const keptCount = useMemo(() => auditLog.filter((a) => a.status === 'KEPT').length, [auditLog]);
-  const mergedCount = useMemo(() => auditLog.filter((a) => a.status === 'DUPLICATE_MERGED').length, [auditLog]);
-  const removedCount = useMemo(() => auditLog.filter((a) => a.status === 'REMOVED').length, [auditLog]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  const filteredLogs = useMemo(() => {
-    let list = [...auditLog];
+  useEffect(() => {
+    getStats()
+      .then((s) => setStatusCounts({
+        KEPT: s.auditStatusCounts?.KEPT || 0,
+        DUPLICATE_MERGED: s.auditStatusCounts?.DUPLICATE_MERGED || 0,
+        REMOVED: s.auditStatusCounts?.REMOVED || 0,
+      }))
+      .catch(() => {});
+  }, [dataRevision]);
 
-    if (tabIndex === 1) {
-      list = list.filter((a) => a.status === 'KEPT');
-    } else if (tabIndex === 2) {
-      list = list.filter((a) => a.status === 'DUPLICATE_MERGED');
-    } else if (tabIndex === 3) {
-      list = list.filter((a) => a.status === 'REMOVED');
-    }
+  useEffect(() => {
+    let cancelled = false;
+    const status = TAB_STATUS[tabIndex];
+    getAuditLogs({
+      limit: itemsPerPage,
+      offset: (currentPage - 1) * itemsPerPage,
+      status,
+      search: debouncedSearch,
+    }).then((res) => {
+      if (!cancelled) setPage({ items: res.items || [], total: res.total || 0 });
+    }).catch(() => {
+      if (!cancelled) setPage({ items: [], total: 0 });
+    });
+    return () => { cancelled = true; };
+  }, [tabIndex, debouncedSearch, currentPage, dataRevision, itemsPerPage]);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (a) =>
-          (a.author && a.author.toLowerCase().includes(q)) ||
-          (a.reason && a.reason.toLowerCase().includes(q)) ||
-          (a.category && a.category.toLowerCase().includes(q)) ||
-          (a.text && a.text.toLowerCase().includes(q))
-      );
-    }
-
-    return list;
-  }, [auditLog, tabIndex, searchQuery]);
-
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
-  const paginatedLogs = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredLogs.slice(start, start + itemsPerPage);
-  }, [filteredLogs, currentPage, itemsPerPage]);
+  const keptCount = statusCounts.KEPT;
+  const mergedCount = statusCounts.DUPLICATE_MERGED;
+  const removedCount = statusCounts.REMOVED;
+  const allCount = keptCount + mergedCount + removedCount;
+  const paginatedLogs = page.items;
+  const totalPages = Math.ceil(page.total / itemsPerPage) || 1;
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -207,7 +216,7 @@ function AuditView({ auditLog }) {
               },
             }}
           >
-            <Tab label={`All Records (${auditLog.length})`} />
+            <Tab label={`All Records (${allCount})`} />
             <Tab label={`Kept Posts (${keptCount})`} />
             <Tab label={`Duplicates Merged (${mergedCount})`} />
             <Tab label={`Excluded Noise (${removedCount})`} />
@@ -268,7 +277,8 @@ function AuditView({ auditLog }) {
             <TableBody>
               {paginatedLogs.map((log, index) => {
                 const globalIdx = (currentPage - 1) * itemsPerPage + index + 1;
-                const postUrl = log.id ? `https://x.com/${log.author}/status/${log.id}` : null;
+                const postId = log.postId || log.id;
+                const postUrl = postId ? `https://x.com/${log.author}/status/${postId}` : null;
 
                 return (
                   <TableRow
@@ -352,7 +362,8 @@ function AuditView({ auditLog }) {
           ) : (
             paginatedLogs.map((log, index) => {
               const globalIdx = (currentPage - 1) * itemsPerPage + index + 1;
-              const postUrl = log.id ? `https://x.com/${log.author}/status/${log.id}` : null;
+              const postId = log.postId || log.id;
+              const postUrl = postId ? `https://x.com/${log.author}/status/${postId}` : null;
 
               return (
                 <Box
@@ -473,7 +484,7 @@ function AuditView({ auditLog }) {
 }
 
 AuditView.propTypes = {
-  auditLog: PropTypes.arrayOf(PropTypes.object).isRequired,
+  dataRevision: PropTypes.number,
 };
 
 export default AuditView;
