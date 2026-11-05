@@ -254,6 +254,7 @@ function AppContent() {
                     <DashboardView
                       posts={posts}
                       auditLog={auditLog}
+                      noisePosts={noisePosts}
                       dataSource={dataSource}
                       onNavigate={(routeKey) => navigate(`/${routeKey}`)}
                       onOpenIngest={() => setIsIngestOpen(true)}

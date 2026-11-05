@@ -33,6 +33,7 @@ class TestPreprodGates:
             assert user is None
 
     def test_fresh_init_does_not_keep_published_seed_password(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("RETIRE_PUBLISHED_PASSWORDS", "true")
         db_path = str(tmp_path / "fresh.db")
         monkeypatch.setattr(database, "DB_PATH", db_path)
         monkeypatch.setattr(database, "BOOTSTRAP_CREDENTIALS_PATH", str(tmp_path / "bootstrap.txt"))
@@ -42,6 +43,7 @@ class TestPreprodGates:
         assert user is None
 
     def test_retire_published_passwords_invalidates_hash_and_sessions(self, temp_db, monkeypatch, tmp_path):
+        monkeypatch.setenv("RETIRE_PUBLISHED_PASSWORDS", "true")
         monkeypatch.setattr(database, "BOOTSTRAP_CREDENTIALS_PATH", str(tmp_path / "bootstrap.txt"))
         admin, _err = database.authenticate_user_db("admin", TEST_ADMIN_PASSWORD)
         assert admin is not None
@@ -255,7 +257,8 @@ class TestPreprodGates:
             "https://api.twitter.com/2/tweets/search/recent"
         ) is True
 
-    def test_get_all_posts_without_small_limit_is_capped(self, temp_db):
+    def test_get_all_posts_without_small_limit_is_capped(self, temp_db, monkeypatch):
+        monkeypatch.setattr(database, "POST_LIST_MAX_LIMIT", 200)
         extra = [
             {
                 "id": f"cap_post_{index}",

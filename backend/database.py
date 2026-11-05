@@ -34,7 +34,6 @@ def get_db():
     """Context manager that ensures the SQLite connection is committed and closed."""
     conn = sqlite3.connect(DB_PATH, timeout=20.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA busy_timeout=10000;")
     try:
         yield conn
@@ -166,7 +165,7 @@ OFFICIAL_ACTIVE_QUERY = (
 )
 
 POST_LIST_DEFAULT_LIMIT = 100
-POST_LIST_MAX_LIMIT = 200
+POST_LIST_MAX_LIMIT = 2500
 
 BOOTSTRAP_CREDENTIALS_PATH = os.environ.get("EPA_BOOTSTRAP_CREDENTIALS_PATH") or os.path.join(DATA_DIR, "bootstrap-credentials.txt")
 
@@ -243,9 +242,15 @@ def retire_published_passwords():
 
 def ensure_admin_credentials():
     """Ensures the admin account exists and has the expected active password."""
+    if os.environ.get("RETIRE_PUBLISHED_PASSWORDS", "false").lower() == "true":
+        return
+    admin_seed = next((u for u in DEFAULT_USERS_DATA if u.get("username") == "admin"), None)
     admin_pass = os.environ.get("DEFAULT_ADMIN_PASSWORD", "").strip()
     if not admin_pass or admin_pass == "CHANGE_ME_admin_secure_password_here":
-        admin_pass = "EPAadmin2026!"
+        if admin_seed and admin_seed.get("password") and admin_seed.get("password") not in ("CHANGE_ME_admin_secure_password_here", "EPAadmin2026!"):
+            admin_pass = admin_seed["password"]
+        else:
+            admin_pass = "EPAadmin2026!"
     pwd_hash, salt_hex = _hash_password(admin_pass)
     now_iso = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
@@ -322,6 +327,8 @@ def init_db():
     os.makedirs(DATA_DIR, exist_ok=True)
     with get_db() as conn:
         cursor = conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL;")
+        cursor.execute("PRAGMA synchronous=NORMAL;")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS posts (
@@ -1879,7 +1886,7 @@ def validate_auth_token_db(token: str):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT s.token, s.user_id, s.expires_at,
+            SELECT s.token, s.user_id, s.expires_at, s.last_active_at,
                    u.id, u.username, u.email, u.full_name, u.avatar, u.role_id, u.is_active, u.created_at,
                    r.name as role_name, r.display_name as role_display_name, r.is_system as role_is_system
             FROM auth_sessions s
@@ -1900,8 +1907,19 @@ def validate_auth_token_db(token: str):
         if not row["is_active"]:
             return None
 
-        cursor.execute("UPDATE auth_sessions SET last_active_at = ? WHERE token = ?", (now_iso, clean_token))
-        conn.commit()
+        last_active = row["last_active_at"]
+        should_update_activity = True
+        if last_active:
+            try:
+                diff = (datetime.fromisoformat(now_iso) - datetime.fromisoformat(last_active)).total_seconds()
+                if diff < 60:
+                    should_update_activity = False
+            except Exception:
+                pass
+
+        if should_update_activity:
+            cursor.execute("UPDATE auth_sessions SET last_active_at = ? WHERE token = ?", (now_iso, clean_token))
+            conn.commit()
 
         cursor.execute("""
             SELECT p.code

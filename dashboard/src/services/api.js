@@ -269,7 +269,7 @@ export async function getPosts(params = {}) {
 }
 
 export async function getAllStoredPosts() {
-  const pageSize = 200;
+  const pageSize = 2000;
   const posts = [];
   const seen = new Set();
   for (let page = 0; page < 50; page += 1) {
@@ -323,7 +323,7 @@ export async function getStats() {
   return await resp.json();
 }
 
-export async function getAuditLogs(limit = 1000) {
+export async function getAuditLogs(limit = 250) {
   const resp = await authFetch(`${API_BASE}/audit?limit=${limit}`);
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
   return await resp.json();

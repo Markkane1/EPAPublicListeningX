@@ -212,6 +212,10 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
         raw_body = self.rfile.read(content_length).decode('utf-8')
         return json.loads(raw_body)
 
+    def address_string(self):
+        """Prevent slow reverse DNS lookups on every incoming request."""
+        return self.client_address[0] if getattr(self, "client_address", None) else "127.0.0.1"
+
     # -----------------------------------------------------------------------
     # Suppress verbose request logging in production
     # -----------------------------------------------------------------------

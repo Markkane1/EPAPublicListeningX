@@ -34,6 +34,7 @@ import { useAuth } from 'context/AuthContext';
 function DashboardView({
   posts,
   auditLog,
+  noisePosts = [],
   dataSource = 'file',
   onNavigate,
   onOpenIngest,
@@ -116,6 +117,10 @@ function DashboardView({
 
   const duplicatesMerged = auditLog.filter((a) => a.status === 'DUPLICATE_MERGED').length;
   const noiseRemoved = auditLog.filter((a) => a.status === 'REMOVED').length;
+  const totalNoise = (noisePosts && noisePosts.length) || noiseRemoved || 0;
+  const precisionRate = (totalClean + totalNoise > 0)
+    ? ((totalClean / (totalClean + totalNoise)) * 100).toFixed(1)
+    : '100.0';
   const totalFiltered = duplicatesMerged + noiseRemoved;
   const totalPipelineProcessed = totalClean + duplicatesMerged + noiseRemoved;
   const purityPct = totalPipelineProcessed > 0 ? Math.round((totalClean / totalPipelineProcessed) * 100) : 100;
@@ -448,7 +453,7 @@ function DashboardView({
           }}
           percentage={{
             color: hasActiveFilters ? 'info' : 'success',
-            count: hasActiveFilters ? `${Math.round((totalClean / (posts.length || 1)) * 100)}%` : '+72.6%',
+            count: hasActiveFilters ? `${Math.round((totalClean / (posts.length || 1)) * 100)}%` : `+${precisionRate}%`,
             text: hasActiveFilters ? 'of total posts' : 'precision rate',
           }}
         />
@@ -1160,6 +1165,7 @@ function DashboardView({
 DashboardView.propTypes = {
   posts: PropTypes.arrayOf(PropTypes.object).isRequired,
   auditLog: PropTypes.arrayOf(PropTypes.object).isRequired,
+  noisePosts: PropTypes.arrayOf(PropTypes.object),
   dataSource: PropTypes.string,
   onNavigate: PropTypes.func.isRequired,
   onOpenIngest: PropTypes.func.isRequired,
