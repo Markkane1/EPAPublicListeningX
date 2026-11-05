@@ -12,6 +12,7 @@ function DetailedStatisticsCard({
   percentage = { color: "success", count: "", text: "" },
   icon = { color: "info", component: null },
   direction = "right",
+  loading = false,
 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
@@ -111,25 +112,58 @@ function DetailedStatisticsCard({
               {title}
             </Typography>
 
-            <Typography
-              variant="h4"
-              sx={{
-                fontFamily: '"Open Sans", sans-serif',
-                fontSize: "26px",
-                fontWeight: 700,
-                color: isWhite ? (darkMode ? "#ffffff" : "#344767") : "#ffffff",
-                lineHeight: 1.2,
-                letterSpacing: "-0.5px",
-              }}
-            >
-              {count}
-            </Typography>
+            {loading ? (
+              <Box
+                sx={{
+                  height: 30,
+                  width: "55%",
+                  borderRadius: "6px",
+                  bgcolor: darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                  animation: "pulse 1.2s ease-in-out infinite",
+                  my: 0.5,
+                  "@keyframes pulse": {
+                    "0%, 100%": { opacity: 0.4 },
+                    "50%": { opacity: 0.85 },
+                  },
+                }}
+              />
+            ) : (
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: '"Open Sans", sans-serif',
+                  fontSize: "26px",
+                  fontWeight: 700,
+                  color: isWhite ? (darkMode ? "#ffffff" : "#344767") : "#ffffff",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                {count}
+              </Typography>
+            )}
           </Box>
 
           {direction === "right" && <Box sx={{ ml: 2 }}>{iconBox}</Box>}
         </Box>
 
-        {percentage && (
+        {loading ? (
+          <Box sx={{ display: "flex", alignItems: "center", mt: 1.5, gap: 0.8 }}>
+            <Box
+              sx={{
+                height: 18,
+                width: "60%",
+                borderRadius: "4px",
+                bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
+                animation: "pulse 1.2s ease-in-out infinite",
+                "@keyframes pulse": {
+                  "0%, 100%": { opacity: 0.4 },
+                  "50%": { opacity: 0.85 },
+                },
+              }}
+            />
+          </Box>
+        ) : percentage && (
           <Box sx={{ display: "flex", alignItems: "center", mt: 1.5, gap: 0.8 }}>
             {percentage.count && (
               <Box
@@ -168,6 +202,7 @@ function DetailedStatisticsCard({
 }
 
 DetailedStatisticsCard.propTypes = {
+  loading: PropTypes.bool,
   bgColor: PropTypes.string,
   title: PropTypes.string.isRequired,
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,

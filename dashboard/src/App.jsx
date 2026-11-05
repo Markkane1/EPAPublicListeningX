@@ -279,6 +279,7 @@ function AppContent() {
                 element={
                   <ProtectedRoute requiredPermission="dashboard.view" moduleName="Dashboard Overview">
                     <DashboardView
+                      stats={stats}
                       dataRevision={dataRevision}
                       dataSource={dataSource}
                       onNavigate={(routeKey) => navigate(`/${routeKey}`)}

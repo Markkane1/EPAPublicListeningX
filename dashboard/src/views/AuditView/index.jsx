@@ -23,7 +23,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import { useArgonController } from 'context';
 import { sanitizeUrl } from '../../utils/security';
-import { getAuditLogs, getStats } from '../../services/api';
+import { getAuditLogs, getStats, getCachedStats } from '../../services/api';
 
 function getStatusBadge(status, darkMode = false) {
   if (status === 'KEPT') {
@@ -97,7 +97,14 @@ function AuditView({ dataRevision = 0 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const [page, setPage] = useState({ items: [], total: 0 });
-  const [statusCounts, setStatusCounts] = useState({ KEPT: 0, DUPLICATE_MERGED: 0, REMOVED: 0 });
+  const [statusCounts, setStatusCounts] = useState(() => {
+    const s = getCachedStats();
+    return s ? {
+      KEPT: s.auditStatusCounts?.KEPT || 0,
+      DUPLICATE_MERGED: s.auditStatusCounts?.DUPLICATE_MERGED || 0,
+      REMOVED: s.auditStatusCounts?.REMOVED || 0,
+    } : { KEPT: 0, DUPLICATE_MERGED: 0, REMOVED: 0 };
+  });
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);

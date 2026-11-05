@@ -23,12 +23,12 @@ import PieChartRoundedIcon from '@mui/icons-material/PieChartRounded';
 import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import { useArgonController } from 'context';
 import { sanitizeUrl } from '../../utils/security';
-import { getStats, getPosts } from '../../services/api';
+import { getStats, getPosts, getCachedStats } from '../../services/api';
 
 function AnalyticsView({ dataRevision = 0 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(() => getCachedStats() || null);
   const [viralPosts, setViralPosts] = useState([]);
 
   useEffect(() => {

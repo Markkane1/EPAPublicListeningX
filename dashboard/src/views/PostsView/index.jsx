@@ -10,7 +10,7 @@ import PostCard from 'components/PostCard';
 import FilterBar from 'components/FilterBar';
 
 import { useArgonController } from 'context';
-import { getPosts, getStats, POSTS_CHUNK_SIZE, POSTS_PAGE_SIZE } from '../../services/api';
+import { getPosts, getStats, getCachedStats, POSTS_CHUNK_SIZE, POSTS_PAGE_SIZE } from '../../services/api';
 
 function PostsView({
   dataRevision = 0,
@@ -26,7 +26,15 @@ function PostsView({
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = POSTS_PAGE_SIZE;
   const [chunk, setChunk] = useState({ items: [], total: 0, offset: 0 });
-  const [facets, setFacets] = useState({ cityCounts: {}, categoryCounts: {}, dateCounts: [], archiveTotal: 0 });
+  const [facets, setFacets] = useState(() => {
+    const s = getCachedStats();
+    return s ? {
+      cityCounts: s.cityCounts || {},
+      categoryCounts: s.categoryCounts || {},
+      dateCounts: s.dateCounts || [],
+      archiveTotal: s.archiveTotalPosts || 0,
+    } : { cityCounts: {}, categoryCounts: {}, dateCounts: [], archiveTotal: 0 };
+  });
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [filters, setFilters] = useState({

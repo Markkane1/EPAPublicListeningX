@@ -33,6 +33,42 @@ export function clearAuthToken() {
 
 const _apiCache = new Map();
 
+export function getCachedApiData(key, maxAgeMs = 60000) {
+  const entry = _apiCache.get(key);
+  if (entry && entry.data && (Date.now() - entry.time < maxAgeMs)) {
+    return entry.data;
+  }
+  return null;
+}
+
+export function getCachedStats(params = {}) {
+  const query = new URLSearchParams();
+  if (params.date && params.date !== 'all') query.set('date', params.date);
+  if (params.timeOfDay && params.timeOfDay !== 'all') query.set('timeOfDay', params.timeOfDay);
+  const cacheKey = `stats:${query.toString()}`;
+  return getCachedApiData(cacheKey);
+}
+
+export function getCachedPosts(params = {}) {
+  const query = new URLSearchParams();
+  if (params.search) query.set('search', params.search);
+  if (params.city && params.city !== 'all') query.set('city', params.city);
+  if (params.severity && params.severity !== 'all') query.set('severity', params.severity);
+  if (params.category && params.category !== 'all') query.set('category', params.category);
+  if (params.sortBy) query.set('sortBy', params.sortBy);
+  if (params.sortOrder || params.order) query.set('order', params.sortOrder || params.order);
+  if (params.limit) query.set('limit', String(params.limit));
+  if (params.offset) query.set('offset', String(params.offset));
+  if (params.date && params.date !== 'all') query.set('date', params.date);
+  if (params.timeOfDay && params.timeOfDay !== 'all') query.set('timeOfDay', params.timeOfDay);
+  if (params.media && params.media !== 'all') query.set('media', params.media);
+  if (params.verified === true || params.verified === 1 || params.verified === '1') {
+    query.set('verified', '1');
+  }
+  const cacheKey = `posts:${query.toString()}`;
+  return getCachedApiData(cacheKey);
+}
+
 export function invalidateApiCache(prefix = null) {
   if (!prefix) {
     _apiCache.clear();

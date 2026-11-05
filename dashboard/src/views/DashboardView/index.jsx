@@ -30,9 +30,10 @@ import DetailedStatisticsCard from 'examples/Cards/StatisticsCards/DetailedStati
 import PostCard from 'components/PostCard';
 import { useArgonController } from 'context';
 import { useAuth } from 'context/AuthContext';
-import { getStats, getPosts, getAuditLogs, POSTS_CHUNK_SIZE } from '../../services/api';
+import { getStats, getPosts, getAuditLogs, getCachedStats, getCachedPosts, POSTS_CHUNK_SIZE } from '../../services/api';
 
 function DashboardView({
+  stats: propStats = null,
   dataRevision = 0,
   dataSource = 'file',
   onNavigate,
@@ -45,9 +46,13 @@ function DashboardView({
   const canIngest = hasPermission('posts.ingest');
   const [dateFilter, setDateFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
-  const [stats, setStats] = useState(null);
-  const [recentPosts, setRecentPosts] = useState([]);
+  const [stats, setStats] = useState(() => propStats || getCachedStats() || null);
+  const [recentPosts, setRecentPosts] = useState(() => {
+    const cached = getCachedPosts({ sortBy: 'newest', limit: POSTS_CHUNK_SIZE, offset: 0 });
+    return cached?.items || [];
+  });
   const [auditLog, setAuditLog] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(() => !(propStats || getCachedStats()));
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +67,7 @@ function DashboardView({
         statsParams.timeOfDay = timeFilter;
         postParams.timeOfDay = timeFilter;
       }
+      if (!stats) setLoadingStats(true);
       try {
         const [statsRes, postsRes, auditRes] = await Promise.all([
           getStats(statsParams),
@@ -72,10 +78,10 @@ function DashboardView({
         setStats(statsRes);
         setRecentPosts(postsRes.items || []);
         setAuditLog(auditRes.items || []);
+        setLoadingStats(false);
       } catch {
         if (!cancelled) {
-          setStats(null);
-          setRecentPosts([]);
+          setLoadingStats(false);
         }
       }
     }
@@ -428,6 +434,7 @@ function DashboardView({
         }}
       >
         <DetailedStatisticsCard
+          loading={loadingStats && !stats}
           title="Clean Posts"
           count={String(totalClean)}
           icon={{
@@ -442,6 +449,7 @@ function DashboardView({
         />
 
         <DetailedStatisticsCard
+          loading={loadingStats && !stats}
           title="Peak Recorded AQI"
           count={hasAqi ? String(peakAqi) : '—'}
           icon={{
@@ -456,6 +464,7 @@ function DashboardView({
         />
 
         <DetailedStatisticsCard
+          loading={loadingStats && !stats}
           title="Average Recorded AQI"
           count={hasAqi ? String(avgAqi) : '—'}
           icon={{
@@ -470,6 +479,7 @@ function DashboardView({
         />
 
         <DetailedStatisticsCard
+          loading={loadingStats && !stats}
           title="Filtered Noise & Dupes"
           count={String(totalFiltered)}
           icon={{
