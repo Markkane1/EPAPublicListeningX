@@ -341,12 +341,17 @@ def enrich_post(p: dict) -> dict:
     emotion = "Neutral / Reporting"
 
     if sentiment_engine is not None:
-        s_res = sentiment_engine.analyze_text(text, engine="vader")
-        sentiment = s_res.get("sentiment", "Informative / Neutral")
-        sentiment_score = s_res.get("sentiment_score", 0.0)
-        sentiment_engine_used = s_res.get("sentiment_engine", "vader")
-        sentiment_confidence = s_res.get("sentiment_confidence", 0.5)
-        emotion = s_res.get("emotion", "Neutral / Reporting")
+        try:
+            from backend import database
+            configured_engine = database.get_settings().get('sentiment_engine', 'vader')
+        except Exception:
+            configured_engine = 'vader'
+        s_res = sentiment_engine.analyze_text(text, engine=configured_engine)
+        sentiment = s_res.get('sentiment', 'Informative / Neutral')
+        sentiment_score = s_res.get('sentiment_score', 0.0)
+        sentiment_engine_used = s_res.get('sentiment_engine', configured_engine)
+        sentiment_confidence = s_res.get('sentiment_confidence', 0.5)
+        emotion = s_res.get('emotion', 'Neutral / Reporting')
     else:
         if any(w in text_lower for w in ['hell', 'killing', 'burn', 'dying', 'villain', 'worst', 'disaster', 'suffocating', 'shame', 'choking']):
             sentiment = "Critical / Alarmed"

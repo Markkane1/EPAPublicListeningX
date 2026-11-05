@@ -29,6 +29,7 @@ scrapper/release/*.pem
 *.db-wal
 *.db-shm
 data/
+!backend/data/vader_lexicon.txt
 scrapper/sample_data/
 
 # Scratch / temporary working files
