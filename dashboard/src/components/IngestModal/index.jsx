@@ -142,7 +142,7 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
           borderRadius: 3,
           p: { xs: 0.5, sm: 1 },
           m: { xs: 1, sm: 2 },
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
           color: darkMode ? '#ffffff' : 'inherit',
         }
@@ -203,22 +203,22 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
           onClick={() => fileInputRef.current && fileInputRef.current.click()}
           sx={{
             border: '2px dashed',
-            borderColor: dragActive ? '#5e72e4' : (darkMode ? 'rgba(255, 255, 255, 0.15)' : '#ced4da'),
+            borderColor: dragActive ? '#16a34a' : (darkMode ? 'rgba(255, 255, 255, 0.15)' : '#ced4da'),
             backgroundColor: dragActive
-              ? (darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.05)')
-              : (darkMode ? '#0b1437' : '#f8f9fa'),
+              ? (darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.05)')
+              : (darkMode ? '#090e15' : '#f8f9fa'),
             borderRadius: 3,
             p: 4,
             textAlign: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             '&:hover': {
-              borderColor: '#5e72e4',
-              backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.1)' : 'rgba(94, 114, 228, 0.03)'
+              borderColor: '#16a34a',
+              backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.1)' : 'rgba(22, 163, 74, 0.03)'
             }
           }}
         >
-          <UploadFileRoundedIcon sx={{ fontSize: '48px', color: dragActive ? '#5e72e4' : (darkMode ? '#5e72e4' : '#8392ab'), mb: 1 }} />
+          <UploadFileRoundedIcon sx={{ fontSize: '48px', color: dragActive ? '#16a34a' : (darkMode ? '#16a34a' : '#8392ab'), mb: 1 }} />
           <ArgonTypography variant="h6" color={darkMode ? 'white' : 'dark'} fontWeight="medium">
             {fileName ? `Loaded: ${fileName}` : 'Drag and drop scraped posts .json file here'}
           </ArgonTypography>
@@ -235,7 +235,7 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
 
             <Grid container spacing={2} mb={2}>
               <Grid item xs={6} sm={3}>
-                <ArgonBox p={1.5} borderRadius="10px" sx={{ backgroundColor: darkMode ? '#0b1437' : '#f1f5f9', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : undefined }} textAlign="center">
+                <ArgonBox p={1.5} borderRadius="10px" sx={{ backgroundColor: darkMode ? '#090e15' : '#f1f5f9', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : undefined }} textAlign="center">
                   <ArgonTypography variant="caption" sx={{ color: darkMode ? '#94a3b8' : undefined }} color={darkMode ? undefined : 'text'} textTransform="uppercase" fontWeight="bold">
                     Raw Ingested
                   </ArgonTypography>
@@ -305,12 +305,12 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
               flexWrap="wrap"
               gap={1}
               sx={{
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
               }}
             >
               <ArgonTypography variant="caption" fontWeight="bold" sx={{ color: darkMode ? '#38bdf8' : '#0284c7' }}>
-                ✓ 100% Pipeline Accounting:
+                Pipeline Accounting (100% Verified):
               </ArgonTypography>
               <ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : '#475569', fontWeight: 600 }}>
                 <strong>{processingResult.newlyAddedPosts.length}</strong> Clean +{' '}
@@ -320,7 +320,7 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
               </ArgonTypography>
             </ArgonBox>
 
-            <ArgonBox p={2} borderRadius="10px" sx={{ backgroundColor: darkMode ? '#0b1437' : 'transparent', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e9ecef' }} mb={1}>
+            <ArgonBox p={2} borderRadius="10px" sx={{ backgroundColor: darkMode ? '#090e15' : 'transparent', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e9ecef' }} mb={1}>
               <ArgonTypography variant="button" fontWeight="bold" color={darkMode ? 'white' : 'dark'} display="block" mb={0.5}>
                 Ingestion Strategy:
               </ArgonTypography>
@@ -347,11 +347,11 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
               p={1.5}
               borderRadius="8px"
               sx={{
-                backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.12)' : 'rgba(94, 114, 228, 0.06)',
-                border: darkMode ? '1px dashed rgba(94, 114, 228, 0.35)' : '1px dashed #b8c4f9'
+                backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.12)' : 'rgba(22, 163, 74, 0.06)',
+                border: darkMode ? '1px dashed rgba(22, 163, 74, 0.35)' : '1px dashed #b8c4f9'
               }}
             >
-              <ArgonTypography variant="caption" fontWeight="bold" sx={{ color: darkMode ? '#a5b4fc' : '#5e72e4', display: 'block' }}>
+              <ArgonTypography variant="caption" fontWeight="bold" sx={{ color: darkMode ? '#4ade80' : '#16a34a', display: 'block' }}>
                 Preview de-duplicates inside this file only.
               </ArgonTypography>
               <ArgonTypography variant="caption" sx={{ color: darkMode ? '#cbd5e1' : '#475569', display: 'block', mt: 0.3, lineHeight: 1.5 }}>
@@ -363,7 +363,7 @@ function IngestModal({ open, onClose, onIngestSuccess }) {
               <ArgonBox mt={1.5} p={1.5} borderRadius="8px" sx={{ backgroundColor: darkMode ? 'rgba(245, 54, 92, 0.15)' : 'rgba(245, 54, 92, 0.05)', border: darkMode ? '1px dashed rgba(245, 54, 92, 0.4)' : '1px dashed #fca5a5' }} display="flex" alignItems="center" gap={1}>
                 <ArgonBox>
                   <ArgonTypography variant="caption" fontWeight="bold" color="error">
-                    ℹ️ {processingResult.stats.removedCount} posts were classified as noise.
+                    {processingResult.stats.removedCount} posts were classified as noise.
                   </ArgonTypography>
                   <ArgonTypography variant="caption" display="block" sx={{ color: darkMode ? '#94a3b8' : undefined }} color={darkMode ? undefined : 'text'}>
                     After ingesting, you can review and manually salvage relevant posts in the <strong>Noise & Learning Engine</strong> page to teach the system without AI.

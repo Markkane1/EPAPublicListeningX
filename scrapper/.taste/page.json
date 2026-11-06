@@ -1,0 +1,693 @@
+{
+  "version": 1,
+  "page": {
+    "title": "Collected",
+    "route": "/",
+    "description": "EPA Punjab listening tool for the open X page. The default view is the popup tally with auto-scroll and export. The panel, minimized count, preview, and off-X prompt are their own views."
+  },
+  "architecture": {
+    "contract": "This screen answers how much of the open X page is already collected, and which tally can be exported.",
+    "mode": "operate_monitor",
+    "novelty": "low",
+    "grid": "No sidebar and no top bar. At 1440 the inset is 36px, and 36 + 1368 + 36 = 1440. One column of 1368. The tally inset is 24px, the inner width is 1320, and 3 x 440 = 1320, with each hairline drawn inside its cell. On the panel, Speed and Stop at share the column: 672 + 24 + 672 = 1368. The preview columns meet the same 1368 edge. Titles, tally, and table share one left edge and one right edge. A block stays as tall as its content.",
+    "signatureRule": "Accent ladder built from the EPA logo green. Full accent sits only on the filled Auto-scroll button, the selected tally count, and the scrolling dot. The pale accent tint fills only the selected tally cell. The face on the first screen is that ladder plus the full EPA lockup.",
+    "rhythm": "Sparse. One 24px gap and 24px card padding. Table rows 45px. Controls 32px tall, 44px on a phone. Title 32px at weight 700 only. Section labels 18px. Selected count 32px. Sibling counts 24px. Body 14px. Labels 12px. DM Sans. Tabular numbers on every count and table figure. No shadow on a resting card."
+  },
+  "navigation": [
+    {
+      "label": "Collected",
+      "target": "#/collected"
+    },
+    {
+      "label": "Panel",
+      "target": "#/panel"
+    },
+    {
+      "label": "Preview",
+      "target": "#/preview"
+    },
+    {
+      "label": "Minimized",
+      "target": "#/minimized"
+    },
+    {
+      "label": "Open X",
+      "target": "#/away"
+    }
+  ],
+  "navigationDesign": {
+    "layoutCase": "app-shell",
+    "layout": "Open plane with the destination sidebar removed. The product mark is the supplied EPA lockup in the header, and the scope is the page kind of the open X page. Collected, Panel, Preview, Minimized, and Open X are hash views reached by those controls. There is no second chrome, no account switcher, and no link that only scrolls inside the current view.",
+    "behavior": [
+      "/ and #/collected show the same Collected view.",
+      "#/panel, #/preview, #/minimized, and #/away each replace the view in place.",
+      "The current view is marked on its own control. Nothing points at an anchor inside the open view.",
+      "A view change fades opacity over 200ms with no slide onto the page. Reduced motion swaps immediately."
+    ],
+    "transformation": {
+      "compact": "No sidebar. Margins 16px. The open view's name and its one primary action stay on screen. Panel and preview keep a 48px header with close.",
+      "medium": "No sidebar from 641 to 1100px. One column with 24px insets. Tables keep their columns.",
+      "expanded": "No sidebar and no top bar. The lockup and the title sit on the ground, 36px from the top of the canvas."
+    }
+  },
+  "sections": [
+    {
+      "id": "shell",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "referenceDirectionId": "user-reference-1",
+      "purpose": "Name the tool with the supplied EPA lockup and hold the toolbar icon crops.",
+      "userQuestion": "Whose listening tool is this?",
+      "stage": "orient",
+      "dependencies": [],
+      "evidence": [],
+      "copy": {
+        "heading": "EPA Punjab",
+        "body": [],
+        "callsToAction": []
+      },
+      "layout": "Shown on #/collected and #/away only. The visible header is the full lockup image at 240px wide, left aligned on the ground, with no tint tile and no retyped Urdu or ISO line. The heading is the image alt only. If the file is missing, keep the frame and the alt text, and do not draw a leaf, a letter, or a square. Toolbar slots of 16, 48, and 128 use the wordmark crop from the same artwork. No top bar and no destination list in this header.",
+      "motion": {
+        "purpose": "none",
+        "trigger": "none",
+        "behavior": "The lockup is present on load. Nothing enters or loops.",
+        "durationMs": 0,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The end state is already on screen."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [
+        "epa-lockup",
+        "epa-wordmark"
+      ],
+      "transformation": {
+        "compact": "Lockup 168px wide. Alt text remains EPA Punjab.",
+        "medium": "Lockup 200px wide, left aligned.",
+        "expanded": "Lockup 240px wide, 36px from the top, on the same left edge as the title."
+      }
+    },
+    {
+      "id": "collected-title",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "State the finding and offer auto-scroll as the first action.",
+      "userQuestion": "What needs doing on this page, and is collection running?",
+      "stage": "act",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [
+        "6 posts on this search",
+        "Users 0",
+        "Search",
+        "Ready"
+      ],
+      "copy": {
+        "heading": "Collected",
+        "body": [
+          "6 posts on this search. Users still at 0.",
+          "Search. Ready.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "Auto-scroll",
+            "target": "#/collected"
+          }
+        ]
+      },
+      "layout": "The one h1, 32px, weight 700. The finding is the 14px muted line under it, 9 words, and Auto-scroll is the one filled button on the right, bottom-aligned with that line. The scope row under it shows the noun Search and the status Ready, with an 8px dot in muted. Sample data is one 12px muted line under the finding, the only such notice on this view. While Scrolling, the button label is Pause, aria-pressed is true, and the dot uses accent. Limit reached uses the warning ink. Auto-scroll stays available at a zero count. It is disabled only when the page cannot be read.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "The filled button darkens slightly while held. The status word and dot swap in place when scrolling starts or stops.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The label and dot change at once, with no travel."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Title 24px. Auto-scroll stays visible at 44px tall. The finding wraps under the title and the button remains on screen.",
+        "medium": "Title row stays one row. The finding and Auto-scroll share it.",
+        "expanded": "Title, finding, and Auto-scroll share the 1368 edge, 24px below the lockup."
+      }
+    },
+    {
+      "id": "collected-tally",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Show the three tallies and choose what export, preview, and clear apply to.",
+      "userQuestion": "How many posts, users, and trends are collected?",
+      "stage": "evaluate",
+      "dependencies": [
+        "collected-title"
+      ],
+      "evidence": [
+        "Posts 6",
+        "Users 0",
+        "Trends 2"
+      ],
+      "copy": {
+        "heading": "Posts",
+        "body": [
+          "Posts 6.",
+          "Users 0.",
+          "Trends 2.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "Posts",
+            "target": "#/collected"
+          },
+          {
+            "label": "Users",
+            "target": "#/collected"
+          },
+          {
+            "label": "Trends",
+            "target": "#/collected"
+          }
+        ]
+      },
+      "layout": "One white container, radius 8px, split into three equal cells. Posts is selected: pale accent fill, count 6 at 32px in accent, weight 600. Users 0 and Trends 2 are 24px, weight 400. The zero is muted even though a selected zero would keep the pale fill. Unselected counts are text ink. Labels 14px muted above the figures. No icons, sparklines, deltas, or captions. The selected count is the largest figure on the view. Cells are a radiogroup. Choosing Users or Trends moves the pale fill and the accent figure, and points export at that tally. This view does not paint a second Sample data line.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "The pale fill and accent figure move to the chosen cell. Counts do not roll upward.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The selected cell updates immediately."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "The selected cell is full width. The other two cells share the next row, half and half.",
+        "medium": "Three equal cells in one row.",
+        "expanded": "Three cells of 440px inside the 1320 inner width."
+      }
+    },
+    {
+      "id": "collected-actions",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Export the selected tally or open the on-page panel.",
+      "userQuestion": "How do I take this tally, or open the panel?",
+      "stage": "act",
+      "dependencies": [
+        "collected-tally"
+      ],
+      "evidence": [
+        "Export posts, 6 rows"
+      ],
+      "copy": {
+        "heading": "Export posts",
+        "body": [
+          "CSV, JSON, and Excel each contain 6 posts.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "CSV",
+            "target": "#/collected"
+          },
+          {
+            "label": "JSON",
+            "target": "#/collected"
+          },
+          {
+            "label": "Excel",
+            "target": "#/collected"
+          },
+          {
+            "label": "Open panel",
+            "target": "#/panel"
+          }
+        ]
+      },
+      "layout": "A single row on the tally's edges. The noun Export posts is 14px text, followed by three outlined buttons, CSV, JSON, and Excel. Open panel is outlined at the right end. None of these is a second filled button. At 6 posts they are enabled. At 0 they stay visible, with muted ink and the control border, and they do not fire. A successful local save replaces the status line with Saved CSV, Saved JSON, or Saved Excel, then restores Ready or Scrolling. No server is involved. This row does not repeat the Sample data notice.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Outlined buttons darken the border while held. The saved status replaces the status word in place.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The saved word appears at once."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Export buttons wrap under the label. Each control is at least 44px tall. Open panel remains on screen.",
+        "medium": "One row until the buttons no longer fit, then they wrap as a group.",
+        "expanded": "One row across the 1368 edge, 24px under the tally."
+      }
+    },
+    {
+      "id": "away-prompt",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Tell the reader to open an X page when the tab is somewhere else.",
+      "userQuestion": "Where do I collect if this tab is not on X?",
+      "stage": "act",
+      "dependencies": [
+        "shell"
+      ],
+      "evidence": [],
+      "copy": {
+        "heading": "Open X",
+        "body": [
+          "Open a search, a profile, or Explore on X."
+        ],
+        "callsToAction": [
+          {
+            "label": "Open X",
+            "target": "https://x.com/explore"
+          }
+        ]
+      },
+      "layout": "The h1 is Open X. The one sentence under it is the prompt, 14px muted. Open X is the only filled button and opens https://x.com/explore. No tally, no zero counts, and no Sample data line, because this view has no figures. The lockup from the shell stays above the title.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "The filled button darkens slightly while held.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The press state changes with no travel."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "The prompt wraps. Open X stays full width and 44px tall.",
+        "medium": "Title and prompt on the left, Open X on the right of the title row.",
+        "expanded": "Same title row as Collected, on the 1368 edge."
+      }
+    },
+    {
+      "id": "panel-header",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "referenceDirectionId": "user-reference-1",
+      "purpose": "Identify the floating panel and move, shrink, or close it.",
+      "userQuestion": "How do I move, shrink, or close the panel?",
+      "stage": "orient",
+      "dependencies": [],
+      "evidence": [],
+      "copy": {
+        "heading": "EPA Punjab",
+        "body": [],
+        "callsToAction": [
+          {
+            "label": "Minimize",
+            "target": "#/minimized"
+          },
+          {
+            "label": "Close",
+            "target": "#/collected"
+          }
+        ]
+      },
+      "layout": "The panel's own header, shown on #/panel and not stacked under the popup shell. Full lockup at 168px wide, unedited. Drag is the header itself, named Drag. Minimize and Close are 16px outline icons, ink coloured, with a 32px hit area and those accessible names. The panel surface has a soft shadow and no border. Inner blocks stay flat. If the lockup is missing, keep the alt text and do not draw a substitute mark.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "press",
+        "behavior": "Minimize and Close swap the view in place. Drag updates the panel position while the pointer is down. No opening slide.",
+        "durationMs": 200,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The next view is immediate. Drag still follows the pointer."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [
+        "epa-lockup"
+      ],
+      "transformation": {
+        "compact": "The panel is full width with 16px outer margins. Drag is inactive. Minimize and Close grow to a 44px hit area.",
+        "medium": "The panel width is min(560px, the canvas). It still floats, 16px from the bottom right.",
+        "expanded": "On the 1440 review the panel blocks use the 1368 column so every control meets the canvas. The floating product frame is the compact width, 380px."
+      }
+    },
+    {
+      "id": "panel-title",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Repeat the same finding on the panel and keep auto-scroll one click away.",
+      "userQuestion": "What needs doing from the panel?",
+      "stage": "act",
+      "dependencies": [
+        "panel-header"
+      ],
+      "evidence": [
+        "6 posts on this search",
+        "Users 0",
+        "Search",
+        "Ready"
+      ],
+      "copy": {
+        "heading": "Collected",
+        "body": [
+          "6 posts on this search. Users still at 0.",
+          "Search. Ready.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "Auto-scroll",
+            "target": "#/panel"
+          },
+          {
+            "label": "Preview",
+            "target": "#/preview"
+          }
+        ]
+      },
+      "layout": "The panel's one h1, Collected. The same finding, the same Search scope, and the same Ready status as the popup, all from one session object. Auto-scroll is the filled button. Preview is outlined beside it and is disabled at a zero selected count. Sample data appears once under this finding and is not repeated on the panel's later blocks. Pause and the scrolling dot behave as on the popup.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Auto-scroll and Preview give press feedback. Status text swaps in place.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "Labels change with no travel."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Title 24px. Auto-scroll remains. Preview stays beside it when both fit, otherwise directly under it, both at least 44px.",
+        "medium": "One title row: finding on the left, Preview and Auto-scroll on the right.",
+        "expanded": "The title row meets the 1368 edge, 24px under the panel header."
+      }
+    },
+    {
+      "id": "panel-tally",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Use the same three counts as the popup, as the panel's switch.",
+      "userQuestion": "Which tally is the panel acting on?",
+      "stage": "evaluate",
+      "dependencies": [
+        "panel-title"
+      ],
+      "evidence": [
+        "Posts 6",
+        "Users 0",
+        "Trends 2"
+      ],
+      "copy": {
+        "heading": "Posts",
+        "body": [
+          "Posts 6.",
+          "Users 0.",
+          "Trends 2.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "Posts",
+            "target": "#/panel"
+          },
+          {
+            "label": "Users",
+            "target": "#/panel"
+          },
+          {
+            "label": "Trends",
+            "target": "#/panel"
+          }
+        ]
+      },
+      "layout": "The same three-cell tally as Collected, reading the same session counts. Posts selected, 6 in accent at 32px on the pale tint. Users 0 muted. Trends 2 in ink at 24px. Changing the cell changes Preview, Export, and Clear. The view notice is not painted again here.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "The selected cell moves as it does on the popup.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The cell updates immediately."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Selected cell full width, the other two half width beneath.",
+        "medium": "Three equal cells.",
+        "expanded": "3 x 440 inside the 1320 inner width."
+      }
+    },
+    {
+      "id": "panel-controls",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "purpose": "Set the scroll pace and limit, then export or clear the selected tally.",
+      "userQuestion": "How fast does the scroll run, when does it stop, and how do I export or clear this tally?",
+      "stage": "act",
+      "dependencies": [
+        "panel-tally"
+      ],
+      "evidence": [
+        "Normal, 2 s",
+        "No limit",
+        "6 posts"
+      ],
+      "copy": {
+        "heading": "Speed",
+        "body": [
+          "Normal, 2 s. Stop at No limit.",
+          "Clear asks: Clear 6 posts?",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "CSV",
+            "target": "#/panel"
+          },
+          {
+            "label": "JSON",
+            "target": "#/panel"
+          },
+          {
+            "label": "Excel",
+            "target": "#/panel"
+          },
+          {
+            "label": "Clear",
+            "target": "#/panel"
+          }
+        ]
+      },
+      "layout": "Speed and Stop at are two selects on one row, 672px each with a 24px gap. Speed options are Fast, 1.2 s, Normal, 2 s, and Safe, 3.5 s. Default is Normal, 2 s. Stop at options are No limit, 50, 100, 250, and 500. Default is No limit. While Scrolling with a numbered stop, one 12px hint reads Stops at 50, using the chosen number. The export row matches the popup: Export posts, then CSV, JSON, and Excel. Clear is last, a text button in the negative colour, enabled at 6. Its confirm reads Clear 6 posts? with Clear and Cancel. Cancel and Escape return focus to Clear. Clearing posts sets that tally to 0 and leaves the 2 trends in place. At 0, Preview, the export buttons, and Clear are disabled in muted ink. No chart and no plan card.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Selects, the hint, and the confirm open or close in place. The confirm does not slide in from the edge.",
+        "durationMs": 180,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The confirm and the hint appear at once."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Speed and Stop at stack full width. Export wraps. Clear stays last. Controls are at least 44px tall.",
+        "medium": "Speed and Stop at share one row until either would fall under 340px, then they stack.",
+        "expanded": "672 + 24 + 672 = 1368 for the selects. Export and Clear use that same edge."
+      }
+    },
+    {
+      "id": "minimized-pill",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "app-screen"
+      ],
+      "referenceDirectionId": "user-reference-1",
+      "purpose": "Keep the live selected count on screen while the panel is shrunk.",
+      "userQuestion": "How many are collected while the panel is out of the way?",
+      "stage": "continue",
+      "dependencies": [],
+      "evidence": [
+        "6 posts"
+      ],
+      "copy": {
+        "heading": "Collected",
+        "body": [
+          "6 posts.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "6 posts",
+            "target": "#/panel"
+          }
+        ]
+      },
+      "layout": "The h1 Collected is the view title. The control is a white pill with a shadow and no border: the EPA wordmark crop at 16px tall, then 6 posts, with 6 in accent. The noun follows the selected tally, so Users would read 0 users in muted. One Sample data line sits under the h1 only. Activating the pill opens #/panel. No second lockup and no tally cells.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "The pill darkens slightly while held, then the panel view replaces it.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The panel view replaces the pill at once."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [
+        "epa-wordmark"
+      ],
+      "transformation": {
+        "compact": "The pill sits under the title, full width minus 32px, at least 44px tall.",
+        "medium": "The pill sits 16px from the bottom right of the canvas.",
+        "expanded": "The title uses the 1368 edge. The pill remains a compact control, 16px from the bottom right."
+      }
+    },
+    {
+      "id": "preview-title",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Name the preview and state that export covers every row of the selected tally.",
+      "userQuestion": "What will the file contain?",
+      "stage": "prove",
+      "dependencies": [
+        "panel-tally"
+      ],
+      "evidence": [
+        "6 posts",
+        "export includes every row"
+      ],
+      "copy": {
+        "heading": "Preview",
+        "body": [
+          "6 posts. Export includes every row.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "Close",
+            "target": "#/panel"
+          }
+        ]
+      },
+      "layout": "The h1 is Preview. The finding under it is 6 posts. Export includes every row. Close is an outlined button on the right and returns to the panel, restoring focus to Preview. There is no filled button and no logo on this view. Sample data is the one quiet 12px line under the finding. The heading and the count follow the selected tally.",
+      "motion": {
+        "purpose": "feedback",
+        "trigger": "press",
+        "behavior": "Close gives press feedback, then the panel view replaces the preview.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The panel returns at once."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "Title 24px. Close stays, at least 44px. The finding wraps beneath the title.",
+        "medium": "One title row across the column.",
+        "expanded": "The title row meets the 1368 edge."
+      }
+    },
+    {
+      "id": "preview-table",
+      "layoutFamily": "dashboard",
+      "layoutCases": [
+        "table-filter-bar"
+      ],
+      "purpose": "Show the rows of the selected tally, with a filter that does not change the export.",
+      "userQuestion": "Which rows are in the selected tally?",
+      "stage": "prove",
+      "dependencies": [
+        "preview-title"
+      ],
+      "evidence": [
+        "6 posts",
+        "Ravi Desk, 4 likes",
+        "Canal Station, 0 likes",
+        "Mall Road Brief, 11 likes"
+      ],
+      "copy": {
+        "heading": "Posts",
+        "body": [
+          "Ravi Desk, Smog layer over the canal at noon. 4 likes, 2026-11-02 12:14.",
+          "Canal Station, School run delayed on Mall Road. 0 likes, 2026-11-02 11:02.",
+          "Mall Road Brief, AQI board at the crossing reads 312. 11 likes, 2026-11-02 09:40.",
+          "Shalimar Watch, Visibility under a kilometre past the gate. 2 likes, 2026-11-02 08:15.",
+          "Baghban Notes, Evening burn still hanging over the orchard road. 0 likes, 2026-11-01 18:46.",
+          "Gulberg Log, Clinic queue longer than yesterday. 7 likes, 2026-11-01 16:05.",
+          "Sample data."
+        ],
+        "callsToAction": [
+          {
+            "label": "Filter",
+            "target": "#/preview"
+          },
+          {
+            "label": "Sort",
+            "target": "#/preview"
+          }
+        ]
+      },
+      "layout": "Toolbar, then the table on the ground, with no card around it. Filter is a labelled field, 280 by 32. The count 6 posts sits with the sort Posted, default Newest. Header labels are 12px muted sentence case, with no band and no uppercase. Rows are 45px, rules 1px, no zebra. Text is the identity column. Column widths are Text 344, Name 140, Username 120, Posted 128, Likes 56, Reposts 68, Replies 64, Quotes 60, Bookmarks 76, Views 60, Type 68, Verified 72, Id 56, Post 56, and those sum to 1368. Counts are right aligned and tabular. A missing view is a 6 by 2px muted mark. Verified reads Yes or No. Post reads Open, in ink. There is no kebab, because a row has no action of its own. All 6 rows show, so no load-more control. The filter recomputes the count and does not change the 6 rows in the file. Users, when selected, keeps the header frame and one line: Scroll the page to collect. Trends, when selected, shows two rows and the heading Trends. This table does not paint a second Sample data line.",
+      "motion": {
+        "purpose": "state_change",
+        "trigger": "state_change",
+        "behavior": "Filter and sort update the rows in place. Unmatched rows hide without a stagger. Sort reorders existing rows without fading them in.",
+        "durationMs": 160,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "reducedMotion": "The filtered or sorted rows appear at once."
+      },
+      "componentNeeds": [],
+      "assetNeeds": [],
+      "transformation": {
+        "compact": "The table becomes two-line rows. Line 1 is the text and the likes. Line 2 is the other fields in 13px muted, wrapping rather than dropped. The page does not scroll sideways.",
+        "medium": "The table keeps its columns inside its own frame. Text stays whole before any narrower column is cut.",
+        "expanded": "The 14 columns meet the 1368 edge. The first six rows are on screen at 1440 by 900."
+      }
+    }
+  ],
+  "responsive": [
+    "At 640px and below, insets are 16px, the title is 24px, and controls are at least 44px. The selected tally cell is full width and the other two share the row beneath.",
+    "From 641 to 1100px there is still no sidebar. The tally stays three cells. Speed and Stop at stack only if a cell would fall under 340px. Preview keeps a real table.",
+    "At 1440 by 900, Collected shows the lockup, Collected, the finding, Search, Ready, the tally, Auto-scroll, export, and Open panel without page scroll. Panel shows Speed, Stop at, Preview, export, and Clear. Preview shows its header and first rows."
+  ],
+  "interactions": [
+    "Posts, Users, and Trends are a radiogroup. Click or arrow keys move the selection. The pale tint and the accent figure follow. Export posts becomes Export users or Export trends.",
+    "Auto-scroll toggles local status between Ready and Scrolling, and its label between Auto-scroll and Pause. The sample counts do not grow, because this build has no live X page.",
+    "Speed stores Fast, 1.2 s, Normal, 2 s, or Safe, 3.5 s. Stop at stores No limit, 50, 100, 250, or 500. While Scrolling with a number set, the hint is Stops at that number. If the stop is 5 and the selected count is already 6, Auto-scroll does not run and the status is Limit reached.",
+    "CSV, JSON, and Excel download the full selected tally locally and set the status to Saved CSV, Saved JSON, or Saved Excel, then restore Ready or Scrolling. The file names are epa_x_posts, epa_x_users, and epa_x_trends.",
+    "At a selected count of 0, CSV, JSON, Excel, Preview, and Clear are disabled, readable in muted ink, and show no alert. The hint reads Scroll the page to collect.",
+    "Clear asks Clear 6 posts? while posts is selected. Clear removes those 6 and leaves 2 trends. Cancel or Escape closes the confirm and returns focus to Clear.",
+    "Preview opens #/preview. Escape or Close returns to #/panel and focuses Preview. Tab stays inside the preview until it closes.",
+    "Filter matches name, username, and text, ignoring case. orchard leaves 1 post. canal leaves 2 posts. zzzz leaves the frame and the line No rows match. The export count stays 6.",
+    "Sort Posted, Newest is the default. Oldest reverses the six dates. Rows keep their ids.",
+    "Open panel opens #/panel. Minimize opens #/minimized. The pill opens #/panel. Close opens #/collected. Drag moves the compact panel and keeps 24px of the header on screen.",
+    "Open X opens https://x.com/explore.",
+    "Every control has a 2px text-coloured focus ring. Hover darkens a button border or a tally cell ground. The selected tally cell keeps its pale fill. Reduced motion keeps every one of these outcomes and drops the travel.",
+    "Loading keeps the labels and replaces each figure and row with a flat muted bar of the same size. No shimmer. An error stays inside the failed block: Couldn't read this page. Last good at 09:14. with Retry. A refresh of figures already on screen keeps the old figures until the new ones replace them."
+  ],
+  "acceptanceCriteria": [
+    "The sample object session has posts length 6, users length 0, and trends length 2. Page kind is Search. Status is Ready. Selected tally is posts. Speed is Normal, 2 s. Stop at is No limit.",
+    "The screen prints Posts 6, Users 0, and Trends 2. It never prints 8 as a combined total. The minimized control prints 6 posts. Preview prints 6 posts. Export includes 6 post rows.",
+    "Post rows, newest first: s-01 Post, Ravi Desk, ravi_desk, 2026-11-02 12:14 UTC, likes 4, reposts 1, replies 0, quotes 0, bookmarks 0, views missing, verified No, text Smog layer over the canal at noon. s-02 Post, Canal Station, canal_station, 2026-11-02 11:02, likes 0, reposts 0, replies 2, quotes 0, bookmarks 1, views 120, verified Yes, text School run delayed on Mall Road. s-03 Post, Mall Road Brief, mall_brief, 2026-11-02 09:40, likes 11, reposts 3, replies 1, quotes 0, bookmarks 0, views 860, verified No, text AQI board at the crossing reads 312. s-04 Post, Shalimar Watch, shalimar_watch, 2026-11-02 08:15, likes 2, reposts 0, replies 0, quotes 0, bookmarks 0, views missing, verified No, text Visibility under a kilometre past the gate. s-05 Post, Baghban Notes, baghban_notes, 2026-11-01 18:46, likes 0, reposts 0, replies 0, quotes 0, bookmarks 0, views 40, verified No, text Evening burn still hanging over the orchard road. s-06 Retweet, Gulberg Log, gulberg_log, 2026-11-01 16:05, likes 7, reposts 5, replies 0, quotes 1, bookmarks 0, views 540, verified No, text Clinic queue longer than yesterday.",
+    "Likes are 4, 0, 11, 2, 0, and 7 and sum to 24. Reposts are 1, 0, 3, 0, 0, and 5 and sum to 9. Replies sum to 3. Quotes sum to 1. Bookmarks sum to 1. Numbered views are 120, 860, 40, and 540. None of those sums is printed as a heading or a second tally.",
+    "Missing language, followers, following, bio, photo, banner, and media stay null. Preview omits those empty columns. Export still contains the fields id, type, postUrl, text, createdAt, language, likes, retweets, replies, quotes, bookmarks, views, authorName, authorUsername, authorFollowers, authorFollowing, authorDescription, authorVerified, authorAvatar, authorBanner, mediaUrls, and mediaTypes. A missing preview cell is a 6 by 2px muted mark, not a large dash.",
+    "Trends, when that cell is selected, are Lahore smog at rank 3 with context Pakistan trends and no detail, and AQI at rank 8 with no context and detail Air quality. The tally prints 2, not 11. Users, when selected, prints 0 and the empty preview line Scroll the page to collect.",
+    "Each of Collected, Panel, Preview, and Minimized shows the words Sample data once, in 12px muted under that view's title. Open X does not show it. The build does not claim a live page, a sync, or a backend.",
+    "Hover, selected, focus, and disabled are present on the tally, the buttons, the selects, and the preview rows. Empty, zero, loading, and error are present on the tally, the export row, and the preview. A zero prints 0 in muted. Disabled controls stay readable.",
+    "The full lockup is the only header mark. Icon slots and the minimized pill use the wordmark crop from that same artwork. The retired blue icons and the blue composite mark are not used. No chart, sidebar, plan card, greeting, or second logo is drawn.",
+    "At 1440 by 900, the Collected blocks and the Panel blocks each show their headers and first figures on their own view, and the preview shows its header and first rows. The grid sums 36 + 1368 + 36 = 1440, 3 x 440 = 1320, and 672 + 24 + 672 = 1368 all hold."
+  ]
+}

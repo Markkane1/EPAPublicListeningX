@@ -10,6 +10,8 @@ if ROOT_DIR not in sys.path:
 
 from backend import database
 from backend import x_api_client
+from backend import taxonomy
+from backend import classifier
 import pipeline
 
 def initialize_service():
@@ -423,14 +425,20 @@ def restore_noise_post_service(post_id: str, learned_rules: list = None):
     """
     return database.restore_noise_post(post_id=post_id, learned_rules_to_add=learned_rules)
 
-def exclude_post_service(post_id: str, reason: str = None, category: str = "MANUAL_EXCLUDED", remove_associated_rules: bool = True):
+def exclude_post_service(post_id: str, reason: str = None, category: str = "GOVT_BUREAUCRATIC_PR",
+                         phrase_patterns: list = None, confidence: float = 1.0,
+                         curator_user_id: int = None, remove_associated_rules: bool = True):
     """
     Re-excludes a previously restored post or excludes any post from verified clean posts.
+    Allows learning phrase patterns without blocking author handles.
     """
     return database.exclude_post_as_noise(
         post_id=post_id,
         reason=reason,
         category=category,
+        phrase_patterns=phrase_patterns,
+        confidence=confidence,
+        curator_user_id=curator_user_id,
         remove_associated_rules=remove_associated_rules
     )
 
@@ -440,7 +448,6 @@ def extract_candidates_service(post_id: str = None, text: str = "", author: str 
     Returns candidate rule proposals for user confirmation.
     """
     if post_id:
-        noise_items = database.get_noise_posts(status="all", limit=1)
         with database.get_db() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM noise_posts WHERE id = ?", (str(post_id),))
@@ -456,6 +463,40 @@ def extract_candidates_service(post_id: str = None, text: str = "", author: str 
         "authorUsername": author
     }
     return pipeline.extract_learning_candidates(post=post_dict, exclusion_category=category, exclusion_reason=reason)
+
+def extract_exclusion_candidates_service(post_id: str = None, text: str = "", category: str = ""):
+    """
+    Returns candidate phrase patterns detected in a post when excluding it,
+    allowing operator to learn negative phrases without blocking authors.
+    """
+    if post_id and not text:
+        with database.get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM posts WHERE id = ? OR clean_id = ?", (str(post_id), str(post_id)))
+            row = cursor.fetchone()
+            if not row:
+                cursor.execute("SELECT * FROM noise_posts WHERE id = ?", (str(post_id),))
+                row = cursor.fetchone()
+            if row:
+                text = row["text"]
+
+    return pipeline.extract_exclusion_phrase_candidates(text=text, category=category)
+
+def get_taxonomy_service():
+    """Returns canonical 16 noise and 6 relevant categories DTO."""
+    return taxonomy.get_taxonomy_dto()
+
+def get_classifier_status_service():
+    """Returns Tier-1 classifier state, metrics, and dataset readiness."""
+    return classifier.get_classifier_status()
+
+def train_classifier_service():
+    """Triggers training of Tier-1 text classifier using SQLite dataset."""
+    return classifier.train_classifier_from_db()
+
+def predict_classifier_service(text: str = ""):
+    """Scores a text string with the Tier-1 classifier."""
+    return classifier.predict_text(text)
 
 def get_learned_rules_service():
     """Returns all non-AI learned rules."""

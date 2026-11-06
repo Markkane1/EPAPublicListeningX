@@ -451,7 +451,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
       )}
 <Card
         sx={{
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           borderRadius: '16px',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
           boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
@@ -472,7 +472,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 overflowX: 'auto !important'
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 height: '2.5px',
                 borderRadius: '2px'
               },
@@ -485,7 +485,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 fontWeight: 600,
                 minHeight: '44px',
                 color: darkMode ? '#8898aa' : '#64748b',
-                '&.Mui-selected': { color: darkMode ? '#ffffff' : '#5e72e4' }
+                '&.Mui-selected': { color: darkMode ? '#ffffff' : '#16a34a' }
               }
             }}
           >
@@ -561,11 +561,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   fontWeight: 600,
                   fontSize: '11px',
                   borderRadius: '6px',
-                  bgcolor: '#f5f3ff',
-                  color: '#5b21b6',
+                  bgcolor: darkMode ? 'rgba(22, 163, 74, 0.12)' : '#f0fdf4',
+                  color: darkMode ? '#4ade80' : '#16a34a',
                   cursor: 'pointer',
-                  border: '1px solid #ddd6fe',
-                  '&:hover': { bgcolor: '#ede9fe' }
+                  border: darkMode ? '1px solid rgba(22, 163, 74, 0.3)' : '1px solid #bbf7d0',
+                  '&:hover': { bgcolor: darkMode ? 'rgba(22, 163, 74, 0.2)' : '#dcfce7' }
                 }}
               />
             </Tooltip>
@@ -629,7 +629,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     fontSize: '11px',
                     borderRadius: '6px',
                     bgcolor: dataSource === 'x_api' ? '#ecfdf5' : '#eef2ff',
-                    color: dataSource === 'x_api' ? '#047857' : '#4b5fcc',
+                    color: dataSource === 'x_api' ? '#047857' : '#15803d',
                     border: '1px solid',
                     borderColor: dataSource === 'x_api' ? '#a7f3d0' : '#c7d2fe'
                   }}
@@ -641,19 +641,19 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   onClick={() => setDataSource('file')}
                   sx={{
                     border: '1.5px solid',
-                    borderColor: dataSource === 'file' ? '#5e72e4' : '#e2e8f0',
+                    borderColor: dataSource === 'file' ? '#16a34a' : '#e2e8f0',
                     backgroundColor: dataSource === 'file' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
-                    '&:hover': { borderColor: '#818cf8' },
+                    '&:hover': { borderColor: '#34d399' },
                     display: 'flex',
                     gap: 1.5,
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: dataSource === 'file' ? '#5e72e4' : (darkMode ? '#64748b' : '#94a3b8') }}>
+                  <Box sx={{ pt: 0.3, color: dataSource === 'file' ? '#16a34a' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {dataSource === 'file' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -662,7 +662,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   </Box>
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                      <FolderZipRoundedIcon sx={{ fontSize: '18px', color: dataSource === 'file' ? '#5e72e4' : '#64748b' }} />
+                      <FolderZipRoundedIcon sx={{ fontSize: '18px', color: dataSource === 'file' ? '#16a34a' : '#64748b' }} />
                       <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
                         Saved files
                       </Typography>
@@ -735,7 +735,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     Sentiment Analysis
                   </Typography>
                   <Typography sx={{ fontSize: '12.5px', color: '#64748b' }}>
-                    Choose how reactions in posts are scored.
+                    Choose how reactions are scored. Applies to incoming posts; click &quot;Re-analyze all posts&quot; below to update existing records.
                   </Typography>
                 </Box>
                 <Chip
@@ -745,10 +745,10 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     fontWeight: 700,
                     fontSize: '11px',
                     borderRadius: '6px',
-                    bgcolor: sentimentEngineState === 'transformer' ? '#f5f3ff' : '#eef2ff',
-                    color: sentimentEngineState === 'transformer' ? '#5b21b6' : '#4b5fcc',
+                    bgcolor: sentimentEngineState === 'transformer' ? (darkMode ? 'rgba(22, 163, 74, 0.14)' : '#f0fdf4') : (darkMode ? 'rgba(148, 163, 184, 0.1)' : '#f8fafc'),
+                    color: sentimentEngineState === 'transformer' ? (darkMode ? '#4ade80' : '#16a34a') : (darkMode ? '#94a3b8' : '#475569'),
                     border: '1px solid',
-                    borderColor: sentimentEngineState === 'transformer' ? '#ddd6fe' : '#c7d2fe'
+                    borderColor: sentimentEngineState === 'transformer' ? (darkMode ? 'rgba(22, 163, 74, 0.3)' : '#bbf7d0') : (darkMode ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0')
                   }}
                 />
               </Box>
@@ -758,19 +758,19 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   onClick={canManageSettings ? () => handleSwitchEngine('vader') : undefined}
                   sx={{
                     border: '1.5px solid',
-                    borderColor: sentimentEngineState === 'vader' ? '#5e72e4' : '#e2e8f0',
+                    borderColor: sentimentEngineState === 'vader' ? '#16a34a' : '#e2e8f0',
                     backgroundColor: sentimentEngineState === 'vader' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
                     cursor: canManageSettings ? 'pointer' : 'default',
                     transition: 'all 0.15s ease',
-                    '&:hover': { borderColor: '#818cf8' },
+                    '&:hover': { borderColor: '#34d399' },
                     display: 'flex',
                     gap: 1.5,
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'vader' ? '#5e72e4' : (darkMode ? '#64748b' : '#94a3b8') }}>
+                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'vader' ? '#16a34a' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {sentimentEngineState === 'vader' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -780,7 +780,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <SpeedRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'vader' ? '#5e72e4' : '#64748b' }} />
+                        <SpeedRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'vader' ? '#16a34a' : '#64748b' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
                           Standard
                         </Typography>
@@ -795,19 +795,19 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   onClick={canManageSettings ? () => handleSwitchEngine('transformer') : undefined}
                   sx={{
                     border: '1.5px solid',
-                    borderColor: sentimentEngineState === 'transformer' ? '#5e72e4' : '#e2e8f0',
+                    borderColor: sentimentEngineState === 'transformer' ? '#16a34a' : '#e2e8f0',
                     backgroundColor: sentimentEngineState === 'transformer' ? '#faf5ff' : '#ffffff',
                     borderRadius: '12px',
                     p: 2.5,
                     cursor: canManageSettings ? 'pointer' : 'default',
                     transition: 'all 0.15s ease',
-                    '&:hover': { borderColor: '#818cf8' },
+                    '&:hover': { borderColor: '#34d399' },
                     display: 'flex',
                     gap: 1.5,
                     alignItems: 'flex-start'
                   }}
                 >
-                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'transformer' ? '#5e72e4' : (darkMode ? '#64748b' : '#94a3b8') }}>
+                  <Box sx={{ pt: 0.3, color: sentimentEngineState === 'transformer' ? '#16a34a' : (darkMode ? '#64748b' : '#94a3b8') }}>
                     {sentimentEngineState === 'transformer' ? (
                       <RadioButtonCheckedRoundedIcon sx={{ fontSize: '20px' }} />
                     ) : (
@@ -817,7 +817,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AutoAwesomeRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'transformer' ? '#5e72e4' : '#64748b' }} />
+                        <AutoAwesomeRoundedIcon sx={{ fontSize: '18px', color: sentimentEngineState === 'transformer' ? '#16a34a' : '#64748b' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
                           Detailed
                         </Typography>
@@ -845,7 +845,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   mt: 2.5,
                   p: 2,
                   borderRadius: '10px',
-                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
@@ -874,8 +874,8 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     textTransform: 'none',
                     fontWeight: 600,
                     fontSize: '12px',
-                    borderColor: '#5e72e4',
-                    color: '#5e72e4',
+                    borderColor: '#16a34a',
+                    color: '#16a34a',
                     borderRadius: '8px',
                     px: 2,
                     py: 0.7,
@@ -902,7 +902,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 disabled={saving}
                 startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveRoundedIcon sx={{ fontSize: '18px' }} />}
                 sx={{
-                  backgroundColor: '#5e72e4',
+                  backgroundColor: '#16a34a',
                   color: '#ffffff',
                   textTransform: 'none',
                   fontWeight: 600,
@@ -911,7 +911,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   px: 3,
                   py: 0.8,
                   boxShadow: 'none',
-                  '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
+                  '&:hover': { backgroundColor: '#15803d', boxShadow: 'none' }
                 }}
               >
                 {saving ? 'Saving...' : 'Save settings'}
@@ -927,7 +927,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 mb: 2.5,
                 p: { xs: 1.5, sm: 2 },
                 borderRadius: '12px',
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: { xs: 'column', lg: 'row' },
@@ -956,7 +956,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     sx={{
                       fontSize: '12.5px',
                       fontWeight: 600,
-                      backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                      backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                       color: darkMode ? '#ffffff' : '#1e293b',
                       borderRadius: '8px',
                       '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined },
@@ -1042,7 +1042,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   onClick={handleOpenNewVersionModal}
                   startIcon={<BookmarkAddRoundedIcon sx={{ fontSize: '16px' }} />}
                   sx={{
-                    backgroundColor: '#5e72e4',
+                    backgroundColor: '#16a34a',
                     color: '#ffffff',
                     textTransform: 'none',
                     fontWeight: 600,
@@ -1051,7 +1051,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     py: 0.6,
                     boxShadow: 'none',
                     whiteSpace: 'nowrap',
-                    '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' },
+                    '&:hover': { backgroundColor: '#15803d', boxShadow: 'none' },
                   }}
                 >
                   + Save As New Version
@@ -1100,7 +1100,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   boxSizing: 'border-box',
                   outline: 'none',
                   '&:focus': {
-                    borderColor: '#5e72e4',
+                    borderColor: '#16a34a',
                     boxShadow: '0 0 0 3px rgba(79, 70, 229, 0.12)'
                   }
                 }}
@@ -1159,7 +1159,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     onClick={handleUpdateCurrentVersion}
                     startIcon={<SaveRoundedIcon sx={{ fontSize: '15px' }} />}
                     sx={{
-                      backgroundColor: '#5e72e4',
+                      backgroundColor: '#16a34a',
                       color: '#ffffff',
                       textTransform: 'none',
                       fontSize: '11.5px',
@@ -1167,7 +1167,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       borderRadius: '6px',
                       py: 0.4,
                       boxShadow: 'none',
-                      '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
+                      '&:hover': { backgroundColor: '#15803d', boxShadow: 'none' }
                     }}
                   >
                     Save Changes to {tagDraft}
@@ -1191,7 +1191,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
               sx={{
                 p: 2.5,
                 borderRadius: '10px',
-                backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                backgroundColor: darkMode ? '#090e15' : '#ffffff',
                 border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1345,11 +1345,11 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   sx={{
                     fontSize: '13px',
                     borderRadius: '8px',
-                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                     color: darkMode ? '#ffffff' : '#1e293b',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' }
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#16a34a' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16a34a' }
                   }}
                 />
                 <Typography sx={{ fontSize: '11.5px', color: '#64748b', mt: 0.5 }}>
@@ -1374,7 +1374,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       sx={{
                         fontSize: '13px',
                         borderRadius: '8px',
-                        backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                        backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                         color: darkMode ? '#ffffff' : '#1e293b',
                         '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' }
                       }}
@@ -1394,7 +1394,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                       sx={{
                         fontSize: '13px',
                         borderRadius: '8px',
-                        backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                        backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                         color: darkMode ? '#ffffff' : '#1e293b',
                         '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1' }
                       }}
@@ -1433,7 +1433,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                   disabled={saving}
                   startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveRoundedIcon sx={{ fontSize: '18px' }} />}
                   sx={{
-                    backgroundColor: '#5e72e4',
+                    backgroundColor: '#16a34a',
                     color: '#ffffff',
                     textTransform: 'none',
                     fontWeight: 600,
@@ -1443,7 +1443,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                     py: 0.8,
                     boxShadow: 'none',
                     '&:hover': {
-                      backgroundColor: '#4b5fcc',
+                      backgroundColor: '#15803d',
                       boxShadow: 'none'
                     }
                   }}
@@ -1476,7 +1476,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#090e15' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
                 <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
                   Verified posts
                 </Typography>
@@ -1488,7 +1488,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
                 </Typography>
               </Box>
 
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#090e15' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
                 <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
                   Last refreshed
                 </Typography>
@@ -1560,7 +1560,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           sx: {
             borderRadius: '16px',
             p: { xs: 0.5, sm: 1 },
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             color: darkMode ? '#ffffff' : '#0f172a',
             backgroundImage: 'none'
           }
@@ -1646,14 +1646,14 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
             disabled={versionActionLoading || !newTag.trim() || !newQueryText.trim()}
             onClick={handleSaveNewVersion}
             sx={{
-              backgroundColor: '#5e72e4',
+              backgroundColor: '#16a34a',
               color: '#ffffff',
               textTransform: 'none',
               fontWeight: 600,
               borderRadius: '8px',
               px: 3,
               boxShadow: 'none',
-              '&:hover': { backgroundColor: '#4b5fcc', boxShadow: 'none' }
+              '&:hover': { backgroundColor: '#15803d', boxShadow: 'none' }
             }}
           >
             Save Version
@@ -1670,7 +1670,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
           sx: {
             borderRadius: '16px',
             p: { xs: 0.5, sm: 1 },
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             color: darkMode ? '#ffffff' : '#0f172a',
             backgroundImage: 'none'
           }
@@ -1678,7 +1678,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <HistoryRoundedIcon sx={{ color: '#5e72e4', fontSize: '22px' }} />
+            <HistoryRoundedIcon sx={{ color: '#16a34a', fontSize: '22px' }} />
             <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#0f172a' }}>
               Query Version History & Evolution Ledger
             </Typography>
@@ -1694,7 +1694,7 @@ function SettingsView({ onSettingsSaved, onReloadFromDb }) {
 
           <TableContainer sx={{ border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', borderRadius: '10px' }}>
             <Table size="small">
-              <TableHead sx={{ backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
+              <TableHead sx={{ backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}>
                 <TableRow>
                   <TableCell sx={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>Version</TableCell>
                   <TableCell sx={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>Title & Description</TableCell>

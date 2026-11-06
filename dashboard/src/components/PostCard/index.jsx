@@ -18,9 +18,9 @@ import ElectricBoltRoundedIcon from '@mui/icons-material/ElectricBoltRounded';
 import ZoomInRoundedIcon from '@mui/icons-material/ZoomInRounded';
 import ImageNotSupportedRoundedIcon from '@mui/icons-material/ImageNotSupportedRounded';
 import CollectionsRoundedIcon from '@mui/icons-material/CollectionsRounded';
+import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
-import PlayCircleOutlineRoundedIcon from '@mui/icons-material/PlayCircleOutlineRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import { isVideoUrl } from '../../utils/media';
 import { sanitizeUrl } from '../../utils/security';
@@ -54,19 +54,19 @@ function formatMetric(num) {
 function getSeverityBadgeStyle(code) {
   switch (code) {
     case 'hazardous':
-      return { bg: 'linear-gradient(310deg, #f5365c 0%, #ec0c38 100%)', color: '#fff', label: 'Hazardous' };
+      return { bg: '#991b1b', color: '#ffffff', label: 'Hazardous (301+)' };
     case 'very_unhealthy':
-      return { bg: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)', color: '#fff', label: 'Very Unhealthy' };
+      return { bg: '#b91c1c', color: '#ffffff', label: 'Very Unhealthy (201-300)' };
     case 'unhealthy':
-      return { bg: 'linear-gradient(310deg, #fb6340 0%, #fbb140 100%)', color: '#fff', label: 'Unhealthy' };
+      return { bg: '#ea580c', color: '#ffffff', label: 'Unhealthy (151-200)' };
     case 'sensitive':
-      return { bg: 'linear-gradient(310deg, #ffd600 0%, #be9b00 100%)', color: '#212529', label: 'Sensitive' };
+      return { bg: '#d97706', color: '#ffffff', label: 'Sensitive (101-150)' };
     case 'moderate':
-      return { bg: 'linear-gradient(310deg, #0b6a78 0%, #1171ef 100%)', color: '#fff', label: 'Moderate' };
+      return { bg: '#ca8a04', color: '#ffffff', label: 'Moderate (51-100)' };
     case 'good':
-      return { bg: 'linear-gradient(310deg, #0b5d3b 0%, #0e6a68 100%)', color: '#fff', label: 'Good' };
+      return { bg: '#16a34a', color: '#ffffff', label: 'Good (0-50)' };
     default:
-      return { bg: '#8392ab', color: '#fff', label: 'Alert' };
+      return { bg: '#475569', color: '#ffffff', label: 'Alert' };
   }
 }
 
@@ -79,7 +79,7 @@ function renderFormattedText(text) {
       return (
         <span
           key={index}
-          style={{ color: '#5e72e4', fontWeight: 600, cursor: 'pointer' }}
+          style={{ color: '#16a34a', fontWeight: 600, cursor: 'pointer' }}
         >
           {part}
         </span>
@@ -102,7 +102,7 @@ function renderFormattedText(text) {
           href={sanitizeUrl(part)}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#5e72e4', textDecoration: 'underline', wordBreak: 'break-all' }}
+          style={{ color: '#16a34a', textDecoration: 'underline', wordBreak: 'break-all' }}
         >
           {part}
         </a>
@@ -165,7 +165,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
       sx={{
         borderRadius: '16px',
         border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
         boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
         display: 'flex',
         flexDirection: 'column',
@@ -194,6 +194,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
               <img
                 src={authorAvatar}
                 alt={authorName}
+                referrerPolicy="no-referrer"
                 style={{
                   width: '40px',
                   height: '40px',
@@ -212,7 +213,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+                  background: '#16a34a',
                   color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
@@ -220,7 +221,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                   fontWeight: 700,
                   fontSize: '14px',
                   flexShrink: 0,
-                  boxShadow: '0 4px 10px rgba(94, 114, 228, 0.25)',
+                  boxShadow: '0 4px 10px rgba(22, 163, 74, 0.25)',
                 }}
               >
                 {initials}
@@ -271,15 +272,15 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                     sx={{
                       fontFamily: '"Open Sans", sans-serif',
                       fontSize: '11.5px',
-                      color: sortBy === 'followers' ? (darkMode ? '#a5b4fc' : '#5e72e4') : (darkMode ? '#64748b' : '#adb5bd'),
+                      color: sortBy === 'followers' ? (darkMode ? '#4ade80' : '#16a34a') : (darkMode ? '#64748b' : '#adb5bd'),
                       fontWeight: sortBy === 'followers' ? 700 : 500,
                       whiteSpace: 'nowrap',
                       ...(sortBy === 'followers' && {
-                        backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.2)' : '#eff6ff',
+                        backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.2)' : '#eff6ff',
                         px: 0.8,
                         py: 0.15,
                         borderRadius: '4px',
-                        border: darkMode ? '1px solid rgba(94, 114, 228, 0.4)' : '1px solid #bfdbfe',
+                        border: darkMode ? '1px solid rgba(22, 163, 74, 0.4)' : '1px solid #bfdbfe',
                       }),
                     }}
                   >
@@ -316,7 +317,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                   fontFamily: '"Open Sans", sans-serif',
                   fontSize: '11px',
                   fontWeight: 600,
-                  color: darkMode ? '#a5b4fc' : '#5e72e4',
+                  color: darkMode ? '#4ade80' : '#16a34a',
                   borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
                   borderRadius: '6px',
                   px: 1.2,
@@ -325,8 +326,8 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                   flexShrink: 0,
                   whiteSpace: 'nowrap',
                   '&:hover': {
-                    borderColor: '#5e72e4',
-                    backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.05)',
+                    borderColor: '#16a34a',
+                    backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.05)',
                   },
                 }}
               >
@@ -377,12 +378,12 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                 px: 1,
                 py: 0.25,
                 borderRadius: '5px',
-                background: 'linear-gradient(310deg, #fb6340 0%, #f5365c 100%)',
+                background: '#dc2626',
                 color: '#ffffff',
                 fontSize: '10.5px',
                 fontWeight: 700,
                 letterSpacing: '0.3px',
-                boxShadow: '0 2px 6px rgba(245, 54, 92, 0.25)',
+                
               }}
             >
               <WhatshotRoundedIcon sx={{ fontSize: '13px' }} />
@@ -399,15 +400,17 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                 px: 1,
                 py: 0.25,
                 borderRadius: '5px',
-                background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+                background: '#16a34a',
                 color: '#ffffff',
                 fontSize: '10.5px',
                 fontWeight: 700,
                 letterSpacing: '0.3px',
-                boxShadow: '0 2px 6px rgba(94, 114, 228, 0.25)',
+                
               }}
             >
-              👥 {formatMetric(authorFollowers || 0)} REACH {rank && rank <= 12 ? `• #${rank}` : ''}
+              <PeopleAltRoundedIcon sx={{ fontSize: "13px" }} />
+
+              {formatMetric(authorFollowers || 0)} REACH {rank && rank <= 12 ? `• #${rank}` : ''}
             </Box>
           )}
 
@@ -420,7 +423,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                 px: 1,
                 py: 0.25,
                 borderRadius: '5px',
-                background: 'linear-gradient(310deg, #0b6a78 0%, #1171ef 100%)',
+                background: '#0284c7',
                 color: '#ffffff',
                 fontSize: '10.5px',
                 fontWeight: 700,
@@ -542,7 +545,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                 mt: 0.3,
                 fontSize: '12px',
                 fontWeight: 700,
-                color: darkMode ? '#a5b4fc' : '#5e72e4',
+                color: darkMode ? '#4ade80' : '#16a34a',
                 cursor: 'pointer',
                 userSelect: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -578,6 +581,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                       <Box
                         component="video"
                         src={mediaUrls[0]}
+                        referrerPolicy="no-referrer"
                         controls
                         playsInline
                         preload="metadata"
@@ -601,8 +605,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                           right: 8,
                           zIndex: 2,
                           backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                          backdropFilter: 'blur(4px)',
-                          color: '#ffffff',
+                                                    color: '#ffffff',
                           px: 1,
                           py: 0.35,
                           borderRadius: '6px',
@@ -625,6 +628,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                         component="img"
                         src={mediaUrls[0]}
                         alt="Backdrop blur"
+                        referrerPolicy="no-referrer"
                         onError={() => handleImageError(0)}
                         sx={{
                           position: 'absolute',
@@ -640,6 +644,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                         component="img"
                         src={mediaUrls[0]}
                         alt="Post visual attachment"
+                        referrerPolicy="no-referrer"
                         onError={() => handleImageError(0)}
                         sx={{
                           position: 'relative',
@@ -658,8 +663,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                           right: 8,
                           zIndex: 2,
                           backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                          backdropFilter: 'blur(4px)',
-                          color: '#ffffff',
+                                                    color: '#ffffff',
                           px: 1,
                           py: 0.3,
                           borderRadius: '6px',
@@ -718,6 +722,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                           <Box
                             component="video"
                             src={url}
+                            referrerPolicy="no-referrer"
                             muted
                             playsInline
                             preload="metadata"
@@ -740,8 +745,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                               height: 32,
                               borderRadius: '50%',
                               backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                              backdropFilter: 'blur(4px)',
-                              color: '#fff',
+                                                            color: '#fff',
                             }}
                           >
                             <PlayArrowRoundedIcon sx={{ fontSize: 20 }} />
@@ -753,6 +757,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                             component="img"
                             src={url}
                             alt="Backdrop blur"
+                            referrerPolicy="no-referrer"
                             onError={() => handleImageError(idx)}
                             sx={{
                               position: 'absolute',
@@ -768,6 +773,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                             component="img"
                             src={url}
                             alt={`Post attachment ${idx + 1}`}
+                            referrerPolicy="no-referrer"
                             onError={() => handleImageError(idx)}
                             sx={{
                               position: 'relative',
@@ -817,7 +823,7 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
       <Box
         sx={{
           borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-          backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+          backgroundColor: darkMode ? '#090e15' : '#f8fafc',
           px: { xs: 2, sm: 2.5 },
           py: 1.2,
           display: 'flex',
@@ -930,20 +936,20 @@ function PostCard({ post, onImageClick, onExcludePost, sortBy = 'newest', sortOr
                 gap: '5px',
                 transition: 'all 0.15s ease',
                 ...(sortBy === 'views' && {
-                  backgroundColor: darkMode ? 'rgba(124, 58, 237, 0.15)' : '#ede9fe',
+                  backgroundColor: darkMode ? 'rgba(2, 132, 199, 0.12)' : '#f0f9ff',
                   px: 0.8,
                   py: 0.25,
                   borderRadius: '6px',
-                  border: darkMode ? '1px solid rgba(124, 58, 237, 0.3)' : '1px solid #ddd6fe',
+                  border: darkMode ? '1px solid rgba(2, 132, 199, 0.28)' : '1px solid #bae6fd',
                 }),
               }}
             >
-              <VisibilityRoundedIcon sx={{ color: sortBy === 'views' ? '#7c3aed' : (darkMode ? '#a5b4fc' : '#8392ab'), fontSize: '15px' }} />
+              <VisibilityRoundedIcon sx={{ color: sortBy === 'views' ? '#0284c7' : (darkMode ? '#4ade80' : '#8392ab'), fontSize: '15px' }} />
               <Typography
                 sx={{
                   fontSize: '12.5px',
                   fontWeight: sortBy === 'views' ? 800 : 500,
-                  color: sortBy === 'views' ? (darkMode ? '#c084fc' : '#6d28d9') : (darkMode ? '#94a3b8' : '#8392ab'),
+                  color: sortBy === 'views' ? (darkMode ? '#38bdf8' : '#0369a1') : (darkMode ? '#94a3b8' : '#8392ab'),
                 }}
               >
                 {formatMetric(views)}

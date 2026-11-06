@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "epa-lockup",
+      "kind": "image",
+      "status": "ready",
+      "purpose": "Full EPA Punjab lockup for the popup and panel headers. The green wordmark, the Urdu line, and An ISO Certified Agency stay inside the artwork.",
+      "requirements": [
+        "Use this file whole. Do not redraw, recolor, restack, or retype the Urdu line or An ISO Certified Agency.",
+        "Place it on white with no tint tile.",
+        "The workspace file is the supplied JPEG copied unchanged."
+      ],
+      "role": "logo",
+      "sectionIds": [
+        "shell",
+        "panel-header"
+      ],
+      "aspectRatio": "1:1",
+      "composition": "Square official lockup, centered on white. The green EPA letters and leaf are the focal mass, with the Urdu line and An ISO Certified Agency directly beneath. Even white margin around the whole mark. No extra symbol and no text laid on top.",
+      "source": {
+        "kind": "user",
+        "reference": "user-reference-1",
+        "license": "Supplied by the owner as the only product mark."
+      },
+      "destination": "assets/epa-lockup.jpg"
+    },
+    {
+      "id": "epa-wordmark",
+      "kind": "image",
+      "status": "ready",
+      "purpose": "EPA wordmark cropped from the same lockup for the toolbar icon slots and the minimized pill.",
+      "requirements": [
+        "Use only the EPA letters and leaf. The Urdu line and An ISO Certified Agency are not in this file.",
+        "Toolbar slots at 16, 48, and 128 scale this crop. Do not draw a new leaf, monogram, or letter in a square."
+      ],
+      "role": "logo",
+      "sectionIds": [
+        "shell",
+        "minimized-pill"
+      ],
+      "aspectRatio": "327:133",
+      "composition": "Wide crop of the EPA letters only, centered, with a small white margin. The leaf stays inside the P. Urdu and the ISO line are outside the frame. White ground, no tint and no added type.",
+      "source": {
+        "kind": "project",
+        "reference": "assets/epa-lockup.jpg",
+        "license": "Crop of the owner-supplied lockup, user-reference-1. Letters and leaf only."
+      },
+      "destination": "assets/epa-wordmark.png"
+    },
+    {
+      "id": "dm-sans",
+      "kind": "font",
+      "status": "ready",
+      "purpose": "DM Sans variable font for interface text. The weight axis includes 400, 500, 600, and 700.",
+      "requirements": [
+        "Set font-weight to 400, 500, 600, or 700. The file also has an optical-size axis from 9 to 40.",
+        "Do not substitute Geist, Arial, or another family.",
+        "Italic is not part of this file."
+      ],
+      "role": "font",
+      "sectionIds": [
+        "collected-title",
+        "collected-tally",
+        "collected-actions",
+        "away-prompt",
+        "panel-title",
+        "panel-tally",
+        "panel-controls",
+        "minimized-pill",
+        "preview-title",
+        "preview-table"
+      ],
+      "source": {
+        "kind": "external",
+        "reference": "https://github.com/google/fonts/blob/main/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf",
+        "license": "SIL Open Font License, Version 1.1",
+        "contentType": "application/octet-stream"
+      },
+      "destination": "fonts/DMSans-variable.ttf"
+    }
+  ]
+}

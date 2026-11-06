@@ -1,0 +1,52 @@
+{
+ "url": "http://127.0.0.1:5300/index.html",
+ "views": {
+  "desktop": {
+   "width": 1440,
+   "height": 900,
+   "navH": 0,
+   "scrollHeight": 1086,
+   "screens": 1.21,
+   "sections": [
+    {
+     "n": 1,
+     "tag": "div",
+     "id": "",
+     "cls": "empty-state",
+     "top": 654,
+     "h": 257,
+     "hScreens": 0.29,
+     "offGrid": 257,
+     "tiles": [
+      {
+       "file": "desktop-sec-01-a.jpg",
+       "scrollY": 186,
+       "cutTop": 468,
+       "height": 257
+      }
+     ]
+    },
+    {
+     "n": 2,
+     "tag": "footer",
+     "id": "",
+     "cls": "portal-footer",
+     "top": 967,
+     "h": 63,
+     "hScreens": 0.07,
+     "offGrid": 63,
+     "tiles": [
+      {
+       "file": "desktop-sec-02-a.jpg",
+       "scrollY": 186,
+       "cutTop": 781,
+       "height": 63
+      }
+     ]
+    }
+   ],
+   "consoleErrors": []
+  }
+ },
+ "at": "2026-11-06T02:10:31.566Z"
+}

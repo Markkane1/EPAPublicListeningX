@@ -3,73 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EPA Punjab Social Listening</title>
+  <title>Collected</title>
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/listen.css">
   <link rel="stylesheet" href="popup.css">
 </head>
-<body>
-  <div class="popup-container">
-    <header class="popup-header">
-      <div class="brand">
-        <img src="icons/icon48.png" width="26" height="26" class="brand-logo" alt="EPA Punjab Social Listening" style="border-radius: 4px; object-fit: contain;">
-        <span class="brand-title">EPA Punjab Social Listening</span>
+<body class="is-popup">
+  <main class="canvas">
+    <div class="view" id="target-active-view">
+      <img class="lockup" src="assets/epa-lockup.jpg" alt="EPA Punjab" width="168" height="168">
+      <div class="head">
+        <h1>Collected</h1>
+        <div class="head-actions">
+          <button type="button" class="hit primary" id="pop-btn-autoscroll" aria-pressed="false">
+            <span class="face" id="pop-autoscroll-text">Auto-scroll</span>
+          </button>
+        </div>
+        <p class="finding" id="pop-finding">0 posts on this search. Users still at 0.</p>
       </div>
-      <span class="version-tag">Official</span>
-    </header>
-
-    <div id="target-active-view">
-      <div class="status-box">
-        <div class="status-row">
-          <span class="status-indicator">
-            <span class="dot live"></span>
-            <span class="status-label">Connected to X.com</span>
-          </span>
-          <button id="btn-toggle-overlay" class="btn-sm">Show Panel</button>
-        </div>
-      </div>
-
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <span class="metric-num" id="pop-posts-count">0</span>
-          <span class="metric-label">Posts</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-num" id="pop-users-count">0</span>
-          <span class="metric-label">Users</span>
-        </div>
-        <div class="metric-card">
-          <span class="metric-num" id="pop-trends-count">0</span>
-          <span class="metric-label">Trends</span>
-        </div>
-      </div>
-
-      <div class="actions-group">
-        <button id="pop-btn-autoscroll" class="btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          <span id="pop-autoscroll-text">Start Auto-Scroll</span>
+      <p class="scope">
+        <span class="dot" id="pop-status-dot"></span>
+        <span id="pop-page-kind">This page.</span>
+        <span class="status" id="pop-status-text">Ready</span>
+        <span class="hint" id="pop-hint"></span>
+      </p>
+      <div class="tally" role="radiogroup" aria-label="Collected on this page">
+        <button type="button" class="cell" data-kind="posts" id="pop-tab-posts" role="radio" aria-checked="true">
+          <span class="cell-label">Posts</span>
+          <span class="cell-num num is-zero" id="pop-posts-count">0</span>
         </button>
-
-        <div class="export-row">
-          <button id="pop-export-csv" class="btn-secondary">Export CSV</button>
-          <button id="pop-export-json" class="btn-secondary">Export JSON</button>
-          <button id="pop-export-excel" class="btn-secondary">Excel</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="target-inactive-view" style="display: none;">
-      <div class="inactive-box">
-        <p>Open <strong>X.com</strong> or <strong>Twitter.com</strong> to begin extracting posts, user lists, and trending topics.</p>
-        <button id="btn-open-x" class="btn-primary" style="margin-top: 12px; width: 100%;">
-          Open X.com
+        <button type="button" class="cell" data-kind="users" id="pop-tab-users" role="radio" aria-checked="false">
+          <span class="cell-label">Users</span>
+          <span class="cell-num num is-zero" id="pop-users-count">0</span>
+        </button>
+        <button type="button" class="cell" data-kind="trends" id="pop-tab-trends" role="radio" aria-checked="false">
+          <span class="cell-label">Trends</span>
+          <span class="cell-num num is-zero" id="pop-trends-count">0</span>
         </button>
       </div>
+      <div class="actions" id="export-row">
+        <p class="export-label" id="pop-export-label">Export posts</p>
+        <button type="button" class="hit quiet" id="pop-export-csv" disabled><span class="face">CSV</span></button>
+        <button type="button" class="hit quiet" id="pop-export-json" disabled><span class="face">JSON</span></button>
+        <button type="button" class="hit quiet" id="pop-export-excel" disabled><span class="face">Excel</span></button>
+        <span class="push"><button type="button" class="hit quiet" id="btn-toggle-overlay"><span class="face">Open panel</span></button></span>
+      </div>
+      <p class="finding" id="pop-note" role="status"></p>
     </div>
-
-    <footer class="popup-footer">
-      <span>100% Unlocked • Unlimited Local Scraping</span>
-    </footer>
-  </div>
-
+    <div class="view" id="target-inactive-view" hidden>
+      <img class="lockup" src="assets/epa-lockup.jpg" alt="EPA Punjab" width="168" height="168">
+      <div class="head" id="away-head">
+        <div class="head-actions">
+          <button type="button" class="hit primary" id="btn-open-x"><span class="face">Open X</span></button>
+        </div>
+        <p class="finding">Open a search, a profile, or Explore on X.</p>
+      </div>
+    </div>
+  </main>
   <script src="popup.js"></script>
 </body>
 </html>

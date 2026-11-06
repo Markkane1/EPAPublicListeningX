@@ -29,13 +29,13 @@ function SidenavFooter({ onOpenIngest }) {
           <IconButton
             onClick={handleOpen}
             sx={{
-              background: "linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)",
+              background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
               color: "#ffffff",
               p: 1.2,
               borderRadius: "10px",
-              boxShadow: "0 4px 12px rgba(94, 114, 228, 0.35)",
+              boxShadow: "0 4px 12px rgba(22, 163, 74, 0.35)",
               "&:hover": {
-                background: "linear-gradient(310deg, #4b5fcc 0%, #6f4ecc 100%)",
+                background: "linear-gradient(135deg, #15803d 0%, #064e3b 100%)",
               },
             }}
           >
@@ -54,7 +54,7 @@ function SidenavFooter({ onOpenIngest }) {
         onClick={handleOpen}
         startIcon={<CloudUploadRoundedIcon sx={{ fontSize: "17px !important" }} />}
         sx={{
-          background: "linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)",
+          background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
           color: "#ffffff",
           textTransform: "none",
           fontFamily: '"Open Sans", sans-serif',
@@ -62,9 +62,9 @@ function SidenavFooter({ onOpenIngest }) {
           fontSize: "12.5px",
           py: 1,
           borderRadius: "10px",
-          boxShadow: "0 4px 12px rgba(94, 114, 228, 0.3)",
+          boxShadow: "0 4px 12px rgba(22, 163, 74, 0.3)",
           "&:hover": {
-            background: "linear-gradient(310deg, #4b5fcc 0%, #6f4ecc 100%)",
+            background: "linear-gradient(135deg, #15803d 0%, #064e3b 100%)",
           },
         }}
       >

@@ -154,7 +154,7 @@ function AuditView({ dataRevision = 0 }) {
       
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <FactCheckRoundedIcon sx={{ color: '#5e72e4', fontSize: '24px' }} />
+          <FactCheckRoundedIcon sx={{ color: '#16a34a', fontSize: '24px' }} />
           <Typography
             variant="h4"
             sx={{
@@ -177,7 +177,7 @@ function AuditView({ dataRevision = 0 }) {
           p: 3,
           borderRadius: '16px',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
         }}
       >
@@ -205,7 +205,7 @@ function AuditView({ dataRevision = 0 }) {
                 overflowX: 'auto !important',
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 height: '3px',
                 borderRadius: '3px',
               },
@@ -218,7 +218,7 @@ function AuditView({ dataRevision = 0 }) {
                 color: darkMode ? '#94a3b8' : '#64748b',
                 px: { xs: 1.5, sm: 2 },
                 '&.Mui-selected': {
-                  color: darkMode ? '#ffffff' : '#5e72e4',
+                  color: darkMode ? '#ffffff' : '#16a34a',
                 },
               },
             }}
@@ -248,7 +248,7 @@ function AuditView({ dataRevision = 0 }) {
                 fontSize: '13px',
                 borderRadius: '8px',
                 fontFamily: '"Open Sans", sans-serif',
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 color: darkMode ? '#ffffff' : undefined,
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
@@ -270,7 +270,7 @@ function AuditView({ dataRevision = 0 }) {
               <col style={{ width: 'auto' }} />
               <col style={{ width: '80px' }} />
             </colgroup>
-            <TableHead sx={{ display: 'table-header-group', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
+            <TableHead sx={{ display: 'table-header-group', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}>
               <TableRow>
                 <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: darkMode ? '#94a3b8' : '#8392ab', fontSize: '11px', textTransform: 'uppercase', py: 1.2, borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : undefined }}>#</TableCell>
                 <TableCell sx={{ textAlign: 'left', fontWeight: 700, color: darkMode ? '#94a3b8' : '#8392ab', fontSize: '11px', textTransform: 'uppercase', py: 1.2, borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : undefined }}>Status</TableCell>
@@ -308,7 +308,7 @@ function AuditView({ dataRevision = 0 }) {
                       {log.category || 'GENERAL'}
                     </TableCell>
 
-                    <TableCell sx={{ color: darkMode ? '#a5b4fc' : '#5e72e4', fontSize: '12px', fontWeight: 600, py: 1.4, borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : undefined }}>
+                    <TableCell sx={{ color: darkMode ? '#4ade80' : '#16a34a', fontSize: '12px', fontWeight: 600, py: 1.4, borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : undefined }}>
                       @{log.author || 'unknown'}
                     </TableCell>
 
@@ -343,7 +343,7 @@ function AuditView({ dataRevision = 0 }) {
                           target="_blank"
                           rel="noopener noreferrer"
                           size="small"
-                          sx={{ minWidth: 'auto', p: 0.6, color: darkMode ? '#a5b4fc' : '#5e72e4' }}
+                          sx={{ minWidth: 'auto', p: 0.6, color: darkMode ? '#4ade80' : '#16a34a' }}
                         >
                           <LaunchRoundedIcon sx={{ fontSize: '16px' }} />
                         </Button>
@@ -378,7 +378,7 @@ function AuditView({ dataRevision = 0 }) {
                   sx={{
                     p: 2,
                     borderRadius: '12px',
-                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                     border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                     display: 'flex',
                     flexDirection: 'column',
@@ -414,7 +414,7 @@ function AuditView({ dataRevision = 0 }) {
                           minWidth: '44px',
                           minHeight: '44px',
                           p: 0,
-                          color: '#5e72e4'
+                          color: '#16a34a'
                         }}
                       >
                         <LaunchRoundedIcon sx={{ fontSize: '18px' }} />
@@ -423,7 +423,7 @@ function AuditView({ dataRevision = 0 }) {
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#5e72e4' }}>
+                    <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#16a34a' }}>
                       @{log.author || 'unknown'}
                     </Typography>
                   </Box>
@@ -475,7 +475,7 @@ function AuditView({ dataRevision = 0 }) {
                   borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
                   '&.Mui-selected': {
                     color: '#ffffff',
-                    backgroundColor: '#5e72e4',
+                    backgroundColor: '#16a34a',
                   },
                   '&:hover': {
                     backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',

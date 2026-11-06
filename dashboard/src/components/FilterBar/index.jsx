@@ -21,6 +21,13 @@ import SwapVertRoundedIcon from '@mui/icons-material/SwapVertRounded';
 import SouthRoundedIcon from '@mui/icons-material/SouthRounded';
 import NorthRoundedIcon from '@mui/icons-material/NorthRounded';
 import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
+import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
+import PhotoLibraryRoundedIcon from '@mui/icons-material/PhotoLibraryRounded';
 
 import { useArgonController } from 'context';
 
@@ -49,15 +56,30 @@ export const SORT_OPTIONS = [
 ];
 
 export const QUICK_SORTS = [
-  { id: 'newest', label: 'Latest', icon: '🕒' },
-  { id: 'engagement', label: 'Most Interactions', icon: '🔥' },
-  { id: 'aqi_desc', label: 'Highest AQI', icon: '⚠️' },
-  { id: 'replies', label: 'Most Discussion', icon: '💬' },
-  { id: 'likes', label: 'Most Likes', icon: '❤️' },
-  { id: 'followers', label: 'Top Reach', icon: '👥' },
-  { id: 'sentiment_alarm', label: 'Most Alarmed', icon: '🚨' },
-  { id: 'media_count', label: 'Photo Evidence', icon: '📸' },
+  { id: 'newest', label: 'Latest', iconType: 'recency' },
+  { id: 'engagement', label: 'Most Interactions', iconType: 'trending' },
+  { id: 'aqi_desc', label: 'Highest AQI', iconType: 'warning' },
+  { id: 'replies', label: 'Most Discussion', iconType: 'replies' },
+  { id: 'likes', label: 'Most Likes', iconType: 'likes' },
+  { id: 'followers', label: 'Top Reach', iconType: 'reach' },
+  { id: 'sentiment_alarm', label: 'Most Alarmed', iconType: 'alarm' },
+  { id: 'media_count', label: 'Photo Evidence', iconType: 'media' },
 ];
+
+function renderQuickSortIcon(type) {
+  const iconStyle = { fontSize: '13px !important', verticalAlign: 'middle', display: 'block' };
+  switch (type) {
+    case 'recency': return <AccessTimeRoundedIcon sx={iconStyle} />;
+    case 'trending': return <WhatshotRoundedIcon sx={iconStyle} />;
+    case 'warning': return <WarningAmberRoundedIcon sx={iconStyle} />;
+    case 'replies': return <ChatBubbleOutlineRoundedIcon sx={iconStyle} />;
+    case 'likes': return <FavoriteBorderRoundedIcon sx={iconStyle} />;
+    case 'reach': return <PeopleAltRoundedIcon sx={iconStyle} />;
+    case 'alarm': return <ReportProblemRoundedIcon sx={iconStyle} />;
+    case 'media': return <PhotoLibraryRoundedIcon sx={iconStyle} />;
+    default: return null;
+  }
+}
 
 function FilterBar({
   filters,
@@ -100,7 +122,7 @@ function FilterBar({
   return (
     <Card
       sx={{
-        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
         borderRadius: '16px',
         p: { xs: 2, sm: 2.5 },
         mb: 3,
@@ -153,11 +175,11 @@ function FilterBar({
               fontFamily: '"Open Sans", sans-serif',
               fontSize: '13px',
               borderRadius: '8px',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               color: darkMode ? '#ffffff' : '#1e293b',
               '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
-              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#16a34a' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16a34a' },
               '& input': { color: darkMode ? '#ffffff' : 'inherit' },
               '& input::placeholder': { color: darkMode ? '#94a3b8' : undefined, opacity: 1 },
             }}
@@ -176,7 +198,7 @@ function FilterBar({
             MenuProps={{
               PaperProps: {
                 sx: {
-                  backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                  backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                   color: darkMode ? '#ffffff' : 'inherit',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                 },
@@ -186,7 +208,7 @@ function FilterBar({
               fontSize: '13px',
               borderRadius: '8px',
               fontFamily: '"Open Sans", sans-serif',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               color: darkMode ? '#ffffff' : '#344767',
               '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
               '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -213,7 +235,7 @@ function FilterBar({
             MenuProps={{
               PaperProps: {
                 sx: {
-                  backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                  backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                   color: darkMode ? '#ffffff' : 'inherit',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                 },
@@ -223,7 +245,7 @@ function FilterBar({
               fontSize: '13px',
               borderRadius: '8px',
               fontFamily: '"Open Sans", sans-serif',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               color: darkMode ? '#ffffff' : '#344767',
               '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
               '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -251,7 +273,7 @@ function FilterBar({
             MenuProps={{
               PaperProps: {
                 sx: {
-                  backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                  backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                   color: darkMode ? '#ffffff' : 'inherit',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                 },
@@ -261,7 +283,7 @@ function FilterBar({
               fontSize: '13px',
               borderRadius: '8px',
               fontFamily: '"Open Sans", sans-serif',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               color: darkMode ? '#ffffff' : '#344767',
               '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
               '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -288,7 +310,7 @@ function FilterBar({
             MenuProps={{
               PaperProps: {
                 sx: {
-                  backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                  backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                   color: darkMode ? '#ffffff' : 'inherit',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                 },
@@ -298,7 +320,7 @@ function FilterBar({
               fontSize: '13px',
               borderRadius: '8px',
               fontFamily: '"Open Sans", sans-serif',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               color: darkMode ? '#ffffff' : '#344767',
               '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
               '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -330,7 +352,7 @@ function FilterBar({
             MenuProps={{
               PaperProps: {
                 sx: {
-                  backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                  backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                   color: darkMode ? '#ffffff' : 'inherit',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                 },
@@ -340,7 +362,7 @@ function FilterBar({
               fontSize: '13px',
               borderRadius: '8px',
               fontFamily: '"Open Sans", sans-serif',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               color: darkMode ? '#ffffff' : '#344767',
               '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
               '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -357,7 +379,7 @@ function FilterBar({
 
       <Box
         sx={{
-          backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+          backgroundColor: darkMode ? '#090e15' : '#f8fafc',
           borderRadius: '12px',
           p: { xs: 1.5, sm: 1.8 },
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
@@ -380,7 +402,7 @@ function FilterBar({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mr: 0.3, flexShrink: 0 }}>
-            <SwapVertRoundedIcon sx={{ color: '#5e72e4', fontSize: '18px' }} />
+            <SwapVertRoundedIcon sx={{ color: '#16a34a', fontSize: '18px' }} />
             <Typography
               sx={{
                 fontSize: '11px',
@@ -412,21 +434,21 @@ function FilterBar({
                   py: 0.3,
                   minWidth: 'auto',
                   transition: 'all 0.18s ease-in-out',
-                  backgroundColor: isActive ? 'transparent' : (darkMode ? '#111c44' : '#ffffff'),
-                  background: isActive ? 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)' : (darkMode ? '#111c44' : '#ffffff'),
+                  backgroundColor: isActive ? 'transparent' : (darkMode ? '#0f172a' : '#ffffff'),
+                  background: isActive ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : (darkMode ? '#0f172a' : '#ffffff'),
                   color: isActive ? '#ffffff' : (darkMode ? '#cbd5e1' : '#475569'),
                   border: '1px solid',
                   borderColor: isActive ? 'transparent' : (darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1'),
-                  boxShadow: isActive ? '0 3px 8px rgba(94, 114, 228, 0.35)' : 'none',
+                  boxShadow: isActive ? '0 3px 8px rgba(22, 163, 74, 0.35)' : 'none',
                   '&:hover': {
-                    backgroundColor: isActive ? '#485ec4' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9'),
-                    borderColor: isActive ? 'transparent' : '#5e72e4',
+                    backgroundColor: isActive ? '#15803d' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9'),
+                    borderColor: isActive ? 'transparent' : '#16a34a',
                     color: isActive ? '#ffffff' : (darkMode ? '#ffffff' : '#1e293b'),
                     transform: 'translateY(-1px)',
                   },
                 }}
               >
-                <span style={{ marginRight: '4px', fontSize: '12px' }}>{qs.icon}</span>
+                <Box component="span" sx={{ mr: 0.5, display: 'inline-flex', alignItems: 'center' }}>{renderQuickSortIcon(qs.iconType)}</Box>
                 {qs.label}
               </Button>
             );
@@ -454,7 +476,7 @@ function FilterBar({
               MenuProps={{
                 PaperProps: {
                   sx: {
-                    backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                    backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                     color: darkMode ? '#ffffff' : 'inherit',
                     border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                   },
@@ -465,7 +487,7 @@ function FilterBar({
                 fontWeight: 600,
                 borderRadius: '8px',
                 fontFamily: '"Open Sans", sans-serif',
-                backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                 color: darkMode ? '#ffffff' : '#344767',
                 height: '36px',
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
@@ -475,7 +497,7 @@ function FilterBar({
             >
               
               <ListSubheader sx={{ lineHeight: '28px', fontSize: '11px', fontWeight: 700, color: '#8392ab', bgcolor: '#f8fafc' }}>
-                🕒 TIMELINE & RECENCY
+                Timeline & Recency
               </ListSubheader>
               <MenuItem value="newest" sx={{ fontSize: '12.5px', py: 0.8 }}>
                 Latest / Most Recent (Default)
@@ -485,7 +507,7 @@ function FilterBar({
               </MenuItem>
 
               <ListSubheader sx={{ lineHeight: '28px', fontSize: '11px', fontWeight: 700, color: '#8392ab', bgcolor: '#f8fafc' }}>
-                🔥 INTERACTIONS & REACH
+                Interactions & Reach
               </ListSubheader>
               <MenuItem value="engagement" sx={{ fontSize: '12.5px', py: 0.8 }}>
                 Most Interactions (Total Engagement)
@@ -504,7 +526,7 @@ function FilterBar({
               </MenuItem>
 
               <ListSubheader sx={{ lineHeight: '28px', fontSize: '11px', fontWeight: 700, color: '#8392ab', bgcolor: '#f8fafc' }}>
-                ⚠️ AIR QUALITY & SEVERITY
+                Air Quality & Severity
               </ListSubheader>
               <MenuItem value="aqi_desc" sx={{ fontSize: '12.5px', py: 0.8 }}>
                 Highest AQI (Worst Air Pollution)
@@ -517,7 +539,7 @@ function FilterBar({
               </MenuItem>
 
               <ListSubheader sx={{ lineHeight: '28px', fontSize: '11px', fontWeight: 700, color: '#8392ab', bgcolor: '#f8fafc' }}>
-                👥 AUTHOR & INFLUENCE
+                Author & Influence
               </ListSubheader>
               <MenuItem value="followers" sx={{ fontSize: '12.5px', py: 0.8 }}>
                 Top Author Reach (Most Followers)
@@ -527,7 +549,7 @@ function FilterBar({
               </MenuItem>
 
               <ListSubheader sx={{ lineHeight: '28px', fontSize: '11px', fontWeight: 700, color: '#8392ab', bgcolor: '#f8fafc' }}>
-                🚨 CITIZEN URGENCY & SENTIMENT
+                Citizen Urgency & Sentiment
               </ListSubheader>
               <MenuItem value="sentiment_alarm" sx={{ fontSize: '12.5px', py: 0.8 }}>
                 Most Critical / Alarmed Sentiment
@@ -537,7 +559,7 @@ function FilterBar({
               </MenuItem>
 
               <ListSubheader sx={{ lineHeight: '28px', fontSize: '11px', fontWeight: 700, color: '#8392ab', bgcolor: '#f8fafc' }}>
-                📸 MEDIA & PROOF
+                Media & Proof
               </ListSubheader>
               <MenuItem value="media_count" sx={{ fontSize: '12.5px', py: 0.8 }}>
                 Most Media Attachments (Photos/Proof)
@@ -561,7 +583,7 @@ function FilterBar({
                 minWidth: '38px',
                 px: 1,
                 borderRadius: '8px',
-                backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                 borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
                 color: darkMode ? '#cbd5e1' : '#475569',
                 display: 'flex',
@@ -572,20 +594,20 @@ function FilterBar({
                 fontSize: '11.5px',
                 fontWeight: 600,
                 '&:hover': {
-                  borderColor: '#5e72e4',
-                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : '#f1f5f9',
-                  color: '#5e72e4',
+                  borderColor: '#16a34a',
+                  backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : '#f1f5f9',
+                  color: '#16a34a',
                 },
               }}
             >
               {filters.sortOrder === 'asc' ? (
                 <>
-                  <NorthRoundedIcon sx={{ fontSize: '16px', color: '#5e72e4' }} />
+                  <NorthRoundedIcon sx={{ fontSize: '16px', color: '#16a34a' }} />
                   <span style={{ display: 'none', '@media (min-width: 600px)': { display: 'inline' } }}>Asc</span>
                 </>
               ) : (
                 <>
-                  <SouthRoundedIcon sx={{ fontSize: '16px', color: '#5e72e4' }} />
+                  <SouthRoundedIcon sx={{ fontSize: '16px', color: '#16a34a' }} />
                   <span style={{ display: 'none', '@media (min-width: 600px)': { display: 'inline' } }}>Desc</span>
                 </>
               )}
@@ -622,8 +644,8 @@ function FilterBar({
 
           {[
             { id: 'all', label: 'All Posts' },
-            { id: 'media', label: 'With Images 🖼️' },
-            { id: 'text', label: 'Text Only 📝' },
+            { id: 'media', label: 'With Images' },
+            { id: 'text', label: 'Text Only' },
           ].map((item) => {
             const active = filters.media === item.id;
             return (
@@ -639,12 +661,12 @@ function FilterBar({
                   borderRadius: '20px',
                   px: 1.4,
                   py: 0.3,
-                  backgroundColor: active ? '#5e72e4' : (darkMode ? '#0b1437' : '#f8fafc'),
+                  backgroundColor: active ? '#16a34a' : (darkMode ? '#090e15' : '#f8fafc'),
                   color: active ? '#ffffff' : (darkMode ? '#94a3b8' : '#64748b'),
                   border: '1px solid',
-                  borderColor: active ? '#5e72e4' : (darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1'),
+                  borderColor: active ? '#16a34a' : (darkMode ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1'),
                   '&:hover': {
-                    backgroundColor: active ? '#4b5fcc' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9'),
+                    backgroundColor: active ? '#15803d' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9'),
                   },
                 }}
               >

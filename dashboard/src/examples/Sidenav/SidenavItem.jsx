@@ -38,7 +38,7 @@ function SidenavItem({ icon, name, active, ...rest }) {
           userSelect: "none",
           transition: "all 0.2s ease-in-out",
           background: active
-            ? "linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)"
+            ? "linear-gradient(135deg, #16a34a 0%, #15803d 100%)"
             : "transparent",
           color: active
             ? "#ffffff"
@@ -46,7 +46,7 @@ function SidenavItem({ icon, name, active, ...rest }) {
             ? "#cbd5e1"
             : "#475569",
           boxShadow: active
-            ? "0 4px 14px 0 rgba(94, 114, 228, 0.35)"
+            ? "0 4px 14px 0 rgba(22, 163, 74, 0.35)"
             : "none",
           "&:hover": {
             backgroundColor: active

@@ -1,8 +1,8 @@
 
 const colors = {
   background: {
-    default: "#051139",
-    dark: "#111c44",
+    default: "#090e15",
+    dark: "#0f172a",
   },
 
   text: {
@@ -26,8 +26,8 @@ const colors = {
   },
 
   primary: {
-    main: "#5e72e4",
-    focus: "#5e72e4",
+    main: "#22c55e",
+    focus: "#16a34a",
   },
 
   secondary: {
@@ -37,7 +37,7 @@ const colors = {
 
   info: {
     main: "#11cdef",
-    focus: "#11cdef",
+    focus: "#22c55e",
   },
 
   success: {
@@ -79,8 +79,8 @@ const colors = {
 
   gradients: {
     primary: {
-      main: "#5e72e4",
-      state: "#825ee4",
+      main: "#16a34a",
+      state: "#22c55e",
     },
 
     secondary: {
@@ -183,8 +183,8 @@ const colors = {
 
   alertColors: {
     primary: {
-      main: "#5e72e4",
-      state: "#673bde",
+      main: "#22c55e",
+      state: "#16a34a",
       border: "#cfd5f7",
     },
 
@@ -233,8 +233,8 @@ const colors = {
 
   badgeColors: {
     primary: {
-      background: "#eaecfb",
-      text: "##2643e9",
+      background: "rgba(34, 197, 94, 0.2)",
+      text: "#4ade80",
     },
 
     secondary: {
@@ -274,7 +274,7 @@ const colors = {
   },
 
   inputColors: {
-    borderColor: { main: "#f0f2f566", focus: "#11cdef" },
+    borderColor: { main: "#f0f2f566", focus: "#22c55e" },
     error: "#f5365c",
     success: "#2dce89",
   },

@@ -137,7 +137,7 @@ function PostsView({
           EPA Punjab Social Listening Posts Feed
         </Typography>
         <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontSize: '14px', color: darkMode ? '#94a3b8' : '#67748e' }}>
-          Explore post previews, author attribution, interactive multi-dimensional sorting, and clickable direct links to live X.com posts.
+          Filter and review verified environmental reports, author attribution, air quality metrics, and direct links to original posts.
         </Typography>
       </Box>
 
@@ -198,7 +198,7 @@ function PostsView({
                     borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
                     '&.Mui-selected': {
                       color: '#ffffff',
-                      backgroundColor: '#5e72e4',
+                      backgroundColor: '#16a34a',
                     },
                     '&:hover': {
                       backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
@@ -216,7 +216,7 @@ function PostsView({
             textAlign: 'center',
             my: 4,
             borderRadius: '16px',
-            backgroundColor: darkMode ? '#111c44' : '#fff',
+            backgroundColor: darkMode ? '#0f172a' : '#fff',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
             boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.04)',
           }}
@@ -226,7 +226,7 @@ function PostsView({
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -263,7 +263,7 @@ function PostsView({
             variant="contained"
             onClick={handleResetFilters}
             sx={{
-              background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
               color: '#fff',
               textTransform: 'none',
               fontFamily: '"Open Sans", sans-serif',

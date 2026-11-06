@@ -432,7 +432,7 @@ export default function RolesView() {
           mb: 3,
           borderRadius: '16px',
           boxShadow: '0 8px 26px rgba(0,0,0,0.04)',
-          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           alignItems: { xs: 'flex-start', md: 'center' },
@@ -451,7 +451,7 @@ export default function RolesView() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#5e72e4',
+              color: '#16a34a',
               boxShadow: 'none',
               flexShrink: 0
             }}
@@ -511,7 +511,7 @@ export default function RolesView() {
               onClick={handleOpenCreate}
               startIcon={<AddModeratorRoundedIcon sx={{ fontSize: '19px !important' }} />}
               sx={{
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 color: '#ffffff',
                 borderRadius: '8px',
                 textTransform: 'none',
@@ -522,7 +522,7 @@ export default function RolesView() {
                 boxShadow: 'none',
                 transition: 'all 0.15s ease',
                 '&:hover': {
-                  backgroundColor: '#4b5fcc',
+                  backgroundColor: '#15803d',
                   boxShadow: 'none'
                 }
               }}
@@ -540,7 +540,7 @@ export default function RolesView() {
           mb: 3
         }}
       >
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -570,7 +570,7 @@ export default function RolesView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -579,7 +579,7 @@ export default function RolesView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -601,7 +601,7 @@ export default function RolesView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -610,7 +610,7 @@ export default function RolesView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -632,7 +632,7 @@ export default function RolesView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -641,7 +641,7 @@ export default function RolesView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -668,7 +668,7 @@ export default function RolesView() {
           p: 2,
           mb: 3,
           borderRadius: '14px',
-          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           boxShadow: '0 4px 18px rgba(0,0,0,0.02)',
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
@@ -697,7 +697,7 @@ export default function RolesView() {
                   </IconButton>
                 </InputAdornment>
               ),
-              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }
+              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }
             }}
           />
         </Box>
@@ -739,7 +739,7 @@ export default function RolesView() {
       </Card>
 {loading ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <CircularProgress size={40} sx={{ color: '#5e72e4', mb: 2 }} />
+          <CircularProgress size={40} sx={{ color: '#16a34a', mb: 2 }} />
           <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#64748b' }}>
             Loading roles and permission clearance registry...
           </Typography>
@@ -809,7 +809,7 @@ export default function RolesView() {
                           borderRadius: '14px',
                           backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                           border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                          color: '#5e72e4',
+                          color: '#16a34a',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -877,7 +877,7 @@ export default function RolesView() {
                                 height: '20px',
                                 fontSize: '10.5px',
                                 fontWeight: 700,
-                                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                                 color: '#64748b',
                                 border: '1px solid #e2e8f0'
                               }}
@@ -907,9 +907,9 @@ export default function RolesView() {
                             onClick={() => handleOpenEdit(r)}
                             sx={{
                               color: '#64748b',
-                              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                               border: '1px solid #e2e8f0',
-                              '&:hover': { color: '#5e72e4', backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }
+                              '&:hover': { color: '#16a34a', backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }
                             }}
                           >
                             <EditRoundedIcon sx={{ fontSize: '16px' }} />
@@ -926,7 +926,7 @@ export default function RolesView() {
                               onClick={() => handleOpenDelete(r)}
                               sx={{
                                 color: '#94a3b8',
-                                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                                 border: '1px solid #e2e8f0',
                                 '&:hover': { color: '#ef4444', backgroundColor: '#fef2f2', borderColor: '#fecaca' },
                                 '&.Mui-disabled': { opacity: 0.4 }
@@ -954,8 +954,8 @@ export default function RolesView() {
                     sx={{
                       p: 1.8,
                       borderRadius: '12px',
-                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
-                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                      backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                       mb: 2.5
                     }}
                   >
@@ -986,7 +986,7 @@ export default function RolesView() {
                         borderRadius: 3,
                         backgroundColor: '#e2e8f0',
                         '& .MuiLinearProgress-bar': {
-                          backgroundColor: '#5e72e4',
+                          backgroundColor: '#16a34a',
                           borderRadius: 3
                         }
                       }}
@@ -1016,13 +1016,13 @@ export default function RolesView() {
                         let statusText = 'Locked';
 
                         if (coverage.status === 'full') {
-                          badgeBg = darkMode ? '#0b1437' : '#f8fafc';
+                          badgeBg = darkMode ? '#090e15' : '#f8fafc';
                           badgeBorder = darkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0';
                           badgeTextColor = '#059669';
                           iconColor = '#059669';
                           statusText = 'Full';
                         } else if (coverage.status === 'partial') {
-                          badgeBg = darkMode ? '#0b1437' : '#f8fafc';
+                          badgeBg = darkMode ? '#090e15' : '#f8fafc';
                           badgeBorder = darkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0';
                           badgeTextColor = '#475569';
                           iconColor = '#475569';
@@ -1084,7 +1084,7 @@ export default function RolesView() {
                     sx={{
                       p: 2,
                       px: 3,
-                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                       borderTop: '1px solid #f1f5f9',
                       display: 'flex',
                       alignItems: 'center',
@@ -1109,7 +1109,7 @@ export default function RolesView() {
                         borderRadius: '8px',
                         px: 2,
                         py: 0.6,
-                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                         color: darkMode ? '#ffffff' : '#334155',
                         boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
                         transition: 'all 0.2s ease',
@@ -1162,8 +1162,7 @@ export default function RolesView() {
                   height: 50,
                   borderRadius: '14px',
                   backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(8px)',
-                  display: 'flex',
+                                    display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
@@ -1329,7 +1328,7 @@ export default function RolesView() {
 <Box
             sx={{
               p: 2.5,
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
               display: 'flex',
               flexDirection: 'column',
@@ -1347,7 +1346,7 @@ export default function RolesView() {
                   placeholder="e.g. Regional Field Officer"
                   value={formData.displayName}
                   onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                  InputProps={{ sx: { borderRadius: '8px', backgroundColor: darkMode ? '#0b1437' : '#ffffff', color: darkMode ? '#ffffff' : '#1e293b', fontSize: '13px', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } } }}
+                  InputProps={{ sx: { borderRadius: '8px', backgroundColor: darkMode ? '#090e15' : '#ffffff', color: darkMode ? '#ffffff' : '#1e293b', fontSize: '13px', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } } }}
                 />
               </Box>
 
@@ -1389,7 +1388,7 @@ export default function RolesView() {
                 InputProps={{
                   sx: {
                     borderRadius: '8px',
-                    backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                    backgroundColor: darkMode ? '#090e15' : '#ffffff',
                     color: darkMode ? '#ffffff' : '#1e293b',
                     fontSize: '13px',
                     '& textarea': { resize: 'none' },
@@ -1417,7 +1416,7 @@ export default function RolesView() {
                 overflowY: { xs: 'hidden', md: 'auto' },
                 borderRight: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : { xs: 'none', md: '1px solid #e2e8f0' },
                 borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : { xs: '1px solid #e2e8f0', md: 'none' },
-                backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                backgroundColor: darkMode ? '#090e15' : '#ffffff',
                 p: { xs: 1, md: 1.5 },
                 gap: { xs: 1, md: 0 },
                 flexShrink: 0,
@@ -1470,7 +1469,7 @@ export default function RolesView() {
                 />
               </Box>
 {Object.entries(permissionsData.byModule).map(([modName, perms]) => {
-                const conf = MODULE_CONFIG[modName] || { icon: RuleRoundedIcon, color: '#5e72e4' };
+                const conf = MODULE_CONFIG[modName] || { icon: RuleRoundedIcon, color: '#16a34a' };
                 const ModIcon = conf.icon;
                 const moduleIds = perms.map((p) => p.id);
                 const grantedInMod = moduleIds.filter((id) => formData.permissionIds.includes(id)).length;
@@ -1561,14 +1560,14 @@ export default function RolesView() {
                         </IconButton>
                       </InputAdornment>
                     ),
-                    sx: { borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#0b1437' : '#ffffff', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
+                    sx: { borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#090e15' : '#ffffff', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
                   }}
                 />
               </Box>
 {Object.entries(permissionsData.byModule)
                 .filter(([modName]) => activeModuleTab === 'ALL' || activeModuleTab === modName)
                 .map(([modName, perms]) => {
-                  const conf = MODULE_CONFIG[modName] || { icon: RuleRoundedIcon, color: '#5e72e4' };
+                  const conf = MODULE_CONFIG[modName] || { icon: RuleRoundedIcon, color: '#16a34a' };
                   const ModIcon = conf.icon;
                   const moduleIds = perms.map((p) => p.id);
 
@@ -1597,7 +1596,7 @@ export default function RolesView() {
                           p: 1.4,
                           px: 2,
                           borderRadius: '12px',
-                          backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+                          backgroundColor: darkMode ? '#090e15' : '#ffffff',
                           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                           mb: 1.5
@@ -1642,7 +1641,7 @@ export default function RolesView() {
                               borderColor: '#cbd5e1',
                               color: allChecked ? '#b91c1c' : '#334155',
                               '&:hover': {
-                                borderColor: allChecked ? '#ef4444' : '#5e72e4',
+                                borderColor: allChecked ? '#ef4444' : '#16a34a',
                                 backgroundColor: allChecked ? '#fef2f2' : '#f8fafc'
                               }
                             }}
@@ -1669,8 +1668,8 @@ export default function RolesView() {
                               sx={{
                                 p: 1.8,
                                 borderRadius: '12px',
-                                                                backgroundColor: isChecked ? (darkMode ? 'rgba(94, 114, 228, 0.15)' : '#f8faff') : (darkMode ? '#0b1437' : '#ffffff'),
-                                border: isChecked ? (darkMode ? '1px solid #825ee4' : '1px solid #5e72e4') : (darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0'),
+                                                                backgroundColor: isChecked ? (darkMode ? 'rgba(22, 163, 74, 0.15)' : '#f8faff') : (darkMode ? '#090e15' : '#ffffff'),
+                                border: isChecked ? (darkMode ? '1px solid #22c55e' : '1px solid #16a34a') : (darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0'),
                                 boxShadow: 'none',
                                 cursor: 'pointer',
                                 display: 'flex',
@@ -1678,7 +1677,7 @@ export default function RolesView() {
                                 gap: 1.5,
                                 transition: 'all 0.18s ease',
                                 '&:hover': {
-                                  borderColor: isChecked ? '#5e72e4' : '#cbd5e1',
+                                  borderColor: isChecked ? '#16a34a' : '#cbd5e1',
                                   transform: 'translateY(-1px)',
                                   boxShadow: '0 6px 16px rgba(0,0,0,0.05)'
                                 }
@@ -1693,7 +1692,7 @@ export default function RolesView() {
                                   p: 0,
                                   mt: 0.2,
                                   color: '#cbd5e1',
-                                  '&.Mui-checked': { color: '#5e72e4' }
+                                  '&.Mui-checked': { color: '#16a34a' }
                                 }}
                               />
 
@@ -1740,7 +1739,7 @@ export default function RolesView() {
                                     fontFamily: 'monospace',
                                     fontWeight: 600,
                                     backgroundColor: isChecked ? '#eef2ff' : '#f1f5f9',
-                                    color: isChecked ? '#5e72e4' : '#64748b'
+                                    color: isChecked ? '#16a34a' : '#64748b'
                                   }}
                                 />
                               </Box>
@@ -1758,7 +1757,7 @@ export default function RolesView() {
           sx={{
             p: 2.2,
             px: 3,
-            backgroundColor: darkMode ? '#0b1437' : '#ffffff',
+            backgroundColor: darkMode ? '#090e15' : '#ffffff',
             borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             display: 'flex',
             alignItems: 'center',
@@ -1768,7 +1767,7 @@ export default function RolesView() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
               Permissions Selected:{' '}
-              <Box component="span" sx={{ fontWeight: 800, color: '#5e72e4' }}>
+              <Box component="span" sx={{ fontWeight: 800, color: '#16a34a' }}>
                 {formData.permissionIds.length} of {totalPermissionsCount}
               </Box>
             </Typography>
@@ -1797,7 +1796,7 @@ export default function RolesView() {
               onClick={handleSaveModal}
               disabled={actionLoading}
               sx={{
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 color: '#ffffff',
                 textTransform: 'none',
                 fontWeight: 600,
@@ -1807,7 +1806,7 @@ export default function RolesView() {
                 py: 0.9,
                 boxShadow: 'none',
                 '&:hover': {
-                  backgroundColor: '#4b5fcc',
+                  backgroundColor: '#15803d',
                   boxShadow: 'none'
                 }
               }}
@@ -1828,7 +1827,7 @@ export default function RolesView() {
         onClose={() => !actionLoading && setDeleteModalOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '18px', backgroundColor: darkMode ? '#111c44' : '#ffffff', border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none', color: darkMode ? '#ffffff' : 'inherit', p: 1 } }}
+        PaperProps={{ sx: { borderRadius: '18px', backgroundColor: darkMode ? '#0f172a' : '#ffffff', border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none', color: darkMode ? '#ffffff' : 'inherit', p: 1 } }}
       >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 1 }}>
           <WarningAmberRoundedIcon sx={{ color: '#ef4444' }} />
@@ -1840,7 +1839,7 @@ export default function RolesView() {
             <strong>{activeRole?.displayName}</strong> (<code>@{activeRole?.name}</code>)?
           </Typography>
           <Typography sx={{ fontSize: '12px', color: '#64748b', mt: 1.5, backgroundColor: '#fef2f2', p: 1.5, borderRadius: '8px', border: '1px solid #fee2e2' }}>
-            ⚠️ This action cannot be undone. Only custom roles with 0 assigned operators can be safely removed.
+            Note: This action cannot be undone. Only custom roles with 0 assigned operators can be safely removed.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 1 }}>

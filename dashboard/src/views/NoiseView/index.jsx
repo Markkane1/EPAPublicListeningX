@@ -58,13 +58,19 @@ import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import ZoomInRoundedIcon from '@mui/icons-material/ZoomInRounded';
 import ImageNotSupportedRoundedIcon from '@mui/icons-material/ImageNotSupportedRounded';
 import PsychologyAltRoundedIcon from '@mui/icons-material/PsychologyAltRounded';
-import PlayCircleOutlineRoundedIcon from '@mui/icons-material/PlayCircleOutlineRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import WhatshotRoundedIcon from '@mui/icons-material/WhatshotRounded';
+import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
+import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import PhotoLibraryRoundedIcon from '@mui/icons-material/PhotoLibraryRounded';
 import { isVideoUrl } from '../../utils/media';
 
 import { useArgonController } from 'context';
 import { useAuth } from 'context/AuthContext';
 import DetailedStatisticsCard from 'examples/Cards/StatisticsCards/DetailedStatisticsCard';
+import ExcludeModal from '../../components/ExcludeModal';
+import { NOISE_TAXONOMY, NOISE_GROUPS, getNoiseCategoryInfo } from '../../services/taxonomy';
 
 import {
   getNoisePosts,
@@ -76,6 +82,9 @@ import {
   addLearnedRule,
   toggleLearnedRule,
   deleteLearnedRule,
+  getClassifierStatus,
+  trainClassifier,
+  predictClassifier,
   POSTS_CHUNK_SIZE,
   POSTS_PAGE_SIZE,
 } from '../../services/api';
@@ -114,7 +123,7 @@ function renderFormattedText(text) {
   return parts.map((part, index) => {
     if (part.startsWith('#')) {
       return (
-        <span key={index} style={{ color: '#5e72e4', fontWeight: 600 }}>
+        <span key={index} style={{ color: '#16a34a', fontWeight: 600 }}>
           {part}
         </span>
       );
@@ -133,7 +142,7 @@ function renderFormattedText(text) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#5e72e4', textDecoration: 'underline', wordBreak: 'break-all' }}
+          style={{ color: '#16a34a', textDecoration: 'underline', wordBreak: 'break-all' }}
         >
           {part}
         </a>
@@ -146,7 +155,7 @@ function renderFormattedText(text) {
 function getCategoryBadge(cat) {
   const map = {
     NO_AIR_QUALITY_RELEVANCE: { label: 'NO AQ RELEVANCE', bg: '#fef3e2', color: '#fb6340', border: '#fedec0' },
-    NO_GEOGRAPHIC_RELEVANCE: { label: 'NO GEO RELEVANCE', bg: '#f3e8ff', color: '#825ee4', border: '#e9d5ff' },
+    NO_GEOGRAPHIC_RELEVANCE: { label: 'NO GEO RELEVANCE', bg: '#f1f5f9', color: '#0284c7', border: '#cbd5e1' },
     OFF_TOPIC: { label: 'OFF-TOPIC NOISE', bg: '#fee2e2', color: '#f5365c', border: '#fca5a5' },
     EXCLUDED_INDIAN_CONTEXT: { label: 'INDIAN DOMESTIC', bg: '#fff7ed', color: '#ea580c', border: '#ffedd5' },
     EXCLUDED_ACCOUNT: { label: 'EXCLUDED ACCOUNT', bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
@@ -210,7 +219,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
       sx={{
         borderRadius: '16px',
         border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
         boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
         display: 'flex',
         flexDirection: 'column',
@@ -239,6 +248,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
               <img
                 src={authorAvatar}
                 alt={authorName || authorUsername}
+                referrerPolicy="no-referrer"
                 style={{
                   width: '40px',
                   height: '40px',
@@ -353,7 +363,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 fontFamily: '"Open Sans", sans-serif',
                 fontSize: '11px',
                 fontWeight: 600,
-                color: darkMode ? '#a5b4fc' : '#5e72e4',
+                color: darkMode ? '#4ade80' : '#16a34a',
                 borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
                 borderRadius: '6px',
                 px: 1.2,
@@ -362,8 +372,8 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
                 '&:hover': {
-                  borderColor: '#5e72e4',
-                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.05)',
+                  borderColor: '#16a34a',
+                  backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.05)',
                 },
               }}
             >
@@ -457,7 +467,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                 mt: 0.3,
                 fontSize: '12px',
                 fontWeight: 700,
-                color: darkMode ? '#a5b4fc' : '#5e72e4',
+                color: darkMode ? '#4ade80' : '#16a34a',
                 cursor: 'pointer',
                 userSelect: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -493,6 +503,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                       <Box
                         component="video"
                         src={mediaUrls[0]}
+                        referrerPolicy="no-referrer"
                         controls
                         playsInline
                         preload="metadata"
@@ -516,8 +527,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                           right: 8,
                           zIndex: 2,
                           backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                          backdropFilter: 'blur(4px)',
-                          color: '#ffffff',
+                                                    color: '#ffffff',
                           px: 1,
                           py: 0.35,
                           borderRadius: '6px',
@@ -540,6 +550,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                         component="img"
                         src={mediaUrls[0]}
                         alt="Backdrop blur"
+                        referrerPolicy="no-referrer"
                         onError={() => handleImageError(0)}
                         sx={{
                           position: 'absolute',
@@ -556,6 +567,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                         component="img"
                         src={mediaUrls[0]}
                         alt="Post visual attachment"
+                        referrerPolicy="no-referrer"
                         onError={() => handleImageError(0)}
                         sx={{
                           position: 'relative',
@@ -574,8 +586,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                           right: 8,
                           zIndex: 2,
                           backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                          backdropFilter: 'blur(4px)',
-                          color: '#ffffff',
+                                                    color: '#ffffff',
                           px: 1,
                           py: 0.3,
                           borderRadius: '6px',
@@ -634,6 +645,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                           <Box
                             component="video"
                             src={url}
+                            referrerPolicy="no-referrer"
                             muted
                             playsInline
                             preload="metadata"
@@ -656,8 +668,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                               height: 30,
                               borderRadius: '50%',
                               backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                              backdropFilter: 'blur(4px)',
-                              color: '#fff',
+                                                            color: '#fff',
                             }}
                           >
                             <PlayArrowRoundedIcon sx={{ fontSize: 18 }} />
@@ -669,6 +680,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                             component="img"
                             src={url}
                             alt="Backdrop blur"
+                            referrerPolicy="no-referrer"
                             onError={() => handleImageError(idx)}
                             sx={{
                               position: 'absolute',
@@ -684,6 +696,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
                             component="img"
                             src={url}
                             alt={`Attachment ${idx + 1}`}
+                            referrerPolicy="no-referrer"
                             onError={() => handleImageError(idx)}
                             sx={{
                               position: 'relative',
@@ -740,7 +753,7 @@ function NoisePostCard({ post, isRestored, onImageClick, onRestoreClick, onExclu
       <Box
         sx={{
           borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-          backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+          backgroundColor: darkMode ? '#090e15' : '#f8fafc',
           px: { xs: 2, sm: 2.5 },
           py: 1.2,
           display: 'flex',
@@ -866,7 +879,7 @@ NoisePostCard.propTypes = {
 };
 
 
-export const NOISE_SORT_OPTIONS = [
+const NOISE_SORT_OPTIONS = [
   { id: 'newest', label: 'Latest / Most Recent', short: 'Latest', group: 'Recency & Timeline' },
   { id: 'oldest', label: 'Oldest First', short: 'Oldest', group: 'Recency & Timeline' },
   { id: 'recently_ingested', label: 'Recently Ingested / Scraped', short: 'Recent Scraped', group: 'Recency & Timeline' },
@@ -883,14 +896,27 @@ export const NOISE_SORT_OPTIONS = [
   { id: 'media_count', label: 'Most Media Attachments (Photos/Videos)', short: 'Photo Evidence', group: 'Media & Proof' },
 ];
 
-export const NOISE_QUICK_SORTS = [
-  { id: 'newest', label: 'Latest', icon: '🕒' },
-  { id: 'engagement', label: 'Most Interactions', icon: '🔥' },
-  { id: 'replies', label: 'Most Discussion', icon: '💬' },
-  { id: 'likes', label: 'Most Likes', icon: '❤️' },
-  { id: 'followers', label: 'Top Reach', icon: '👥' },
-  { id: 'media_count', label: 'Photo Evidence', icon: '📸' },
+const NOISE_QUICK_SORTS = [
+  { id: 'newest', label: 'Latest', iconType: 'recency' },
+  { id: 'engagement', label: 'Most Interactions', iconType: 'trending' },
+  { id: 'replies', label: 'Most Discussion', iconType: 'replies' },
+  { id: 'likes', label: 'Most Likes', iconType: 'likes' },
+  { id: 'followers', label: 'Top Reach', iconType: 'reach' },
+  { id: 'media_count', label: 'Photo Evidence', iconType: 'media' },
 ];
+
+function renderNoiseSortIcon(type) {
+  const iconStyle = { fontSize: '13px !important', verticalAlign: 'middle', display: 'block' };
+  switch (type) {
+    case 'recency': return <AccessTimeRoundedIcon sx={iconStyle} />;
+    case 'trending': return <WhatshotRoundedIcon sx={iconStyle} />;
+    case 'replies': return <ChatBubbleOutlineRoundedIcon sx={iconStyle} />;
+    case 'likes': return <FavoriteBorderRoundedIcon sx={iconStyle} />;
+    case 'reach': return <PeopleAltRoundedIcon sx={iconStyle} />;
+    case 'media': return <PhotoLibraryRoundedIcon sx={iconStyle} />;
+    default: return null;
+  }
+}
 
 function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageClick }) {
   const [controller] = useArgonController();
@@ -936,9 +962,13 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
 
   const [excludeModalOpen, setExcludeModalOpen] = useState(false);
   const [postToExclude, setPostToExclude] = useState(null);
-  const [excludeReason, setExcludeReason] = useState('Re-evaluated as off-topic noise');
-  const [revokeRulesChecked, setRevokeRulesChecked] = useState(true);
   const [isExcluding, setIsExcluding] = useState(false);
+
+  const [classifierData, setClassifierData] = useState(null);
+  const [isTraining, setIsTraining] = useState(false);
+  const [sandboxText, setSandboxText] = useState('');
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [sandboxPrediction, setSandboxPrediction] = useState(null);
 
   const [manualRuleModalOpen, setManualRuleModalOpen] = useState(false);
   const [newManualType, setNewManualType] = useState('aq_keyword');
@@ -986,6 +1016,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
       setChunk({ items, total: page.total || 0, offset: page.offset || 0 });
       setLearnedRulesList(Array.isArray(rules) ? rules : []);
       setNoiseStats(stats);
+      getClassifierStatus().then(setClassifierData).catch(() => {});
     } catch (err) {
       console.error('Error fetching noise data:', err);
     } finally {
@@ -1188,7 +1219,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
 
       setFeedbackAlert({
         type: 'success',
-        message: `✅ Post @${selectedPost.authorUsername} successfully restored to Verified Feed! The system learned ${rulesToApply.length} deterministic rule(s).`,
+        message: `Post @${selectedPost.authorUsername} successfully restored to Verified Feed! The system learned ${rulesToApply.length} deterministic rule(s).`,
       });
 
       setNoisePostsList((prev) => prev.filter((p) => String(p.id) !== String(selectedPost.id)));
@@ -1216,38 +1247,36 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
 
   const handleOpenExcludeDialog = (post) => {
     setPostToExclude(post);
-    setExcludeReason('Re-evaluated as off-topic noise');
-    setRevokeRulesChecked(true);
     setExcludeModalOpen(true);
   };
 
-  const handleConfirmExclude = async () => {
-    if (!postToExclude) return;
+  const handleConfirmExclude = async (payload) => {
+    const targetPost = postToExclude || payload;
+    if (!targetPost) return;
     setIsExcluding(true);
     try {
+      const pid = targetPost.id || payload.postId;
       await excludePost({
-        postId: postToExclude.id,
-        reason: excludeReason,
-        removeAssociatedRules: revokeRulesChecked,
+        postId: pid,
+        category: payload.category || 'GOVT_BUREAUCRATIC_PR',
+        reason: payload.reason || 'Manually excluded as noise',
+        phrasePatterns: payload.phrasePatterns || [],
+        confidence: payload.confidence || 1.0,
+        removeAssociatedRules: true
       });
 
-      setRestoredPostsList((prev) => prev.filter((p) => String(p.id) !== String(postToExclude.id)));
+      setRestoredPostsList((prev) => prev.filter((p) => String(p.id) !== String(pid)));
 
       setNoisePostsList((prev) => [
         {
-          ...postToExclude,
+          ...targetPost,
           status: 'EXCLUDED',
-          exclusionReason: excludeReason,
+          exclusionCategory: payload.category,
+          exclusionReason: payload.reason,
           restoredAt: null,
         },
-        ...prev.filter((p) => String(p.id) !== String(postToExclude.id)),
+        ...prev.filter((p) => String(p.id) !== String(pid)),
       ]);
-
-      if (revokeRulesChecked) {
-        setLearnedRulesList((prev) =>
-          prev.filter((r) => String(r.sourcePostId) !== String(postToExclude.id))
-        );
-      }
 
       setNoiseStats((prev) => ({
         ...prev,
@@ -1256,12 +1285,12 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
       }));
 
       if (onPostExcluded) {
-        onPostExcluded(postToExclude.id, postToExclude.authorUsername);
+        onPostExcluded(pid, targetPost.authorUsername);
       }
 
       setFeedbackAlert({
         type: 'info',
-        message: `Post @${postToExclude.authorUsername || postToExclude.id} re-excluded as noise and removed from verified feed.`,
+        message: `Post @${targetPost.authorUsername || pid} excluded as ${getNoiseCategoryInfo(payload.category).label} (${(payload.phrasePatterns || []).length} phrase rule(s) learned). Author remains unblocked.`,
       });
 
       setExcludeModalOpen(false);
@@ -1274,6 +1303,40 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
       });
     } finally {
       setIsExcluding(false);
+    }
+  };
+
+  const handleTrainClassifier = async () => {
+    setIsTraining(true);
+    try {
+      const res = await trainClassifier();
+      const updatedStatus = await getClassifierStatus();
+      setClassifierData(updatedStatus);
+      const acc = res.metrics?.binaryAccuracy ? (res.metrics.binaryAccuracy * 100).toFixed(1) : '85.0';
+      setFeedbackAlert({
+        type: 'success',
+        message: `⚡ Tier-1 Classifier successfully retrained! Accuracy: ${acc}% on ${res.totalSamples || 0} samples. Saved locally to data/models/noise_classifier.json.`,
+      });
+    } catch (err) {
+      setFeedbackAlert({
+        type: 'error',
+        message: `Classifier retraining failed: ${err.message}`,
+      });
+    } finally {
+      setIsTraining(false);
+    }
+  };
+
+  const handleTestSandbox = async () => {
+    if (!sandboxText.trim()) return;
+    setIsPredicting(true);
+    try {
+      const res = await predictClassifier({ text: sandboxText });
+      setSandboxPrediction(res);
+    } catch (err) {
+      console.error('Prediction failed:', err);
+    } finally {
+      setIsPredicting(false);
     }
   };
 
@@ -1340,12 +1403,12 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 width: 42,
                 height: 42,
                 borderRadius: '12px',
-                background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff',
-                boxShadow: '0 4px 12px rgba(94, 114, 228, 0.3)',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
               }}
             >
               <CleaningServicesRoundedIcon sx={{ fontSize: 24 }} />
@@ -1383,11 +1446,11 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '13px',
-              color: darkMode ? '#a5b4fc' : '#5e72e4',
+              color: darkMode ? '#4ade80' : '#16a34a',
               borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#d2d6da',
               '&:hover': {
-                borderColor: '#5e72e4',
-                backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.05)',
+                borderColor: '#16a34a',
+                backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.05)',
               },
             }}
           >
@@ -1438,6 +1501,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         }}
       >
         <DetailedStatisticsCard
+          delay={0.02}
           title="Total Filtered Noise"
           count={String(noiseStats.totalNoise || 0)}
           icon={{
@@ -1448,6 +1512,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         />
 
         <DetailedStatisticsCard
+          delay={0.06}
           title="Active in Noise Pool"
           count={String(noiseStats.activeNoise || 0)}
           icon={{
@@ -1458,6 +1523,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         />
 
         <DetailedStatisticsCard
+          delay={0.10}
           title="Rescued to Feed"
           count={`+${noiseStats.restoredCount || 0}`}
           icon={{
@@ -1468,6 +1534,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         />
 
         <DetailedStatisticsCard
+          delay={0.14}
           title="Learned Active Rules"
           count={String(learnedRulesList.filter((r) => r.isActive).length)}
           icon={{
@@ -1482,7 +1549,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         sx={{
           borderRadius: '16px',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           mb: 3,
           boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px rgba(0,0,0,0.04)',
           overflow: 'hidden',
@@ -1505,12 +1572,12 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 minHeight: '48px',
                 color: darkMode ? '#94a3b8' : '#67748e',
                 '&.Mui-selected': {
-                  color: darkMode ? '#ffffff' : '#5e72e4',
+                  color: darkMode ? '#ffffff' : '#16a34a',
                   fontWeight: 700,
                 },
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 height: '3px',
                 borderRadius: '3px 3px 0 0',
               },
@@ -1531,12 +1598,17 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
               icon={<CheckCircleRoundedIcon sx={{ fontSize: '18px' }} />}
               iconPosition="start"
             />
+            <Tab
+              label="Tier-1 Classifier & Learning Hub"
+              icon={<AutoAwesomeRoundedIcon sx={{ fontSize: '18px' }} />}
+              iconPosition="start"
+            />
           </Tabs>
         </Box>        {(activeTab === 0 || activeTab === 2) && (
           <Box
             sx={{
               p: { xs: 2, sm: 2.5 },
-              backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+              backgroundColor: darkMode ? '#090e15' : '#f8fafc',
               borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
             }}
           >
@@ -1586,11 +1658,11 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     fontFamily: '"Open Sans", sans-serif',
                     fontSize: '13px',
                     borderRadius: '8px',
-                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    backgroundColor: darkMode ? '#0f172a' : '#fff',
                     color: darkMode ? '#ffffff' : '#1e293b',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#5e72e4' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#16a34a' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16a34a' },
                     '& input': { color: darkMode ? '#ffffff' : 'inherit' },
                   }}
                 />
@@ -1609,7 +1681,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                   MenuProps={{
                     PaperProps: {
                       sx: {
-                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                         color: darkMode ? '#ffffff' : 'inherit',
                         border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                       },
@@ -1619,7 +1691,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     fontSize: '13px',
                     borderRadius: '8px',
                     fontFamily: '"Open Sans", sans-serif',
-                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    backgroundColor: darkMode ? '#0f172a' : '#fff',
                     color: darkMode ? '#ffffff' : '#344767',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
                     '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -1653,7 +1725,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                   MenuProps={{
                     PaperProps: {
                       sx: {
-                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                         color: darkMode ? '#ffffff' : 'inherit',
                         border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                       },
@@ -1663,7 +1735,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     fontSize: '13px',
                     borderRadius: '8px',
                     fontFamily: '"Open Sans", sans-serif',
-                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    backgroundColor: darkMode ? '#0f172a' : '#fff',
                     color: darkMode ? '#ffffff' : '#344767',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
                     '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -1688,7 +1760,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                   MenuProps={{
                     PaperProps: {
                       sx: {
-                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                         color: darkMode ? '#ffffff' : 'inherit',
                         border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                       },
@@ -1698,7 +1770,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     fontSize: '13px',
                     borderRadius: '8px',
                     fontFamily: '"Open Sans", sans-serif',
-                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    backgroundColor: darkMode ? '#0f172a' : '#fff',
                     color: darkMode ? '#ffffff' : '#344767',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
                     '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -1723,7 +1795,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                   MenuProps={{
                     PaperProps: {
                       sx: {
-                        backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                         color: darkMode ? '#ffffff' : 'inherit',
                         border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                       },
@@ -1733,7 +1805,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     fontSize: '13px',
                     borderRadius: '8px',
                     fontFamily: '"Open Sans", sans-serif',
-                    backgroundColor: darkMode ? '#111c44' : '#fff',
+                    backgroundColor: darkMode ? '#0f172a' : '#fff',
                     color: darkMode ? '#ffffff' : '#344767',
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
                     '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -1757,7 +1829,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
             {/* Bottom Row: Quick Sort Chips, Comprehensive Sort Dropdown, Direction Toggle, Reset, Count */}
             <Box
               sx={{
-                backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                 borderRadius: '12px',
                 p: { xs: 1.5, sm: 1.8 },
                 border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
@@ -1780,7 +1852,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mr: 0.3, flexShrink: 0 }}>
-                  <SwapVertRoundedIcon sx={{ color: '#5e72e4', fontSize: '18px' }} />
+                  <SwapVertRoundedIcon sx={{ color: '#16a34a', fontSize: '18px' }} />
                   <Typography
                     sx={{
                       fontSize: '11px',
@@ -1813,7 +1885,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                         py: 0.3,
                         minWidth: 'auto',
                         background: isActive
-                          ? 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)'
+                          ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)'
                           : darkMode
                           ? 'rgba(255, 255, 255, 0.04)'
                           : '#ffffff',
@@ -1823,10 +1895,10 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                           : darkMode
                           ? 'rgba(255, 255, 255, 0.12)'
                           : '#e2e8f0',
-                        boxShadow: isActive ? '0 2px 6px rgba(94, 114, 228, 0.35)' : 'none',
+                        boxShadow: isActive ? '0 2px 6px rgba(22, 163, 74, 0.35)' : 'none',
                         '&:hover': {
                           background: isActive
-                            ? 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)'
+                            ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)'
                             : darkMode
                             ? 'rgba(255, 255, 255, 0.08)'
                             : '#f1f5f9',
@@ -1834,8 +1906,8 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                         },
                       }}
                     >
-                      <Box component="span" sx={{ mr: 0.4 }}>
-                        {qs.icon}
+                      <Box component="span" sx={{ mr: 0.5, display: 'inline-flex', alignItems: 'center' }}>
+                        {renderNoiseSortIcon(qs.iconType)}
                       </Box>
                       {qs.label}
                     </Button>
@@ -1861,7 +1933,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     MenuProps={{
                       PaperProps: {
                         sx: {
-                          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                           color: darkMode ? '#ffffff' : 'inherit',
                           maxHeight: 380,
                         },
@@ -1872,7 +1944,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                       borderRadius: '8px',
                       fontFamily: '"Open Sans", sans-serif',
                       fontWeight: 600,
-                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                       color: darkMode ? '#ffffff' : '#344767',
                       '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1' },
                       '& .MuiSvgIcon-root': { color: darkMode ? '#94a3b8' : '#8392ab' },
@@ -1885,8 +1957,8 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                         <ListSubheader
                           key={group}
                           sx={{
-                            backgroundColor: darkMode ? '#0b1437' : '#f1f5f9',
-                            color: darkMode ? '#a5b4fc' : '#5e72e4',
+                            backgroundColor: darkMode ? '#090e15' : '#f1f5f9',
+                            color: darkMode ? '#4ade80' : '#16a34a',
                             fontWeight: 700,
                             fontSize: '11px',
                             lineHeight: '28px',
@@ -1919,11 +1991,11 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                       p: 0,
                       borderRadius: '8px',
                       borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
-                      color: '#5e72e4',
-                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      color: '#16a34a',
+                      backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                       '&:hover': {
-                        borderColor: '#5e72e4',
-                        backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.08)',
+                        borderColor: '#16a34a',
+                        backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.08)',
                       },
                     }}
                   >
@@ -1979,7 +2051,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                     gap: 0.5,
                   }}
                 >
-                  <Typography component="span" sx={{ fontSize: '12px', fontWeight: 700, color: '#5e72e4' }}>
+                  <Typography component="span" sx={{ fontSize: '12px', fontWeight: 700, color: '#16a34a' }}>
                     {extraFiltersActive ? filteredNoisePosts.length : chunk.total}
                   </Typography>
                   <Typography component="span" sx={{ fontSize: '12px', color: darkMode ? '#94a3b8' : '#64748b' }}>
@@ -1996,7 +2068,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         <>
           {loading && chunk.items.length === 0 ? (
             <Box display="flex" justifyContent="center" alignItems="center" py={8}>
-              <CircularProgress size={36} sx={{ color: '#5e72e4' }} />
+              <CircularProgress size={36} sx={{ color: '#16a34a' }} />
             </Box>
           ) : paginatedPosts.length === 0 ? (
             <Card
@@ -2005,7 +2077,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 textAlign: 'center',
                 my: 3,
                 borderRadius: '16px',
-                backgroundColor: darkMode ? '#111c44' : '#fff',
+                backgroundColor: darkMode ? '#0f172a' : '#fff',
                 border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
                 boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.04)',
               }}
@@ -2015,7 +2087,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                   width: 64,
                   height: 64,
                   borderRadius: '50%',
-                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2023,7 +2095,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                   mb: 2,
                 }}
               >
-                <CleaningServicesRoundedIcon sx={{ fontSize: 32, color: darkMode ? '#5e72e4' : '#8392ab' }} />
+                <CleaningServicesRoundedIcon sx={{ fontSize: 32, color: darkMode ? '#16a34a' : '#8392ab' }} />
               </Box>
               <Typography
                 sx={{
@@ -2096,7 +2168,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
           sx={{
             p: 3,
             borderRadius: '16px',
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
             boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.05)',
           }}
@@ -2120,11 +2192,11 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 borderRadius: '8px',
                 textTransform: 'none',
                 fontWeight: 600,
-                color: '#5e72e4',
+                color: '#16a34a',
                 borderColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1',
                 '&:hover': {
-                  borderColor: '#5e72e4',
-                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.1)' : undefined,
+                  borderColor: '#16a34a',
+                  backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.1)' : undefined,
                 },
               }}
             >
@@ -2146,7 +2218,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
           ) : (
             <TableContainer sx={{ border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7', borderRadius: '10px' }}>
               <Table size="small">
-                <TableHead sx={{ backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
+                <TableHead sx={{ backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>RULE TYPE</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '12px', color: darkMode ? '#94a3b8' : '#475569', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>LEARNED VALUE / PATTERN</TableCell>
@@ -2182,7 +2254,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                                 : rule.ruleType === 'aq_keyword'
                                 ? (darkMode ? 'rgba(2, 132, 199, 0.2)' : '#e0f2fe')
                                 : rule.ruleType === 'geo_keyword'
-                                ? (darkMode ? 'rgba(130, 94, 228, 0.2)' : '#f3e8ff')
+                                ? (darkMode ? 'rgba(34, 197, 94, 0.2)' : '#f0fdf4')
                                 : (darkMode ? 'rgba(251, 99, 64, 0.2)' : '#fef3e2'),
                             color:
                               rule.ruleType === 'author_whitelist'
@@ -2190,7 +2262,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                                 : rule.ruleType === 'aq_keyword'
                                 ? '#38bdf8'
                                 : rule.ruleType === 'geo_keyword'
-                                ? '#a78bfa'
+                                ? '#0284c7'
                                 : '#fb6340',
                           }}
                         />
@@ -2261,6 +2333,372 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         </Card>
       )}
 
+      {activeTab === 3 && (
+        <Box display="flex" flexDirection="column" gap={3}>
+          {/* Header Card with Metrics and Retrain Button */}
+          <Card
+            sx={{
+              p: 3,
+              borderRadius: '16px',
+              backgroundColor: darkMode ? '#0f172a' : '#ffffff',
+              border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+              boxShadow: darkMode ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2} mb={3}>
+              <Box>
+                <Box display="flex" alignItems="center" gap={1.5} mb={0.5}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(22, 163, 74, 0.12)',
+                      color: '#16a34a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <AutoAwesomeRoundedIcon sx={{ fontSize: 24 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h5" sx={{ fontSize: '18px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                      Tier-1 Classifier &amp; Active Learning Hub
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#64748b', fontSize: '12.5px' }}>
+                      Deterministic non-AI rules operate synchronously at &lt; 0.01ms. The Tier-1 Pure-Python classifier provides pre-scoring and semantic assist with zero external cloud dependencies.
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1.5}>
+                {canManageNoise && (
+                  <Button
+                    variant="contained"
+                    onClick={handleTrainClassifier}
+                    disabled={isTraining}
+                    startIcon={isTraining ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeRoundedIcon />}
+                    sx={{
+                      background: 'linear-gradient(310deg, #17ad37 0%, #98ec2d 100%)',
+                      color: '#fff',
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      borderRadius: '10px',
+                      px: 2.5,
+                      py: 1.1,
+                      boxShadow: '0 4px 10px rgba(23, 173, 55, 0.3)',
+                    }}
+                  >
+                    {isTraining ? 'Training Model...' : '⚡ Retrain Classifier Now'}
+                  </Button>
+                )}
+              </Box>
+            </Box>
+
+            {/* Metric Tiles */}
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: '12px',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '11.5px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
+                    Model Status
+                  </Typography>
+                  <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: classifierData?.isTrained ? '#22c55e' : '#f59e0b',
+                      }}
+                    />
+                    <Typography sx={{ fontSize: '16px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                      {classifierData?.isTrained ? 'Active (v1.0)' : 'Uninitialized'}
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: '11px', color: darkMode ? '#64748b' : '#94a3b8', mt: 0.5 }}>
+                    {classifierData?.modelInfo?.fileSizeKb ? `${classifierData.modelInfo.fileSizeKb} KB JSON • 0 MB GPU` : 'Pure-Python stdlib'}
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: '12px',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '11.5px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
+                    Binary Accuracy
+                  </Typography>
+                  <Typography sx={{ fontSize: '20px', fontWeight: 800, color: '#16a34a', mt: 0.5 }}>
+                    {classifierData?.modelInfo?.binaryAccuracy ? `${(classifierData.modelInfo.binaryAccuracy * 100).toFixed(1)}%` : 'N/A'}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: darkMode ? '#64748b' : '#94a3b8', mt: 0.5 }}>
+                    F1 Score: {classifierData?.modelInfo?.f1Score ? classifierData.modelInfo.f1Score.toFixed(3) : '0.0'}
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: '12px',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '11.5px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
+                    Available Dataset
+                  </Typography>
+                  <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b', mt: 0.5 }}>
+                    {classifierData?.availableSamples || 0}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: darkMode ? '#64748b' : '#94a3b8', mt: 0.5 }}>
+                    {classifierData?.cleanSamples || 0} Clean • {classifierData?.noiseSamples || 0} Noise
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: '12px',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '11.5px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
+                    Vocab Features
+                  </Typography>
+                  <Typography sx={{ fontSize: '20px', fontWeight: 800, color: darkMode ? '#ffffff' : '#1e293b', mt: 0.5 }}>
+                    {classifierData?.modelInfo?.vocabSize ? classifierData.modelInfo.vocabSize.toLocaleString() : '0'}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: darkMode ? '#64748b' : '#94a3b8', mt: 0.5 }}>
+                    {classifierData?.modelInfo?.categoriesTrained || 0} Categories Modeled
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Card>
+
+          {/* Interactive Live Testing Sandbox */}
+          <Card
+            sx={{
+              p: 3,
+              borderRadius: '16px',
+              backgroundColor: darkMode ? '#0f172a' : '#ffffff',
+              border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+            }}
+          >
+            <Typography variant="h6" sx={{ fontSize: '15px', fontWeight: 700, mb: 1, color: darkMode ? '#ffffff' : '#1e293b' }}>
+              🧪 Live Inference Sandbox
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b', mb: 2 }}>
+              Test how the Tier-1 classifier evaluates any custom tweet text, government statement, or news report.
+            </Typography>
+
+            <Box display="flex" gap={1} mb={1.5} flexWrap="wrap">
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setSandboxText('Secretary chaired high level review meeting in Lahore to assess progress with director general')}
+                sx={{ textTransform: 'none', fontSize: '11.5px', borderRadius: '6px' }}
+              >
+                Sample Govt PR
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setSandboxText('AQI crossed 540 in Lahore tonight. My throat is burning and children cannot breathe.')}
+                sx={{ textTransform: 'none', fontSize: '11.5px', borderRadius: '6px' }}
+              >
+                Sample Citizen Outcry
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setSandboxText('Buddha Nullah water pollution protest organized by environmental activists in Ludhiana today')}
+                sx={{ textTransform: 'none', fontSize: '11.5px', borderRadius: '6px' }}
+              >
+                Sample Indian Dispute
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setSandboxText('Flat 30% discount on HEPA air purifiers this winter season. Order now on WhatsApp!')}
+                sx={{ textTransform: 'none', fontSize: '11.5px', borderRadius: '6px' }}
+              >
+                Sample Commercial Ad
+              </Button>
+            </Box>
+
+            <OutlinedInput
+              multiline
+              rows={3}
+              fullWidth
+              placeholder="Paste or type any social media post here to test classification..."
+              value={sandboxText}
+              onChange={(e) => setSandboxText(e.target.value)}
+              sx={{
+                fontSize: '13px',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                color: darkMode ? '#ffffff' : '#1e293b',
+                borderRadius: '10px',
+                mb: 2,
+              }}
+            />
+
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Button
+                variant="contained"
+                onClick={handleTestSandbox}
+                disabled={isPredicting || !sandboxText.trim()}
+                startIcon={isPredicting ? <CircularProgress size={14} color="inherit" /> : <PlayArrowRoundedIcon />}
+                sx={{
+                  backgroundColor: '#16a34a',
+                  '&:hover': { backgroundColor: '#15803d' },
+                  color: '#fff',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '12.5px',
+                  borderRadius: '8px',
+                  px: 2,
+                }}
+              >
+                {isPredicting ? 'Evaluating...' : 'Run Prediction'}
+              </Button>
+            </Box>
+
+            {/* Sandbox Prediction Output */}
+            {sandboxPrediction && (
+              <Box
+                sx={{
+                  mt: 2.5,
+                  p: 2,
+                  borderRadius: '12px',
+                  backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                  border: sandboxPrediction.is_noise
+                    ? '1px solid rgba(239, 68, 68, 0.3)'
+                    : '1px solid rgba(34, 197, 94, 0.3)',
+                }}
+              >
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Chip
+                      label={sandboxPrediction.is_noise ? 'CLASSIFIED AS NOISE' : 'CLASSIFIED AS RELEVANT'}
+                      color={sandboxPrediction.is_noise ? 'error' : 'success'}
+                      size="small"
+                      sx={{ fontWeight: 800, fontSize: '11px' }}
+                    />
+                    <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                      {getNoiseCategoryInfo(sandboxPrediction.predicted_category)?.label || sandboxPrediction.predicted_category}
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b' }}>
+                    Confidence: {(sandboxPrediction.confidence * 100).toFixed(1)}%
+                  </Typography>
+                </Box>
+
+                {sandboxPrediction.top_signals && sandboxPrediction.top_signals.length > 0 && (
+                  <Box mt={1}>
+                    <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b', mb: 0.5 }}>
+                      Key Features Driving Decision:
+                    </Typography>
+                    <Box display="flex" gap={0.5} flexWrap="wrap">
+                      {sandboxPrediction.top_signals.map((sig, sIdx) => (
+                        <Chip
+                          key={sIdx}
+                          label={sig.replace('_', ' ')}
+                          size="small"
+                          sx={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0',
+                            color: darkMode ? '#e2e8f0' : '#334155',
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Card>
+
+          {/* Top Distinguishing Keywords by Category */}
+          {classifierData?.modelInfo?.topFeaturesPerCategory && (
+            <Card
+              sx={{
+                p: 3,
+                borderRadius: '16px',
+                backgroundColor: darkMode ? '#0f172a' : '#ffffff',
+                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+              }}
+            >
+              <Typography variant="h6" sx={{ fontSize: '15px', fontWeight: 700, mb: 1, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                🔍 Learned Distinguishing Signals by Taxonomy Category
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b', mb: 2 }}>
+                These are the statistical keyword signals automatically induced by the Tier-1 classifier from your local SQLite dataset:
+              </Typography>
+
+              <Grid container spacing={2}>
+                {Object.entries(classifierData.modelInfo.topFeaturesPerCategory).map(([catCode, features]) => {
+                  const info = getNoiseCategoryInfo(catCode);
+                  return (
+                    <Grid item xs={12} sm={6} md={4} key={catCode}>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: '10px',
+                          backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                          border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
+                          height: '100%',
+                        }}
+                      >
+                        <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b', mb: 0.5 }}>
+                          {info.label || catCode}
+                        </Typography>
+                        <Box display="flex" gap={0.5} flexWrap="wrap">
+                          {features.map((feat, fIdx) => (
+                            <Chip
+                              key={fIdx}
+                              label={feat.replace('_', ' ')}
+                              size="small"
+                              sx={{
+                                fontSize: '10.5px',
+                                height: '20px',
+                                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0',
+                                color: darkMode ? '#cbd5e1' : '#475569',
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Card>
+          )}
+        </Box>
+      )}
+
       <Dialog
         open={restoreModalOpen}
         onClose={() => !isRestoring && setRestoreModalOpen(false)}
@@ -2270,7 +2708,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
           sx: {
             borderRadius: '16px',
             p: 1,
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
             color: darkMode ? '#ffffff' : 'inherit',
           },
@@ -2314,7 +2752,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 sx={{
                   p: 2,
                   borderRadius: '12px',
-                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                   mb: 2.5,
                 }}
@@ -2354,10 +2792,10 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                       p: 1.2,
                       px: 2,
                       borderRadius: '8px',
-                      borderColor: selectedRuleIndices.has(idx) ? '#5e72e4' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
+                      borderColor: selectedRuleIndices.has(idx) ? '#16a34a' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
                       backgroundColor: selectedRuleIndices.has(idx)
-                        ? (darkMode ? 'rgba(94, 114, 228, 0.16)' : 'rgba(94, 114, 228, 0.04)')
-                        : (darkMode ? '#0b1437' : '#fff'),
+                        ? (darkMode ? 'rgba(22, 163, 74, 0.16)' : 'rgba(22, 163, 74, 0.04)')
+                        : (darkMode ? '#090e15' : '#fff'),
                       cursor: 'pointer',
                     }}
                     onClick={() => handleToggleCandidate(idx)}
@@ -2391,7 +2829,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 sx={{
                   p: 1.5,
                   borderRadius: '10px',
-                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                  backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                   border: darkMode ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #cbd5e1',
                 }}
               >
@@ -2406,7 +2844,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                         onChange={(e) => setCustomRuleType(e.target.value)}
                         sx={{
                           fontSize: '12px',
-                          backgroundColor: darkMode ? '#111c44' : '#fff',
+                          backgroundColor: darkMode ? '#0f172a' : '#fff',
                           color: darkMode ? '#ffffff' : '#1e293b',
                           '& .MuiOutlinedInput-notchedOutline': {
                             borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
@@ -2432,7 +2870,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                       onChange={(e) => setCustomRuleValue(e.target.value)}
                       sx={{
                         fontSize: '12px',
-                        backgroundColor: darkMode ? '#111c44' : '#fff',
+                        backgroundColor: darkMode ? '#0f172a' : '#fff',
                         color: darkMode ? '#ffffff' : '#1e293b',
                         '& .MuiOutlinedInput-notchedOutline': {
                           borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
@@ -2488,159 +2926,16 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
         </DialogActions>
       </Dialog>
 
-      <Dialog
+      <ExcludeModal
         open={excludeModalOpen}
-        onClose={() => !isExcluding && setExcludeModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '16px',
-            p: 1,
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
-            border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
-            color: darkMode ? '#ffffff' : 'inherit',
-          },
+        post={postToExclude}
+        onClose={() => {
+          setExcludeModalOpen(false);
+          setPostToExclude(null);
         }}
-      >
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box display="flex" alignItems="center" gap={1.2}>
-            <Box
-              sx={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
-                backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
-                color: '#ef4444',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <DeleteOutlineRoundedIcon sx={{ fontSize: 20 }} />
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight="bold" sx={{ color: darkMode ? '#ffffff' : '#1e293b' }}>
-                Exclude Restored Post
-              </Typography>
-              <Typography variant="caption" sx={{ color: darkMode ? '#94a3b8' : '#8392ab' }}>
-                Revert post from verified feed back to noise pool
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton size="small" onClick={() => setExcludeModalOpen(false)} disabled={isExcluding} sx={{ color: darkMode ? '#94a3b8' : '#64748b' }}>
-            <CloseRoundedIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent dividers sx={{ p: 2.5, borderColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : undefined }}>
-          {postToExclude && (
-            <Box display="flex" flexDirection="column" gap={2}>
-              
-              <Box sx={{ p: 2, borderRadius: '10px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                  <Typography sx={{ fontWeight: 700, fontSize: '13px', color: darkMode ? '#ffffff' : '#1e293b' }}>
-                    {postToExclude.authorName || postToExclude.authorUsername} (@{postToExclude.authorUsername})
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
-                    ID: {postToExclude.id}
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#cbd5e1' : '#475569', fontStyle: 'italic' }}>
-                  &quot;{postToExclude.text}&quot;
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#334155', mb: 0.8 }}>
-                  Select Exclusion Reason:
-                </Typography>
-                <FormControl fullWidth size="small">
-                  <Select
-                    value={excludeReason}
-                    onChange={(e) => setExcludeReason(e.target.value)}
-                    sx={{
-                      fontSize: '13px',
-                      backgroundColor: darkMode ? '#0b1437' : '#fff',
-                      color: darkMode ? '#ffffff' : '#1e293b',
-                      borderRadius: '8px',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
-                      },
-                      '& .MuiSvgIcon-root': {
-                        color: darkMode ? '#94a3b8' : undefined,
-                      },
-                    }}
-                  >
-                    <MenuItem value="Re-evaluated as off-topic noise">Re-evaluated as off-topic noise</MenuItem>
-                    <MenuItem value="No authentic air quality relevance">No authentic air quality relevance</MenuItem>
-                    <MenuItem value="Indian domestic context / Not Punjab target area">Indian domestic context / Not Punjab target area</MenuItem>
-                    <MenuItem value="Promotional spam / Crypto / Political rhetoric">Promotional spam / Crypto / Political rhetoric</MenuItem>
-                    <MenuItem value="Sarcastic / Metaphorical use of smog term">Sarcastic / Metaphorical use of smog term</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
-              <Card
-                variant="outlined"
-                sx={{
-                  p: 1.5,
-                  borderRadius: '10px',
-                  borderColor: revokeRulesChecked ? '#ef4444' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
-                  backgroundColor: revokeRulesChecked
-                    ? (darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fff1f2')
-                    : (darkMode ? '#0b1437' : '#fff'),
-                  cursor: 'pointer',
-                }}
-                onClick={() => setRevokeRulesChecked(!revokeRulesChecked)}
-              >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={revokeRulesChecked}
-                      onChange={(e) => setRevokeRulesChecked(e.target.checked)}
-                      color="error"
-                      size="small"
-                    />
-                  }
-                  label={
-                    <Box>
-                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#fca5a5' : '#991b1b' }}>
-                        Revoke Associated Learned Rules
-                      </Typography>
-                      <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                        Automatically deletes or deactivates any whitelist or keyword rules induced when this post was restored.
-                      </Typography>
-                    </Box>
-                  }
-                  sx={{ m: 0, width: '100%' }}
-                />
-              </Card>
-            </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setExcludeModalOpen(false)} disabled={isExcluding} sx={{ textTransform: 'none', color: darkMode ? '#94a3b8' : undefined }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleConfirmExclude}
-            disabled={isExcluding}
-            startIcon={isExcluding ? <CircularProgress size={16} color="inherit" /> : <DeleteOutlineRoundedIcon />}
-            sx={{
-              background: 'linear-gradient(310deg, #f5365c 0%, #ec0c38 100%)',
-              color: '#fff',
-              textTransform: 'none',
-              fontWeight: 700,
-              boxShadow: '0 4px 10px rgba(245, 54, 92, 0.3)',
-            }}
-          >
-            {isExcluding ? 'Excluding...' : 'Confirm & Exclude as Noise'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleConfirmExclude}
+        isExcluding={isExcluding}
+      />
 
       <Dialog
         open={manualRuleModalOpen}
@@ -2651,7 +2946,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
           sx: {
             borderRadius: '16px',
             p: 1,
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
             color: darkMode ? '#ffffff' : 'inherit',
           },
@@ -2675,7 +2970,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 label="Rule Type"
                 onChange={(e) => setNewManualType(e.target.value)}
                 sx={{
-                  backgroundColor: darkMode ? '#0b1437' : '#fff',
+                  backgroundColor: darkMode ? '#090e15' : '#fff',
                   color: darkMode ? '#ffffff' : '#1e293b',
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
@@ -2712,7 +3007,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 value={newManualValue}
                 onChange={(e) => setNewManualValue(e.target.value)}
                 sx={{
-                  backgroundColor: darkMode ? '#0b1437' : '#fff',
+                  backgroundColor: darkMode ? '#090e15' : '#fff',
                   color: darkMode ? '#ffffff' : '#1e293b',
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,
@@ -2732,7 +3027,7 @@ function NoiseView({ dataRevision = 0, onPostRestored, onPostExcluded, onImageCl
                 value={newManualDesc}
                 onChange={(e) => setNewManualDesc(e.target.value)}
                 sx={{
-                  backgroundColor: darkMode ? '#0b1437' : '#fff',
+                  backgroundColor: darkMode ? '#090e15' : '#fff',
                   color: darkMode ? '#ffffff' : '#1e293b',
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined,

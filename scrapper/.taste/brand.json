@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "foundation": {
+    "strategy": "extend",
+    "existingAssets": [
+      "C:\\Users\\Asif\\.grok\\sessions\\D%3A%5Cweb%20temps%5CX%20Scrapper\\e0b3435f-b65a-444e-b551-90b1cc9f20e5\\assets\\image-36a716ff-5040-4a00-9c30-de2ae8dd1c2b.jpg",
+      "D:\\web temps\\X Scrapper\\icons\\epa_logo.png",
+      "D:\\web temps\\X Scrapper\\icons\\icon16.png",
+      "D:\\web temps\\X Scrapper\\icons\\icon48.png",
+      "D:\\web temps\\X Scrapper\\icons\\icon128.png",
+      "D:\\web temps\\X Scrapper\\fonts\\geist-400.woff2",
+      "D:\\web temps\\X Scrapper\\fonts\\geist-500.woff2",
+      "D:\\web temps\\X Scrapper\\fonts\\geist-700.woff2"
+    ],
+    "assetActions": [
+      {
+        "asset": "Supplied EPA lockup (user-reference-1, the attached JPEG)",
+        "action": "protect",
+        "reason": "The user required this artwork everywhere and forbade a new logo. It is the green EPA wordmark with the leaf, the Urdu line, and An ISO Certified Agency, on white."
+      },
+      {
+        "asset": "D:\\web temps\\X Scrapper\\icons\\epa_logo.png",
+        "action": "retire",
+        "reason": "This file is a blue Social Listening composite, not the supplied green lockup. It must not appear as the product mark."
+      },
+      {
+        "asset": "D:\\web temps\\X Scrapper\\icons\\icon16.png, icon48.png, and icon128.png",
+        "action": "retire",
+        "reason": "The toolbar icons are the older blue mark. Icon slots take a crop of the EPA wordmark from the supplied file, not a redraw."
+      },
+      {
+        "asset": "D:\\web temps\\X Scrapper\\fonts\\geist-400.woff2, geist-500.woff2, and geist-700.woff2",
+        "action": "retire",
+        "reason": "Geist is only the face of the previous screen pass. The agency did not specify a typeface, so this run uses the sheet face."
+      }
+    ],
+    "lockedDecisions": [
+      "The supplied JPEG is the only logo. It is placed as artwork and is not redrawn, recolored, or restacked.",
+      "Wide headers show the full lockup, including the Urdu line and An ISO Certified Agency, inside the image. Those lines are not retyped.",
+      "Icon-sized slots use only the EPA wordmark, cropped from that same file.",
+      "No monogram and no letter in a square.",
+      "The listening tool stays a popup, an on-page panel, a minimized control, and a preview table. No sidebar and no marketing page.",
+      "Jobs and labels stay: Collected, Posts, Users, Trends, Auto-scroll, Pause, Preview, Speed, Stop at, Export, Clear, Open panel, Open X."
+    ],
+    "assumptions": [
+      "The letter green was measured from the supplied image: median #60ba48. That green is 2.44:1 on white, so it never carries words.",
+      "#2b5420 is the same green mixed toward black, used wherever green must be read as text. It clears 4.5:1 on white and on the pale tints.",
+      "The filled button uses the logo green with near-black type, because white type on #60ba48 fails contrast.",
+      "DM Sans is the interface face because the logo file names no typeface.",
+      "Author photos already stored on collected posts may show in the preview. No new people are invented."
+    ]
+  },
+  "creativeDirection": {
+    "summary": "The face is the accent ladder built from the EPA logo green, in place of the sheet's raspberry. Full green sits only on the live count and the one filled button. Pale tints do the area work. The sheet stays light, flat, and sparse.",
+    "traits": [
+      {
+        "quality": "Official mark, used whole",
+        "boundary": "not a redraw, a monogram, or a second symbol"
+      },
+      {
+        "quality": "One green, small",
+        "boundary": "not a green page, a green sidebar, or a second hue"
+      },
+      {
+        "quality": "A working tally",
+        "boundary": "not a welcome banner or a marketing hero"
+      }
+    ],
+    "productiveTension": "A government lockup on a quiet grey tool, with the green reserved for the number being collected and the button that collects it.",
+    "signatureDevice": {
+      "description": "The collected tally: one row split into Posts, Users, and Trends. The selected count is the only large figure and the only full-green number. Its cell takes the pale green tint. The other counts stay in ink, and a real zero stays grey. Changing the cell changes what Preview, Export, and Clear apply to.",
+      "status": "candidate",
+      "invariants": [
+        "Three equal cells in one container, divided by a hairline, not three separate cards.",
+        "The selected count is the largest figure on the screen and the only figure in #60ba48.",
+        "A zero is grey, including the selected cell.",
+        "The pale tint sits on the selected cell only.",
+        "The tally is also the switch for export, preview, and clear."
+      ]
+    },
+    "restraint": "Green is the logo, the selected count, the filled button, and small status tints. Everything else is grey, white, or near-black.",
+    "avoid": [
+      "A new logo or a simplified leaf icon",
+      "Raspberry, violet, indigo, or the old data blue",
+      "Full green behind large panels",
+      "A tinted icon on every tally cell",
+      "Gradients, glows, glass, and shadows on resting cards"
+    ]
+  },
+  "colorPalette": [
+    {
+      "name": "ground",
+      "value": "#f9fafb",
+      "usage": "Page and panel ground. Kept from the sheet so the pale green tints read as areas, not as the ground."
+    },
+    {
+      "name": "surface",
+      "value": "#ffffff",
+      "usage": "Tally, cards, fields, and the preview sheet."
+    },
+    {
+      "name": "raised",
+      "value": "#f3f4f6",
+      "usage": "Quiet secondary fills and the neutral pill, one step off white."
+    },
+    {
+      "name": "border",
+      "value": "#e5e7eb",
+      "usage": "Card and panel edges, 1px."
+    },
+    {
+      "name": "rule",
+      "value": "#f2f2f2",
+      "usage": "Row and tally dividers, lighter than the card edge."
+    },
+    {
+      "name": "control",
+      "value": "#d1d5db",
+      "usage": "Border of fields and the secondary button, one step darker than the card edge."
+    },
+    {
+      "name": "text",
+      "value": "#111827",
+      "usage": "Titles, counts that are not the selected tally, and the label on the green button."
+    },
+    {
+      "name": "muted",
+      "value": "#5f6672",
+      "usage": "Labels, the page kind, hints, and zero counts. About 5.8:1 on white."
+    },
+    {
+      "name": "accent",
+      "value": "#60ba48",
+      "usage": "Logo letter green, measured from the supplied file. Full strength only on the selected count, the chart's main series, and the filled button. Not used for words: 2.44:1 on white."
+    },
+    {
+      "name": "accent-soft",
+      "value": "#f2f9f0",
+      "usage": "Pale tint of the logo green on the selected tally cell and accent chips."
+    },
+    {
+      "name": "accent-track",
+      "value": "#dff1da",
+      "usage": "Stronger pale tint for a progress track or a selected chip, still the same green."
+    },
+    {
+      "name": "accent-ink",
+      "value": "#2b5420",
+      "usage": "Dark of the logo green for any green that must be read, including accent chips. Clears 4.5:1 on white and on the pale tints."
+    },
+    {
+      "name": "positive",
+      "value": "#2b5420",
+      "usage": "Same dark green as accent-ink. The sheet's separate green is not used, because the accent is already green and two greens would split the status from the mark."
+    },
+    {
+      "name": "negative",
+      "value": "#c4242a",
+      "usage": "Clear, and any failing count. Text only, not a large fill."
+    },
+    {
+      "name": "warning",
+      "value": "#92400e",
+      "usage": "Limit reached and other notices that need attention without meaning failure."
+    },
+    {
+      "name": "chart-1",
+      "value": "#60ba48",
+      "usage": "The one data hue, on the selected tally and a single series. Same value as accent."
+    },
+    {
+      "name": "chart-2",
+      "value": "#6b7280",
+      "usage": "Neutral comparison series, grey, not a second brand hue."
+    },
+    {
+      "name": "chart-3",
+      "value": "#88cb76",
+      "usage": "Lighter step of the same logo green if a chart needs a second mark. Not a new hue."
+    },
+    {
+      "name": "pill-positive-bg",
+      "value": "#f2f9f0",
+      "usage": "Background of a good-status chip. Same pale green as accent-soft."
+    },
+    {
+      "name": "pill-positive-ink",
+      "value": "#2b5420",
+      "usage": "Text on the good-status chip."
+    },
+    {
+      "name": "pill-negative-bg",
+      "value": "#ffedea",
+      "usage": "Background of a failing or destructive chip."
+    },
+    {
+      "name": "pill-negative-ink",
+      "value": "#831c1e",
+      "usage": "Text on the failing chip."
+    },
+    {
+      "name": "pill-warning-bg",
+      "value": "#fffbeb",
+      "usage": "Background of a notice chip."
+    },
+    {
+      "name": "pill-warning-ink",
+      "value": "#92400e",
+      "usage": "Text on the notice chip."
+    },
+    {
+      "name": "pill-neutral-bg",
+      "value": "#f3f4f6",
+      "usage": "Background of a resting chip such as Ready."
+    },
+    {
+      "name": "pill-neutral-ink",
+      "value": "#374151",
+      "usage": "Text on a resting chip."
+    },
+    {
+      "name": "pill-accent-bg",
+      "value": "#f2f9f0",
+      "usage": "Background of a chip that marks the live tally."
+    },
+    {
+      "name": "pill-accent-ink",
+      "value": "#2b5420",
+      "usage": "Text on the live-tally chip."
+    }
+  ],
+  "typefaces": [
+    {
+      "family": "DM Sans",
+      "source": "Google Fonts",
+      "roles": [
+        "interface"
+      ],
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ]
+    }
+  ],
+  "interfaceDirection": "Sparse light tool. The sheet's open plane has no top bar and no coloured sidebar; this product also has no destination sidebar, because the locked frame is the popup and the floating panel. The tally is the only section control. Labels are 12px sentence case in muted grey. Controls are 32px tall. List and preview rows sit on a 45px pitch, with 1px rules and no zebra. One status mark per row. The phone layout is the same single column with 16px margins. Active selection is a pale green cell, not a left bar.",
+  "designTokens": {
+    "typeScale": {
+      "display": "32px",
+      "h1": "32px",
+      "h2": "18px",
+      "h3": "24px",
+      "body": "14px",
+      "small": "12px",
+      "label": "12px"
+    },
+    "radius": {
+      "scale": [
+        "6px",
+        "8px"
+      ],
+      "pill": "999px"
+    },
+    "spacing": {
+      "section": "24px",
+      "gutter": "24px",
+      "stack": "24px"
+    },
+    "buttons": {
+      "primary": "32px tall, 6px radius, fill #60ba48, label #111827 at 500. One per screen: Auto-scroll, or Pause while scrolling, or Open X when the tab is not on X.",
+      "secondary": "32px tall, 6px radius, fill #ffffff, 1px border #d1d5db, label #111827. Preview, Open panel, and the export actions."
+    },
+    "surfaces": "Ground #f9fafb, white surface, separation by a 1px line or one tint step. No shadow on a resting card. A shadow is allowed only on the floating panel, the minimized control, and the preview dialog, because they sit over X. A border or a shadow, never both, on any one surface."
+  },
+  "imageDirection": {
+    "summary": "The only brand image is the supplied EPA lockup. Inside collected rows, a post may show the account photo already on that record. Nothing else is illustrated.",
+    "subjects": [
+      "Supplied EPA lockup, full in headers and the wordmark crop in icon slots",
+      "Account photo on a collected post or user, when the record already has one"
+    ],
+    "treatment": "Logo artwork is used unchanged, on white, never recolored or set in a tinted tile. Account photos are small circles in the row, 24px, and do not carry a status colour.",
+    "avoid": [
+      "A drawn monogram",
+      "Stock photography",
+      "Decorative leaves, patterns, or illustrations",
+      "A second logo in the preview"
+    ]
+  },
+  "motionDirection": {
+    "summary": "Feedback only. Nothing enters on load. One timing pair for selection, overlays, and result changes. Reduced motion keeps the same end state with no travel.",
+    "principles": [
+      "Press and hover on buttons: the fill darkens slightly while the control is held; 120-160ms; ease-out.",
+      "Tally selection: the pale tint and the green count move to the chosen cell; 160-200ms; ease-out.",
+      "Preview and the minimized panel: the overlay opens or closes over the page; 180-220ms; ease-out. Focus returns to the control that opened it, and Escape closes it.",
+      "Filter and export state: rows or the disabled state update in place; 120-180ms; ease-out. Row identity stays put. No count-up."
+    ],
+    "avoid": [
+      "An entrance on the panel, the tally, or the title",
+      "A looping pulse on the scrolling dot",
+      "Glass, glow, or a colour sweep",
+      "Motion that hides the count or the table"
+    ]
+  },
+  "voice": {
+    "summary": "Talk like the listening desk. Name the thing: posts, users, trends, search, profile, followers, explore, replies. Statuses are Ready, Scrolling, and Limit reached. Empty collecting says Scroll the page to collect. An empty filter says No rows match. A missing cell is a dash. Clear names the tally and the count. Export confirms with Saved CSV, Saved JSON, or Saved Excel.",
+    "avoid": [
+      "Items, records, data, and status as labels",
+      "Welcome lines and unlocked or unlimited claims",
+      "Scraper, buffer, and payload",
+      "Emoji and exclamation marks"
+    ]
+  }
+}

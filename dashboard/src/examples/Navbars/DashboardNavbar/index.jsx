@@ -100,7 +100,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
     if (!user || !user.role) return "#64748b";
     switch (user.role.name) {
       case "super_admin":
-        return "#5e72e4";
+        return "#16a34a";
       case "analyst":
         return "#0284c7";
       case "auditor":
@@ -144,7 +144,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
               sx={{
                 display: { xs: "inline-flex", lg: "none" },
                 color: darkMode ? "#cbd5e1" : "#344767",
-                backgroundColor: darkMode ? "#111c44" : "#ffffff",
+                backgroundColor: darkMode ? "#0f172a" : "#ffffff",
                 border: darkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
                 borderRadius: "10px",
                 p: 0.9,
@@ -152,8 +152,8 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                 transition: "all 0.2s ease",
                 "&:hover": {
                   backgroundColor: darkMode ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
-                  borderColor: "#5e72e4",
-                  color: "#5e72e4",
+                  borderColor: "#16a34a",
+                  color: "#16a34a",
                   transform: "scale(1.04)",
                 },
               }}
@@ -200,7 +200,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                 display: { xs: "none", sm: "flex" },
                 alignItems: "center",
                 gap: 0.8,
-                backgroundColor: darkMode ? (dataSource === "x_api" ? "rgba(34, 197, 94, 0.15)" : "#111c44") : (dataSource === "x_api" ? "#f0fdf4" : "#f1f5f9"),
+                backgroundColor: darkMode ? (dataSource === "x_api" ? "rgba(34, 197, 94, 0.15)" : "#0f172a") : (dataSource === "x_api" ? "#f0fdf4" : "#f1f5f9"),
                 color: dataSource === "x_api" ? "#22c55e" : (darkMode ? "#94a3b8" : "#334155"),
                 px: 1.4,
                 py: 0.5,
@@ -265,7 +265,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
               onClick={handleOpenIngest}
               startIcon={<CloudUploadRoundedIcon sx={{ fontSize: "16px !important" }} />}
               sx={{
-                backgroundColor: "#5e72e4",
+                backgroundColor: "#16a34a",
                 color: "#ffffff",
                 textTransform: "none",
                 fontFamily: '"Open Sans", sans-serif',
@@ -277,7 +277,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                 boxShadow: "none",
                 whiteSpace: "nowrap",
                 "&:hover": {
-                  backgroundColor: "#4b5fcc",
+                  backgroundColor: "#15803d",
                   boxShadow: "none",
                 },
               }}
@@ -306,7 +306,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
             title="Toggle Dark Mode"
             sx={{
               color: darkMode ? "#cbd5e1" : "#64748b",
-              backgroundColor: darkMode ? "#111c44" : "#ffffff",
+              backgroundColor: darkMode ? "#0f172a" : "#ffffff",
               border: darkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
               borderRadius: "8px",
               p: 0.8,
@@ -325,7 +325,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
             onClick={handleOpenMenu}
             sx={{
               color: darkMode ? "#cbd5e1" : "#64748b",
-              backgroundColor: darkMode ? "#111c44" : "#ffffff",
+              backgroundColor: darkMode ? "#0f172a" : "#ffffff",
               border: darkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
               borderRadius: "8px",
               p: 0.8,
@@ -347,7 +347,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                   py: 0.4,
                   borderRadius: "24px",
                   border: darkMode ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid #e2e8f0",
-                  backgroundColor: darkMode ? "#111c44" : "#ffffff",
+                  backgroundColor: darkMode ? "#0f172a" : "#ffffff",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                   "&:hover": {
@@ -387,7 +387,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                     minWidth: "240px",
                     boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
                     border: darkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
-                    backgroundColor: darkMode ? "#111c44" : "#ffffff",
+                    backgroundColor: darkMode ? "#0f172a" : "#ffffff",
                     p: 1
                   }
                 }}
@@ -473,7 +473,7 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                 mt: 1.5,
                 boxShadow: darkMode ? "0 10px 30px rgba(0,0,0,0.5)" : "0 10px 30px rgba(0,0,0,0.1)",
                 border: darkMode ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
-                backgroundColor: darkMode ? "#111c44" : "#ffffff",
+                backgroundColor: darkMode ? "#0f172a" : "#ffffff",
                 minWidth: "280px",
               },
             }}

@@ -12,6 +12,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Doughnut, Pie, Bar } from 'react-chartjs-2';
@@ -30,9 +31,11 @@ function AnalyticsView({ dataRevision = 0 }) {
   const { darkMode } = controller || {};
   const [stats, setStats] = useState(() => getCachedStats() || null);
   const [viralPosts, setViralPosts] = useState([]);
+  const [loading, setLoading] = useState(!stats);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     Promise.all([
       getStats(),
       getPosts({ sortBy: 'engagement', limit: 10 }),
@@ -40,7 +43,11 @@ function AnalyticsView({ dataRevision = 0 }) {
       if (cancelled) return;
       setStats(s);
       setViralPosts(page.items || []);
-    }).catch(() => {});
+      setLoading(false);
+    }).catch((err) => {
+      console.warn('Analytics fetch warning:', err);
+      if (!cancelled) setLoading(false);
+    });
     return () => { cancelled = true; };
   }, [dataRevision]);
 
@@ -54,12 +61,44 @@ function AnalyticsView({ dataRevision = 0 }) {
       'Moderate / Good (<150)': { count: 0, color: '#2dce89', label: 'Moderate / Good' },
       'Unspecified Alert': { count: 0, color: '#adb5bd', label: 'General Alert' },
     };
-    Object.entries(stats?.aqiBucketCounts || {}).forEach(([key, count]) => {
-      if (counts[key]) counts[key].count = count;
-    });
+
+    const sourceBucketCounts =
+      stats?.aqiBucketCounts ||
+      stats?.aqi_distribution ||
+      stats?.aqi_bucket_counts ||
+      stats?.aqiBuckets ||
+      {};
+
+    const rawEntries = Object.entries(sourceBucketCounts);
+
+    if (rawEntries.length > 0) {
+      rawEntries.forEach(([key, count]) => {
+        const val = Number(count) || 0;
+        if (counts[key]) {
+          counts[key].count += val;
+        } else {
+          const lower = String(key || '').toLowerCase();
+          if (lower.includes('hazard') || lower.includes('300')) counts['Hazardous (300+)'].count += val;
+          else if (lower.includes('very') || lower.includes('201')) counts['Very Unhealthy (201-300)'].count += val;
+          else if (lower.includes('unhealthy') || lower.includes('151')) counts['Unhealthy (151-200)'].count += val;
+          else if (lower.includes('moderate') || lower.includes('good') || lower.includes('150')) counts['Moderate / Good (<150)'].count += val;
+          else counts['Unspecified Alert'].count += val;
+        }
+      });
+    } else if (viralPosts && viralPosts.length > 0) {
+      viralPosts.forEach((p) => {
+        const aqi = Number(p.aqi_value);
+        if (aqi >= 300) counts['Hazardous (300+)'].count += 1;
+        else if (aqi >= 201) counts['Very Unhealthy (201-300)'].count += 1;
+        else if (aqi >= 151) counts['Unhealthy (151-200)'].count += 1;
+        else if (aqi > 0) counts['Moderate / Good (<150)'].count += 1;
+        else counts['Unspecified Alert'].count += 1;
+      });
+    }
 
     const items = Object.entries(counts).filter(([, v]) => v.count > 0);
-    const total = postsTotal || 1;
+    const sumCount = items.reduce((sum, [, v]) => sum + v.count, 0);
+    const total = sumCount || postsTotal || 1;
 
     const chartData = {
       labels: items.map(([k]) => k),
@@ -68,7 +107,7 @@ function AnalyticsView({ dataRevision = 0 }) {
           data: items.map(([, v]) => v.count),
           backgroundColor: items.map(([, v]) => v.color),
           borderWidth: 2,
-          borderColor: darkMode ? '#111c44' : '#ffffff',
+          borderColor: darkMode ? '#0f172a' : '#ffffff',
           hoverOffset: 4,
         },
       ],
@@ -82,7 +121,7 @@ function AnalyticsView({ dataRevision = 0 }) {
     }));
 
     return { chartData, legendItems };
-  }, [stats, postsTotal, darkMode]);
+  }, [stats, viralPosts, postsTotal, darkMode]);
 
   const cityStats = useMemo(() => {
     const cityCounts = stats?.cityCounts || {};
@@ -120,7 +159,7 @@ function AnalyticsView({ dataRevision = 0 }) {
         {
           label: 'Posts Count',
           data,
-          backgroundColor: '#5e72e4',
+          backgroundColor: '#16a34a',
           borderRadius: 6,
           maxBarThickness: 24,
         },
@@ -138,13 +177,51 @@ function AnalyticsView({ dataRevision = 0 }) {
       'Positive / Solution-Oriented': { count: 0, color: '#2dce89' },
     };
 
-    Object.entries(stats?.sentimentCounts || {}).forEach(([s, count]) => {
-      if (sMap[s]) sMap[s].count = count;
-      else sMap['Informative / Neutral'].count += count;
-    });
+    const sourceSentimentCounts =
+      stats?.sentimentCounts ||
+      stats?.sentiments ||
+      stats?.sentiment_distribution ||
+      stats?.sentiment_counts ||
+      {};
+
+    const rawEntries = Object.entries(sourceSentimentCounts);
+
+    if (rawEntries.length > 0) {
+      rawEntries.forEach(([s, count]) => {
+        const val = Number(count) || 0;
+        if (sMap[s]) {
+          sMap[s].count += val;
+        } else {
+          const lower = String(s || '').toLowerCase().trim();
+          if (lower.includes('critical') || lower.includes('alarmed')) {
+            sMap['Critical / Alarmed'].count += val;
+          } else if (lower.includes('concern')) {
+            sMap['Concerned'].count += val;
+          } else if (lower.includes('positive') || lower.includes('solution')) {
+            sMap['Positive / Solution-Oriented'].count += val;
+          } else {
+            sMap['Informative / Neutral'].count += val;
+          }
+        }
+      });
+    } else if (viralPosts && viralPosts.length > 0) {
+      viralPosts.forEach((p) => {
+        const lower = String(p.sentiment || '').toLowerCase();
+        if (lower.includes('critical') || lower.includes('alarmed')) {
+          sMap['Critical / Alarmed'].count += 1;
+        } else if (lower.includes('concern')) {
+          sMap['Concerned'].count += 1;
+        } else if (lower.includes('positive') || lower.includes('solution')) {
+          sMap['Positive / Solution-Oriented'].count += 1;
+        } else {
+          sMap['Informative / Neutral'].count += 1;
+        }
+      });
+    }
 
     const items = Object.entries(sMap).filter(([, v]) => v.count > 0);
-    const total = postsTotal || 1;
+    const sumCount = items.reduce((sum, [, v]) => sum + v.count, 0);
+    const total = sumCount || postsTotal || 1;
 
     const chartData = {
       labels: items.map(([k]) => k),
@@ -153,7 +230,7 @@ function AnalyticsView({ dataRevision = 0 }) {
           data: items.map(([, v]) => v.count),
           backgroundColor: items.map(([, v]) => v.color),
           borderWidth: 2,
-          borderColor: darkMode ? '#111c44' : '#ffffff',
+          borderColor: darkMode ? '#0f172a' : '#ffffff',
           hoverOffset: 4,
         },
       ],
@@ -167,7 +244,7 @@ function AnalyticsView({ dataRevision = 0 }) {
     }));
 
     return { chartData, legendItems };
-  }, [stats, postsTotal, darkMode]);
+  }, [stats, viralPosts, postsTotal, darkMode]);
 
   return (
     <Box sx={{ py: 2 }}>
@@ -204,12 +281,12 @@ function AnalyticsView({ dataRevision = 0 }) {
             p: 3,
             borderRadius: '16px',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <PieChartRoundedIcon sx={{ color: '#5e72e4', fontSize: '20px' }} />
+            <PieChartRoundedIcon sx={{ color: '#16a34a', fontSize: '20px' }} />
             <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#344767' }}>
               AQI Severity Breakdown
             </Typography>
@@ -230,66 +307,87 @@ function AnalyticsView({ dataRevision = 0 }) {
               minHeight: '220px',
             }}
           >
-            <Box sx={{ width: '180px', height: '180px', flexShrink: 0 }}>
-              <Doughnut
-                data={severityStats.chartData}
-                options={{
-                  cutout: '72%',
-                  plugins: { legend: { display: false } },
-                  maintainAspectRatio: false,
-                }}
-              />
-            </Box>
+            {loading && !stats ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px', gap: 1.5, width: '100%' }}>
+                <CircularProgress size={32} sx={{ color: '#16a34a' }} />
+                <Typography sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
+                  Loading AQI severity metrics...
+                </Typography>
+              </Box>
+            ) : severityStats.legendItems.length === 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px', gap: 1, width: '100%', py: 3 }}>
+                <PieChartRoundedIcon sx={{ fontSize: '40px', color: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }} />
+                <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
+                  No severity data available
+                </Typography>
+                <Typography sx={{ fontSize: '12px', color: darkMode ? '#64748b' : '#94a3b8', textAlign: 'center', maxWidth: '280px' }}>
+                  AQI levels will appear here as sensor and social alert data are recorded.
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ width: '180px', height: '180px', flexShrink: 0, position: 'relative' }}>
+                  <Doughnut
+                    data={severityStats.chartData}
+                    options={{
+                      cutout: '72%',
+                      plugins: { legend: { display: false } },
+                      maintainAspectRatio: false,
+                    }}
+                  />
+                </Box>
 
-            <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-              {severityStats.legendItems.map((item) => (
-                <Box
-                  key={item.name}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: 1,
-                    borderRadius: '8px',
-                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
-                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                  {severityStats.legendItems.map((item) => (
                     <Box
+                      key={item.name}
                       sx={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        backgroundColor: item.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#e2e8f0' : '#344767' }}>
-                      {item.name}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
-                      {item.count}
-                    </Typography>
-                    <Box
-                      sx={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: darkMode ? '#cbd5e1' : '#64748b',
-                        backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : '#edf2f7',
-                        px: 0.8,
-                        py: 0.2,
-                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        borderRadius: '8px',
+                        backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
                       }}
                     >
-                      {item.pct}%
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                        <Box
+                          sx={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: item.color,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#e2e8f0' : '#344767' }}>
+                          {item.name}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                          {item.count}
+                        </Typography>
+                        <Box
+                          sx={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: darkMode ? '#cbd5e1' : '#64748b',
+                            backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : '#edf2f7',
+                            px: 0.8,
+                            py: 0.2,
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {item.pct}%
+                        </Box>
+                      </Box>
                     </Box>
-                  </Box>
+                  ))}
                 </Box>
-              ))}
-            </Box>
+              </>
+            )}
           </Box>
         </Card>
 
@@ -298,7 +396,7 @@ function AnalyticsView({ dataRevision = 0 }) {
             p: 3,
             borderRadius: '16px',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
           }}
         >
@@ -351,12 +449,12 @@ function AnalyticsView({ dataRevision = 0 }) {
             p: 3,
             borderRadius: '16px',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <BarChartRoundedIcon sx={{ color: '#5e72e4', fontSize: '20px' }} />
+            <BarChartRoundedIcon sx={{ color: '#16a34a', fontSize: '20px' }} />
             <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#344767' }}>
               Topic Category Classification
             </Typography>
@@ -395,7 +493,7 @@ function AnalyticsView({ dataRevision = 0 }) {
             p: 3,
             borderRadius: '16px',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-            backgroundColor: darkMode ? '#111c44' : '#ffffff',
+            backgroundColor: darkMode ? '#0f172a' : '#ffffff',
             boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
           }}
         >
@@ -421,65 +519,86 @@ function AnalyticsView({ dataRevision = 0 }) {
               minHeight: '220px',
             }}
           >
-            <Box sx={{ width: '180px', height: '180px', flexShrink: 0 }}>
-              <Pie
-                data={sentimentStats.chartData}
-                options={{
-                  plugins: { legend: { display: false } },
-                  maintainAspectRatio: false,
-                }}
-              />
-            </Box>
+            {loading && !stats ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px', gap: 1.5, width: '100%' }}>
+                <CircularProgress size={32} sx={{ color: '#2dce89' }} />
+                <Typography sx={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
+                  Loading sentiment distribution...
+                </Typography>
+              </Box>
+            ) : sentimentStats.legendItems.length === 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px', gap: 1, width: '100%', py: 3 }}>
+                <PieChartRoundedIcon sx={{ fontSize: '40px', color: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }} />
+                <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
+                  No sentiment data available
+                </Typography>
+                <Typography sx={{ fontSize: '12px', color: darkMode ? '#64748b' : '#94a3b8', textAlign: 'center', maxWidth: '280px' }}>
+                  Sentiment records will populate automatically as posts are classified.
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ width: '180px', height: '180px', flexShrink: 0, position: 'relative' }}>
+                  <Pie
+                    data={sentimentStats.chartData}
+                    options={{
+                      plugins: { legend: { display: false } },
+                      maintainAspectRatio: false,
+                    }}
+                  />
+                </Box>
 
-            <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-              {sentimentStats.legendItems.map((item) => (
-                <Box
-                  key={item.name}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: 1,
-                    borderRadius: '8px',
-                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
-                    border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+                  {sentimentStats.legendItems.map((item) => (
                     <Box
+                      key={item.name}
                       sx={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        backgroundColor: item.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#e2e8f0' : '#344767' }}>
-                      {item.name}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
-                      {item.count}
-                    </Typography>
-                    <Box
-                      sx={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: darkMode ? '#cbd5e1' : '#64748b',
-                        backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : '#edf2f7',
-                        px: 0.8,
-                        py: 0.2,
-                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        borderRadius: '8px',
+                        backgroundColor: darkMode ? '#090e15' : '#f8fafc',
+                        border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
                       }}
                     >
-                      {item.pct}%
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                        <Box
+                          sx={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: item.color,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: darkMode ? '#e2e8f0' : '#344767' }}>
+                          {item.name}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#1e293b' }}>
+                          {item.count}
+                        </Typography>
+                        <Box
+                          sx={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: darkMode ? '#cbd5e1' : '#64748b',
+                            backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : '#edf2f7',
+                            px: 0.8,
+                            py: 0.2,
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {item.pct}%
+                        </Box>
+                      </Box>
                     </Box>
-                  </Box>
+                  ))}
                 </Box>
-              ))}
-            </Box>
+              </>
+            )}
           </Box>
         </Card>
       </Box>
@@ -490,14 +609,14 @@ function AnalyticsView({ dataRevision = 0 }) {
           mb: 3,
           borderRadius: '16px',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TrendingUpRoundedIcon sx={{ color: '#5e72e4', fontSize: '22px' }} />
+              <TrendingUpRoundedIcon sx={{ color: '#16a34a', fontSize: '22px' }} />
               <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '18px', color: darkMode ? '#ffffff' : '#1e293b' }}>
                 Viral Impact & Influence Leaderboard
               </Typography>
@@ -508,7 +627,7 @@ function AnalyticsView({ dataRevision = 0 }) {
           </Box>
           <Box
             sx={{
-              background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
               color: '#ffffff',
               px: 1.5,
               py: 0.5,
@@ -536,7 +655,7 @@ function AnalyticsView({ dataRevision = 0 }) {
               <col style={{ width: '85px' }} />
               <col style={{ width: '95px' }} />
             </colgroup>
-            <TableHead sx={{ display: 'table-header-group', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
+            <TableHead sx={{ display: 'table-header-group', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}>
               <TableRow>
                 <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: darkMode ? '#94a3b8' : '#8392ab', fontSize: '11px', textTransform: 'uppercase', py: 1.2, whiteSpace: 'nowrap', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : undefined }}>Rank</TableCell>
                 <TableCell sx={{ textAlign: 'left', fontWeight: 700, color: darkMode ? '#94a3b8' : '#8392ab', fontSize: '11px', textTransform: 'uppercase', py: 1.2, whiteSpace: 'nowrap', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : undefined }}>Author</TableCell>
@@ -564,7 +683,7 @@ function AnalyticsView({ dataRevision = 0 }) {
                         width: '28px',
                         height: '28px',
                         borderRadius: '50%',
-                        backgroundColor: index === 0 ? '#f5365c' : index === 1 ? '#fb6340' : index === 2 ? '#5e72e4' : (darkMode ? '#1e293b' : '#edf2f7'),
+                        backgroundColor: index === 0 ? '#f5365c' : index === 1 ? '#fb6340' : index === 2 ? '#16a34a' : (darkMode ? '#1e293b' : '#edf2f7'),
                         color: index < 3 ? '#ffffff' : (darkMode ? '#94a3b8' : '#495057'),
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -668,12 +787,12 @@ function AnalyticsView({ dataRevision = 0 }) {
                         fontWeight: 600,
                         py: 0.4,
                         px: 1.2,
-                        color: darkMode ? '#a5b4fc' : '#5e72e4',
+                        color: darkMode ? '#4ade80' : '#16a34a',
                         borderColor: darkMode ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
                         borderRadius: '6px',
                         '&:hover': {
-                          borderColor: '#5e72e4',
-                          backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.06)',
+                          borderColor: '#16a34a',
+                          backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.06)',
                         },
                       }}
                     >

@@ -4,13 +4,13 @@ import json
 import time
 import pytest
 
-def http_get(url, token=None, retries=3):
-    headers = {"Content-Type": "application/json"}
+def http_get(url, token=None, retries=5):
+    headers = {"Content-Type": "application/json", "Connection": "close"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    req = urllib.request.Request(url, headers=headers, method="GET")
     for attempt in range(retries):
         try:
+            req = urllib.request.Request(url, headers=headers, method="GET")
             with urllib.request.urlopen(req) as resp:
                 content = resp.read().decode("utf-8")
                 return resp.status, json.loads(content) if content else {}
@@ -21,13 +21,13 @@ def http_get(url, token=None, retries=3):
             except Exception:
                 err_json = {"raw": content}
             return e.code, err_json
-        except (ConnectionResetError, urllib.error.URLError, ConnectionAbortedError, ConnectionError) as e:
+        except (ConnectionResetError, urllib.error.URLError, ConnectionAbortedError, ConnectionError, OSError) as e:
             if attempt == retries - 1:
                 raise
-            time.sleep(0.08)
+            time.sleep(0.15)
 
-def http_post(url, data=None, token=None, retries=3):
-    headers = {"Content-Type": "application/json"}
+def http_post(url, data=None, token=None, retries=5):
+    headers = {"Content-Type": "application/json", "Connection": "close"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     body = json.dumps(data or {}).encode("utf-8")
@@ -44,10 +44,10 @@ def http_post(url, data=None, token=None, retries=3):
             except Exception:
                 err_json = {"raw": content}
             return e.code, err_json
-        except (ConnectionResetError, urllib.error.URLError, ConnectionAbortedError, ConnectionError) as e:
+        except (ConnectionResetError, urllib.error.URLError, ConnectionAbortedError, ConnectionError, OSError) as e:
             if attempt == retries - 1:
                 raise
-            time.sleep(0.08)
+            time.sleep(0.15)
 
 class TestE2ERBACMatrix:
     def test_anonymous_access_denied_401(self, ephemeral_server):

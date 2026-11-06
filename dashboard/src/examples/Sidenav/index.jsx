@@ -177,7 +177,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
                 sx={{
                   display: { xs: "none", lg: "inline-flex" },
                   color: isDark ? "#cbd5e1" : "#344767",
-                  backgroundColor: isDark ? "#111c44" : "#ffffff",
+                  backgroundColor: isDark ? "#0f172a" : "#ffffff",
                   border: isDark ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid #e2e8f0",
                   borderRadius: "10px",
                   p: 0.8,
@@ -185,8 +185,8 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
                   transition: "all 0.2s ease",
                   "&:hover": {
                     backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
-                    borderColor: "#5e72e4",
-                    color: "#5e72e4",
+                    borderColor: "#16a34a",
+                    color: "#16a34a",
                     transform: "scale(1.05)",
                   },
                 }}
@@ -263,7 +263,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
                     fontFamily: '"Open Sans", sans-serif',
                     fontWeight: 700,
                     fontSize: "11px",
-                    color: isDark ? "#825ee4" : "#5e72e4",
+                    color: isDark ? "#22c55e" : "#16a34a",
                     letterSpacing: "0.2px",
                     lineHeight: 1.15,
                     whiteSpace: "nowrap",
@@ -292,8 +292,8 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
                   transition: "all 0.2s ease",
                   "&:hover": {
                     backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
-                    borderColor: "#5e72e4",
-                    color: "#5e72e4",
+                    borderColor: "#16a34a",
+                    color: "#16a34a",
                     transform: "scale(1.05)",
                   },
                 }}

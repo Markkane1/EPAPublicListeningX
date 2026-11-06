@@ -23,7 +23,7 @@ export default function ProtectedRoute({ children, requiredPermission, moduleNam
           gap: 2
         }}
       >
-        <CircularProgress size={36} thickness={4} sx={{ color: '#5e72e4' }} />
+        <CircularProgress size={36} thickness={4} sx={{ color: '#16a34a' }} />
         <Typography sx={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
           Authenticating secure session...
         </Typography>

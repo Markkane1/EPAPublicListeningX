@@ -26,7 +26,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 import FilterAltOffRoundedIcon from '@mui/icons-material/FilterAltOffRounded';
 
-import DetailedStatisticsCard from 'examples/Cards/StatisticsCards/DetailedStatisticsCard';
+import DetailedStatisticsCard, { AnimatedNumber } from 'examples/Cards/StatisticsCards/DetailedStatisticsCard';
 import PostCard from 'components/PostCard';
 import { useArgonController } from 'context';
 import { useAuth } from 'context/AuthContext';
@@ -152,13 +152,86 @@ function DashboardView({
 
   return (
     <Box sx={{ py: 2 }}>
-      
+      {/* Primary KPI Metrics */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            lg: 'repeat(4, 1fr)',
+          },
+          gap: 3,
+          mb: 3,
+        }}
+      >
+        <DetailedStatisticsCard
+          delay={0.02}
+          loading={loadingStats && !stats}
+          title="Clean Posts"
+          count={String(totalClean)}
+          icon={{
+            color: 'success',
+            component: <CheckCircleRoundedIcon />,
+          }}
+          percentage={{
+            color: hasActiveFilters ? 'info' : 'success',
+            count: hasActiveFilters ? `${Math.round((totalClean / (archiveTotal || 1)) * 100)}%` : `+${precisionRate}%`,
+            text: hasActiveFilters ? 'of total posts' : 'precision rate',
+          }}
+        />
+
+        <DetailedStatisticsCard
+          delay={0.06}
+          loading={loadingStats && !stats}
+          title="Peak Recorded AQI"
+          count={hasAqi ? String(peakAqi) : '—'}
+          icon={{
+            color: 'error',
+            component: <WarningAmberRoundedIcon />,
+          }}
+          percentage={{
+            color: peakIsHazardous ? 'error' : 'secondary',
+            count: hasAqi ? (peakIsHazardous ? 'Hazardous' : 'Recorded') : 'No AQI yet',
+            text: hasActiveFilters ? 'in selected window' : (topCity || 'from posts'),
+          }}
+        />
+
+        <DetailedStatisticsCard
+          delay={0.10}
+          loading={loadingStats && !stats}
+          title="Average Recorded AQI"
+          count={hasAqi ? String(avgAqi) : '—'}
+          icon={{
+            color: 'warning',
+            component: <CloudQueueRoundedIcon />,
+          }}
+          percentage={{
+            color: avgIsHazardous ? 'warning' : 'secondary',
+            count: hasAqi ? (avgIsHazardous ? 'Hazardous' : 'Recorded') : 'No AQI yet',
+            text: hasActiveFilters ? 'window baseline' : 'from posts with AQI',
+          }}
+        />
+
+        <DetailedStatisticsCard
+          delay={0.14}
+          loading={loadingStats && !stats}
+          title="Filtered Noise & Dupes"
+          count={String(totalFiltered)}
+          icon={{
+            color: 'info',
+            component: <CleaningServicesRoundedIcon />,
+          }}
+          percentage={{ color: 'secondary', count: `${duplicatesMerged} merged`, text: `${noiseRemoved} excluded` }}
+        />
+      </Box>
+
       <Card
         sx={{
           mb: 3,
           p: { xs: 2, sm: 2.5 },
           borderRadius: '16px',
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
           boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 16px 0 rgba(103, 116, 142, 0.06)',
         }}
@@ -180,12 +253,12 @@ function DashboardView({
                 width: 38,
                 height: 38,
                 borderRadius: '10px',
-                background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#ffffff',
-                boxShadow: '0 4px 10px rgba(94, 114, 228, 0.3)',
+                boxShadow: '0 4px 10px rgba(22, 163, 74, 0.3)',
                 flexShrink: 0,
               }}
             >
@@ -212,10 +285,10 @@ function DashboardView({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Box
               sx={{
-                backgroundColor: hasActiveFilters ? (darkMode ? 'rgba(37, 99, 235, 0.2)' : '#eff6ff') : (darkMode ? '#0b1437' : '#f8fafc'),
+                backgroundColor: hasActiveFilters ? (darkMode ? 'rgba(34, 197, 94, 0.15)' : '#dcfce7') : (darkMode ? '#090e15' : '#f8fafc'),
                 border: '1px solid',
-                borderColor: hasActiveFilters ? (darkMode ? 'rgba(37, 99, 235, 0.4)' : '#bfdbfe') : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
-                color: hasActiveFilters ? (darkMode ? '#93c5fd' : '#1d4ed8') : (darkMode ? '#94a3b8' : '#64748b'),
+                borderColor: hasActiveFilters ? (darkMode ? 'rgba(34, 197, 94, 0.35)' : '#86efac') : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
+                color: hasActiveFilters ? (darkMode ? '#4ade80' : '#15803d') : (darkMode ? '#94a3b8' : '#64748b'),
                 px: 1.4,
                 py: 0.5,
                 borderRadius: '20px',
@@ -231,12 +304,14 @@ function DashboardView({
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  backgroundColor: hasActiveFilters ? '#2563eb' : '#94a3b8',
+                  backgroundColor: hasActiveFilters ? '#16a34a' : '#94a3b8',
                 }}
               />
-              {hasActiveFilters
-                ? `Showing ${totalClean} of ${archiveTotal} posts`
-                : `All Time Scope (${archiveTotal} posts)`}
+              {hasActiveFilters ? (
+                <>Showing <AnimatedNumber value={totalClean} /> of <AnimatedNumber value={archiveTotal} /> posts</>
+              ) : (
+                <>All Time Scope (<AnimatedNumber value={archiveTotal} /> posts)</>
+              )}
             </Box>
 
             {hasActiveFilters && (
@@ -297,7 +372,7 @@ function DashboardView({
                 fontSize: '13px',
                 borderRadius: '8px',
                 fontFamily: '"Open Sans", sans-serif',
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 color: darkMode ? '#ffffff' : undefined,
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
@@ -338,7 +413,7 @@ function DashboardView({
                 fontSize: '13px',
                 borderRadius: '8px',
                 fontFamily: '"Open Sans", sans-serif',
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 color: darkMode ? '#ffffff' : undefined,
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
@@ -346,10 +421,10 @@ function DashboardView({
               }}
             >
               <MenuItem value="all">All Hours (24 Hours)</MenuItem>
-              <MenuItem value="morning">🌅 Morning (06:00 - 12:00)</MenuItem>
-              <MenuItem value="afternoon">☀️ Afternoon (12:00 - 18:00)</MenuItem>
-              <MenuItem value="evening">🌙 Evening / Peak Smog (18:00 - 24:00)</MenuItem>
-              <MenuItem value="night">🌌 Night & Dawn (00:00 - 06:00)</MenuItem>
+              <MenuItem value="morning">Morning (06:00 - 12:00)</MenuItem>
+              <MenuItem value="afternoon">Afternoon (12:00 - 18:00)</MenuItem>
+              <MenuItem value="evening">Evening / Peak Smog (18:00 - 24:00)</MenuItem>
+              <MenuItem value="night">Night & Dawn (00:00 - 06:00)</MenuItem>
             </Select>
           </FormControl>
 
@@ -402,14 +477,14 @@ function DashboardView({
                     fontSize: '11.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    backgroundColor: isActive ? '#5e72e4' : (darkMode ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9'),
+                    backgroundColor: isActive ? '#16a34a' : (darkMode ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9'),
                     color: isActive ? '#ffffff' : (darkMode ? '#cbd5e1' : '#475569'),
                     border: '1px solid',
-                    borderColor: isActive ? '#5e72e4' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
+                    borderColor: isActive ? '#16a34a' : (darkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
                     transition: 'all 0.15s ease-in-out',
                     whiteSpace: 'nowrap',
                     '&:hover': {
-                      backgroundColor: isActive ? '#485ec4' : (darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0'),
+                      backgroundColor: isActive ? '#15803d' : (darkMode ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0'),
                     },
                   }}
                 >
@@ -421,81 +496,12 @@ function DashboardView({
         </Box>
       </Card>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            lg: 'repeat(4, 1fr)',
-          },
-          gap: 3,
-          mb: 3,
-        }}
-      >
-        <DetailedStatisticsCard
-          loading={loadingStats && !stats}
-          title="Clean Posts"
-          count={String(totalClean)}
-          icon={{
-            color: 'success',
-            component: <CheckCircleRoundedIcon />,
-          }}
-          percentage={{
-            color: hasActiveFilters ? 'info' : 'success',
-            count: hasActiveFilters ? `${Math.round((totalClean / (archiveTotal || 1)) * 100)}%` : `+${precisionRate}%`,
-            text: hasActiveFilters ? 'of total posts' : 'precision rate',
-          }}
-        />
-
-        <DetailedStatisticsCard
-          loading={loadingStats && !stats}
-          title="Peak Recorded AQI"
-          count={hasAqi ? String(peakAqi) : '—'}
-          icon={{
-            color: 'error',
-            component: <WarningAmberRoundedIcon />,
-          }}
-          percentage={{
-            color: peakIsHazardous ? 'error' : 'secondary',
-            count: hasAqi ? (peakIsHazardous ? 'Hazardous' : 'Recorded') : 'No AQI yet',
-            text: hasActiveFilters ? 'in selected window' : (topCity || 'from posts'),
-          }}
-        />
-
-        <DetailedStatisticsCard
-          loading={loadingStats && !stats}
-          title="Average Recorded AQI"
-          count={hasAqi ? String(avgAqi) : '—'}
-          icon={{
-            color: 'warning',
-            component: <CloudQueueRoundedIcon />,
-          }}
-          percentage={{
-            color: avgIsHazardous ? 'warning' : 'secondary',
-            count: hasAqi ? (avgIsHazardous ? 'Hazardous' : 'Recorded') : 'No AQI yet',
-            text: hasActiveFilters ? 'window baseline' : 'from posts with AQI',
-          }}
-        />
-
-        <DetailedStatisticsCard
-          loading={loadingStats && !stats}
-          title="Filtered Noise & Dupes"
-          count={String(totalFiltered)}
-          icon={{
-            color: 'info',
-            component: <CleaningServicesRoundedIcon />,
-          }}
-          percentage={{ color: 'secondary', count: `${duplicatesMerged} merged`, text: `${noiseRemoved} excluded` }}
-        />
-      </Box>
-
       <Card
         sx={{
           mb: 3,
           p: { xs: 2.5, sm: 3 },
           borderRadius: '16px',
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
           boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
         }}
@@ -513,7 +519,7 @@ function DashboardView({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5, flexWrap: 'wrap' }}>
               <Box
                 sx={{
-                  backgroundColor: darkMode ? '#0b1437' : '#f1f5f9',
+                  backgroundColor: darkMode ? '#090e15' : '#f1f5f9',
                   color: darkMode ? '#cbd5e1' : '#334155',
                   border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                   px: 1.4,
@@ -528,7 +534,7 @@ function DashboardView({
                   gap: 0.6,
                 }}
               >
-                <PlaceRoundedIcon sx={{ fontSize: '15px', color: '#5e72e4' }} />
+                <PlaceRoundedIcon sx={{ fontSize: '15px', color: '#16a34a' }} />
                 Scope: Punjab, Pakistan
               </Box>
             </Box>
@@ -545,9 +551,14 @@ function DashboardView({
                 wordBreak: 'break-word',
               }}
             >
-              {hasAqi
-                ? `Peak AQI ${peakAqi}${topCity ? ` in ${topCity}` : ''}`
-                : 'No AQI yet'}
+              {hasAqi ? (
+                <>
+                  Peak AQI <AnimatedNumber value={peakAqi} />
+                  {topCity ? ` in ${topCity}` : ''}
+                </>
+              ) : (
+                'No AQI yet'
+              )}
             </Typography>
 
             <Typography
@@ -559,9 +570,16 @@ function DashboardView({
                 mb: 2,
               }}
             >
-              {hasAqi
-                ? `Peak recorded AQI is ${peakAqi}${peakIsHazardous ? ' (Hazardous)' : ''}. Average recorded AQI is ${avgAqi}${avgIsHazardous ? ' (Hazardous)' : ''}.${topCity ? ` Most posts in this window name ${topCity}.` : ''}`
-                : 'No post in this window has a numeric AQI.'}
+              {hasAqi ? (
+                <>
+                  Peak recorded AQI is <AnimatedNumber value={peakAqi} />
+                  {peakIsHazardous ? ' (Hazardous)' : ''}. Average recorded AQI is <AnimatedNumber value={avgAqi} />
+                  {avgIsHazardous ? ' (Hazardous)' : ''}.
+                  {topCity ? ` Most posts in this window name ${topCity}.` : ''}
+                </>
+              ) : (
+                'No post in this window has a numeric AQI.'
+              )}
             </Typography>
 
             <Box
@@ -576,11 +594,11 @@ function DashboardView({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <WarningAmberRoundedIcon sx={{ fontSize: '18px', color: '#f5365c', flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                  Peak AQI: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{hasAqi ? `${peakAqi}${peakIsHazardous ? ' (Hazardous)' : ''}` : '—'}</strong>
+                  Peak AQI: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{hasAqi ? <><AnimatedNumber value={peakAqi} />{peakIsHazardous ? ' (Hazardous)' : ''}</> : '—'}</strong>
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                <PlaceRoundedIcon sx={{ fontSize: '18px', color: '#5e72e4', flexShrink: 0 }} />
+                <PlaceRoundedIcon sx={{ fontSize: '18px', color: '#16a34a', flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
                   Epicenter: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{topCity || '—'}</strong>
                 </Typography>
@@ -588,7 +606,7 @@ function DashboardView({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <VerifiedRoundedIcon sx={{ fontSize: '18px', color: '#2dce89', flexShrink: 0 }} />
                 <Typography sx={{ fontSize: '12.5px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                  Clean Dataset: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}>{totalClean} Posts</strong>
+                  Clean Dataset: <strong style={{ color: darkMode ? '#ffffff' : '#1e293b' }}><AnimatedNumber value={totalClean} /> Posts</strong>
                 </Typography>
               </Box>
             </Box>
@@ -610,7 +628,7 @@ function DashboardView({
               onClick={() => onNavigate('posts')}
               startIcon={<DynamicFeedRoundedIcon />}
               sx={{
-                background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
                 color: '#ffffff',
                 fontFamily: '"Open Sans", sans-serif',
                 fontWeight: 600,
@@ -619,14 +637,14 @@ function DashboardView({
                 borderRadius: '8px',
                 px: 2,
                 py: 1,
-                boxShadow: '0 4px 14px 0 rgba(94, 114, 228, 0.35)',
+                boxShadow: '0 4px 14px 0 rgba(22, 163, 74, 0.35)',
                 '&:hover': {
-                  background: 'linear-gradient(310deg, #5263d9 0%, #724fd9 100%)',
-                  boxShadow: '0 6px 18px 0 rgba(94, 114, 228, 0.45)',
+                  background: '#15803d',
+                  boxShadow: '0 6px 18px 0 rgba(22, 163, 74, 0.45)',
                 },
               }}
             >
-              Explore All {totalClean} Posts
+              View All <AnimatedNumber value={totalClean} /> Posts
             </Button>
 
             {canIngest && (
@@ -661,7 +679,7 @@ function DashboardView({
               onClick={() => onNavigate('settings')}
               startIcon={<TuneRoundedIcon />}
               sx={{
-                color: darkMode ? '#a5b4fc' : '#5e72e4',
+                color: darkMode ? '#4ade80' : '#16a34a',
                 fontFamily: '"Open Sans", sans-serif',
                 fontWeight: 600,
                 fontSize: '12.5px',
@@ -670,7 +688,7 @@ function DashboardView({
                 px: 2,
                 py: 0.8,
                 '&:hover': {
-                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : '#f8f9fe',
+                  backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : '#f8f9fe',
                 },
               }}
             >
@@ -692,7 +710,7 @@ function DashboardView({
         }}
       >
         
-        <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: '16px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)', minWidth: 0 }}>
+        <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: '16px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)', minWidth: 0 }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, mb: 2 }}>
             <Box>
               <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#344767' }}>
@@ -713,7 +731,7 @@ function DashboardView({
                 fontWeight: 700,
               }}
             >
-              {sortedCities.length} Districts
+              <AnimatedNumber value={sortedCities.length} /> Districts
             </Box>
           </Box>
 
@@ -729,17 +747,18 @@ function DashboardView({
                       <Typography sx={{ fontSize: '13px', fontWeight: 600, color: darkMode ? '#e2e8f0' : '#344767' }}>
                         {city}
                       </Typography>
-                      <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#a5b4fc' : '#5e72e4' }}>
-                        {count} ({percentage}%)
+                      <Typography sx={{ fontSize: '12px', fontWeight: 700, color: darkMode ? '#4ade80' : '#16a34a' }}>
+                        <AnimatedNumber value={count} /> (<AnimatedNumber value={percentage} />%)
                       </Typography>
                     </Box>
-                    <Box sx={{ width: '100%', height: '6px', borderRadius: '3px', backgroundColor: darkMode ? '#0b1437' : '#e9ecef', overflow: 'hidden' }}>
+                    <Box sx={{ width: '100%', height: '6px', borderRadius: '3px', backgroundColor: darkMode ? '#090e15' : '#e9ecef', overflow: 'hidden' }}>
                       <Box
                         sx={{
                           height: '100%',
                           borderRadius: '3px',
                           background: city === 'Lahore' ? 'linear-gradient(310deg, #f5365c 0%, #ec0c38 100%)' : 'linear-gradient(310deg, #1171ef 0%, #11cdef 100%)',
                           width: `${Math.min(100, percentage * 1.2)}%`,
+                          transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
                         }}
                       />
                     </Box>
@@ -756,7 +775,7 @@ function DashboardView({
           </Box>
         </Card>
 
-        <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: '16px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)', minWidth: 0 }}>
+        <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: '16px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 20px 0 rgba(0, 0, 0, 0.05)', minWidth: 0 }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 2 }}>
             <Box>
               <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 700, fontSize: '16px', color: darkMode ? '#ffffff' : '#344767' }}>
@@ -799,36 +818,36 @@ function DashboardView({
               mb: 2,
             }}
           >
-            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
+            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#090e15' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#2dce89', textTransform: 'uppercase' }}>
                 Valid Posts
               </Typography>
               <Typography sx={{ fontSize: '22px', fontWeight: 800, color: darkMode ? '#ffffff' : '#344767', my: 0.3 }}>
-                {totalClean}
+                <AnimatedNumber value={totalClean} />
               </Typography>
               <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 Passed all negative gates & checks
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
+            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#090e15' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#fb6340', textTransform: 'uppercase' }}>
                 Duplicates Merged
               </Typography>
               <Typography sx={{ fontSize: '22px', fontWeight: 800, color: darkMode ? '#ffffff' : '#344767', my: 0.3 }}>
-                {duplicatesMerged}
+                <AnimatedNumber value={duplicatesMerged} />
               </Typography>
               <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 Consolidated into parent post
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#0b1437' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
+            <Box sx={{ p: 1.8, borderRadius: '12px', backgroundColor: darkMode ? '#090e15' : '#f8f9fa', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7' }}>
               <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#f5365c', textTransform: 'uppercase' }}>
                 Excluded Noise
               </Typography>
               <Typography sx={{ fontSize: '22px', fontWeight: 800, color: darkMode ? '#ffffff' : '#344767', my: 0.3 }}>
-                {noiseRemoved}
+                <AnimatedNumber value={noiseRemoved} />
               </Typography>
               <Typography sx={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#8392ab' }}>
                 Irrelevant chatter & external regions
@@ -841,7 +860,7 @@ function DashboardView({
             sx={{
               p: 1.8,
               borderRadius: '12px',
-              backgroundColor: darkMode ? '#0b1437' : '#f8f9fa',
+              backgroundColor: darkMode ? '#090e15' : '#f8f9fa',
               border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
               mb: 2,
             }}
@@ -865,7 +884,7 @@ function DashboardView({
                 />
               </Box>
               <Typography sx={{ fontSize: '11.5px', color: darkMode ? '#94a3b8' : '#8392ab', fontWeight: 600 }}>
-                {totalPipelineProcessed} Records Evaluated
+                <AnimatedNumber value={totalPipelineProcessed} /> Records Evaluated
               </Typography>
             </Box>
 
@@ -881,28 +900,28 @@ function DashboardView({
                 mb: 1,
               }}
             >
-              <Box sx={{ width: `${purityPct}%`, backgroundColor: '#2dce89' }} title={`Clean: ${purityPct}%`} />
-              <Box sx={{ width: `${duplicatePct}%`, backgroundColor: '#fb6340' }} title={`Merged: ${duplicatePct}%`} />
-              <Box sx={{ width: `${noisePct}%`, backgroundColor: '#f5365c' }} title={`Excluded: ${noisePct}%`} />
+              <Box sx={{ width: `${purityPct}%`, backgroundColor: '#2dce89', transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} title={`Clean: ${purityPct}%`} />
+              <Box sx={{ width: `${duplicatePct}%`, backgroundColor: '#fb6340', transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} title={`Merged: ${duplicatePct}%`} />
+              <Box sx={{ width: `${noisePct}%`, backgroundColor: '#f5365c', transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} title={`Excluded: ${noisePct}%`} />
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.2, flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2dce89' }} />
                 <Typography sx={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
-                  Verified Clean ({purityPct}%)
+                  Verified Clean (<AnimatedNumber value={purityPct} />%)
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#fb6340' }} />
                 <Typography sx={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
-                  Merged Duplicates ({duplicatePct}%)
+                  Merged Duplicates (<AnimatedNumber value={duplicatePct} />%)
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f5365c' }} />
                 <Typography sx={{ fontSize: '11px', fontWeight: 600, color: darkMode ? '#cbd5e1' : '#64748b' }}>
-                  Excluded Noise ({noisePct}%)
+                  Excluded Noise (<AnimatedNumber value={noisePct} />%)
                 </Typography>
               </Box>
             </Box>
@@ -944,7 +963,7 @@ function DashboardView({
                       p: 1,
                       px: 1.4,
                       borderRadius: '10px',
-                      backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                      backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                       border: darkMode ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #f1f5f9',
                       display: 'flex',
                       alignItems: 'center',
@@ -1037,8 +1056,8 @@ function DashboardView({
               </Typography>
               <Box
                 sx={{
-                  backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.2)' : 'rgba(94, 114, 228, 0.1)',
-                  color: darkMode ? '#b3c5ff' : '#5e72e4',
+                  backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.2)' : 'rgba(22, 163, 74, 0.1)',
+                  color: darkMode ? '#b3c5ff' : '#16a34a',
                   px: 1.2,
                   py: 0.3,
                   borderRadius: '6px',
@@ -1062,14 +1081,14 @@ function DashboardView({
               textTransform: 'none',
               fontFamily: '"Open Sans", sans-serif',
               fontWeight: 600,
-              color: darkMode ? '#a5b4fc' : '#5e72e4',
+              color: darkMode ? '#4ade80' : '#16a34a',
               whiteSpace: 'nowrap',
               '&:hover': {
-                backgroundColor: darkMode ? 'rgba(94, 114, 228, 0.15)' : 'rgba(94, 114, 228, 0.08)',
+                backgroundColor: darkMode ? 'rgba(22, 163, 74, 0.15)' : 'rgba(22, 163, 74, 0.08)',
               },
             }}
           >
-            Explore All Posts ({totalClean})
+            View All Posts (<AnimatedNumber value={totalClean} />)
           </Button>
         </Box>
 
@@ -1096,7 +1115,7 @@ function DashboardView({
               p: { xs: 3, sm: 5 },
               textAlign: 'center',
               borderRadius: '16px',
-              backgroundColor: darkMode ? '#111c44' : '#ffffff',
+              backgroundColor: darkMode ? '#0f172a' : '#ffffff',
               border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #edf2f7',
               boxShadow: darkMode ? '0 8px 24px rgba(0, 0, 0, 0.35)' : '0 4px 16px 0 rgba(103, 116, 142, 0.04)',
             }}
@@ -1135,14 +1154,14 @@ function DashboardView({
                 textTransform: 'none',
                 fontFamily: '"Open Sans", sans-serif',
                 fontWeight: 600,
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 color: '#ffffff',
                 borderRadius: '8px',
                 px: 2.5,
                 py: 0.8,
-                boxShadow: '0 4px 12px rgba(94, 114, 228, 0.3)',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
                 '&:hover': {
-                  backgroundColor: '#485ec4',
+                  backgroundColor: '#15803d',
                 },
               }}
             >

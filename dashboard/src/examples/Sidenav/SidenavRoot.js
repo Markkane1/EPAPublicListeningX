@@ -19,7 +19,7 @@ export default styled(Drawer)(({ theme, ownerState }) => {
   if (layout === "landing") {
     bgColor = transparent.main;
   } else if (isDark) {
-    bgColor = background?.dark || "#111c44";
+    bgColor = background?.dark || "#0f172a";
   } else {
     bgColor = white.main;
   }

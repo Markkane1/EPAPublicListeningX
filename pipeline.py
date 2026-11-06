@@ -244,6 +244,101 @@ def extract_learning_candidates(post: dict, exclusion_category: str = "", exclus
 
     return candidates
 
+COMMON_BUREAUCRATIC_PHRASE_PATTERNS = [
+    (re.compile(r'\bchaired\s+(?:a\s+)?(?:high[- ]level\s+)?meeting\b', re.IGNORECASE), "chaired review meeting"),
+    (re.compile(r'\bmeeting\s+held\s+regarding\b', re.IGNORECASE), "meeting held regarding"),
+    (re.compile(r'\bdelegation\s+called\s+on\b', re.IGNORECASE), "delegation called on"),
+    (re.compile(r'\breviewed\s+progress\b', re.IGNORECASE), "reviewed progress"),
+    (re.compile(r'\bshields?\s+presented\b', re.IGNORECASE), "shields presented"),
+    (re.compile(r'\binaugurated\s+the\b', re.IGNORECASE), "inaugurated the"),
+    (re.compile(r'\bpress\s+release\b', re.IGNORECASE), "press release"),
+    (re.compile(r'\bconvened\s+a\s+meeting\b', re.IGNORECASE), "convened a meeting"),
+    (re.compile(r'\binspected\s+the\s+arrangements\b', re.IGNORECASE), "inspected arrangements"),
+    (re.compile(r'\bheld\s+a\s+meeting\b', re.IGNORECASE), "held a meeting"),
+]
+
+COMMON_COMMERCIAL_PATTERNS = [
+    (re.compile(r'\bair\s+purifier\b', re.IGNORECASE), "air purifier"),
+    (re.compile(r'\bhepa\s+filter\b', re.IGNORECASE), "hepa filter"),
+    (re.compile(r'\border\s+(?:via|on)\s+whatsapp\b', re.IGNORECASE), "order on whatsapp"),
+    (re.compile(r'\bflat\s+\d+%\s+off\b', re.IGNORECASE), "flat discount"),
+    (re.compile(r'\bdiscount\s+on\b', re.IGNORECASE), "discount on"),
+    (re.compile(r'\bdm\s+for\s+price\b', re.IGNORECASE), "dm for price"),
+]
+
+COMMON_INDIAN_WATER_PATTERNS = [
+    (re.compile(r'\bbuddha\s+nullah\b', re.IGNORECASE), "buddha nullah"),
+    (re.compile(r'\bchitti\s+bein\b', re.IGNORECASE), "chitti bein"),
+    (re.compile(r'\bsatluj\s+river\b', re.IGNORECASE), "satluj river"),
+]
+
+COMMON_METAPHOR_PATTERNS = [
+    (re.compile(r'\bsmog\s+of\s+\w+\b', re.IGNORECASE), "smog of [topic]"),
+    (re.compile(r'\bpolitical\s+smog\b', re.IGNORECASE), "political smog"),
+    (re.compile(r'\btoxic\s+boss\b', re.IGNORECASE), "toxic boss"),
+    (re.compile(r'\btoxic\s+culture\b', re.IGNORECASE), "toxic culture"),
+    (re.compile(r'\bmental\s+smog\b', re.IGNORECASE), "mental smog"),
+]
+
+def extract_exclusion_phrase_candidates(text: str, category: str = "") -> list:
+    """
+    Extracts candidate phrase patterns from a post when an operator is excluding it,
+    allowing the system to learn phrase-based negative rules without blocking the author handle.
+    """
+    candidates = []
+    text_clean = (text or "").strip()
+    text_lower = text_clean.lower()
+    found_phrases = set()
+
+    # Category-specific check
+    pattern_groups = []
+    if category in ("GOVT_BUREAUCRATIC_PR", "EXCLUDED_ACCOUNT", "MANUAL_EXCLUDED"):
+        pattern_groups.append(COMMON_BUREAUCRATIC_PHRASE_PATTERNS)
+    elif category == "INDIAN_WATER_DISPUTES":
+        pattern_groups.append(COMMON_INDIAN_WATER_PATTERNS)
+    elif category in ("COMMERCIAL_SPAM_AND_ADS", "COMMERCIAL_SPAM"):
+        pattern_groups.append(COMMON_COMMERCIAL_PATTERNS)
+    elif category in ("METAPHORICAL_OR_SARCASTIC", "METAPHORICAL_SARCASM"):
+        pattern_groups.append(COMMON_METAPHOR_PATTERNS)
+    
+    # Always include all pattern groups as fallbacks
+    pattern_groups.extend([
+        COMMON_BUREAUCRATIC_PHRASE_PATTERNS,
+        COMMON_INDIAN_WATER_PATTERNS,
+        COMMON_COMMERCIAL_PATTERNS,
+        COMMON_METAPHOR_PATTERNS
+    ])
+
+    for p_group in pattern_groups:
+        for pat, default_val in p_group:
+            m = pat.search(text_lower)
+            if m:
+                matched_str = m.group(0).strip()
+                if matched_str not in found_phrases:
+                    found_phrases.add(matched_str)
+                    candidates.append({
+                        "phrase": matched_str,
+                        "label": f"Filter phrase: \"{matched_str}\"",
+                        "description": f"Silences future posts matching '{matched_str}' (author handle unblocked)",
+                        "recommended": True
+                    })
+
+    # If no standard patterns matched, extract 2-3 word n-grams that contain meaningful words
+    if not candidates:
+        words = [w for w in re.findall(r'[a-zA-Z]{3,}', text_lower) if w not in COMMON_STOP_WORDS]
+        for i in range(min(3, len(words) - 1)):
+            bigram = f"{words[i]} {words[i+1]}"
+            if bigram not in found_phrases:
+                found_phrases.add(bigram)
+                candidates.append({
+                    "phrase": bigram,
+                    "label": f"Candidate phrase: \"{bigram}\"",
+                    "description": f"Filter out future posts containing '{bigram}'",
+                    "recommended": False
+                })
+
+    return candidates
+
 def normalize_text_for_dedup(text: str) -> str:
     """Normalizes text by stripping replies, URLs, and punctuation to detect semantic duplicates."""
     t = NORM_REPLY_REGEX.sub('', text)
@@ -473,6 +568,7 @@ def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts:
     learned_geo_list = [k.strip().lower() for k in learned_rules.get("geo_keywords", []) if k.strip()]
     learned_exceptions = [e.strip().lower() for e in learned_rules.get("off_topic_exceptions", []) if e.strip()]
     has_indian_comparison_rule = any("comparison" in str(e).lower() or "cross_border" in str(e).lower() for e in learned_rules.get("indian_exceptions", []))
+    learned_negative_phrases = [p.strip().lower() for p in (learned_rules.get("negative_phrases") or []) if p.strip()]
 
     # Initialize seen IDs and normalized text mapping from existing DB posts
     seen_ids = set()
@@ -588,6 +684,27 @@ def process_dataset(raw_posts: list, learned_rules: dict = None, existing_posts:
         if handle in active_excluded_authors and not is_trusted_author:
             record_noise(idx, pid, handle, text, "EXCLUDED_ACCOUNT",
                          f"Author @{handle} matches query negative constraint (-from:@{handle})", p)
+            continue
+
+        # 2.5 Learned Negative Phrases Filter (Content-based, NOT author-based)
+        matched_negative_phrase = None
+        for neg_phrase in learned_negative_phrases:
+            if neg_phrase in text_lower:
+                # Safeguard: Do not exclude if the post contains hard environmental field data or enforcement metrics
+                has_hard_metrics = (
+                    re.search(r'\baqi\s*[:=-]?\s*\d{2,4}\b', text_lower) is not None or
+                    re.search(r'\bpm2\.?5\s*[:=-]?\s*\d{1,4}\b', text_lower) is not None or
+                    re.search(r'\b(pkr|rs\.?)\s*\d+[\d,]*\b', text_lower) is not None or
+                    any(w in text_lower for w in ['sealed', 'fined', 'challan', 'arrested', 'demolished', 'impounded'])
+                )
+                if not has_hard_metrics and not is_trusted_author:
+                    matched_negative_phrase = neg_phrase
+                    break
+
+        if matched_negative_phrase:
+            neg_cat = "GOVT_BUREAUCRATIC_PR" if any(w in matched_negative_phrase for w in ["meeting", "chaired", "delegation", "reviewed", "inaugurated"]) else "OFF_TOPIC"
+            record_noise(idx, pid, handle, text, neg_cat,
+                         f"Matched learned negative pattern: '{matched_negative_phrase}' (author @{handle} unblocked)", p)
             continue
 
         # 3. Gurmukhi Script Filter (Indian Punjab domestic discourse)

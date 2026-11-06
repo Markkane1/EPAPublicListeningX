@@ -1,9 +1,97 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useArgonController } from "context";
+
+function parseNumberParts(val) {
+  if (val === null || val === undefined || val === '' || val === '-' || val === '—') {
+    return null;
+  }
+  const str = String(val).trim();
+  const match = str.match(/^([^\d\-+.]*?)([-+]?\d[\d,]*(?:\.\d+)?)(.*)$/);
+  if (!match) return null;
+  const prefix = match[1] || '';
+  const numStr = match[2].replace(/,/g, '');
+  const suffix = match[3] || '';
+  const num = parseFloat(numStr);
+  if (isNaN(num)) return null;
+  const dotIdx = numStr.indexOf('.');
+  const decimals = dotIdx !== -1 ? (numStr.length - dotIdx - 1) : 0;
+  return { prefix, num, suffix, decimals };
+}
+
+function formatValue(n, decimals, prefix = '', suffix = '') {
+  const formatted = decimals > 0
+    ? n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+    : Math.round(n).toLocaleString();
+  return `${prefix}${formatted}${suffix}`;
+}
+
+export function AnimatedNumber({ value, duration = 650 }) {
+  const parts = parseNumberParts(value);
+  const isReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const [displayValue, setDisplayValue] = useState(() => {
+    if (!parts) return value ?? '—';
+    if (isReduced) return formatValue(parts.num, parts.decimals, parts.prefix, parts.suffix);
+    return formatValue(0, parts.decimals, parts.prefix, parts.suffix);
+  });
+
+  const prevNumRef = useRef(null);
+
+  useEffect(() => {
+    if (!parts) {
+      setDisplayValue(value ?? '—');
+      prevNumRef.current = null;
+      return;
+    }
+
+    if (isReduced) {
+      setDisplayValue(formatValue(parts.num, parts.decimals, parts.prefix, parts.suffix));
+      prevNumRef.current = parts.num;
+      return;
+    }
+
+    const startNum = prevNumRef.current !== null ? prevNumRef.current : 0;
+    const targetNum = parts.num;
+    prevNumRef.current = targetNum;
+
+    if (startNum === targetNum && prevNumRef.current !== null) {
+      setDisplayValue(formatValue(targetNum, parts.decimals, parts.prefix, parts.suffix));
+      return;
+    }
+
+    const startTime = performance.now();
+    let frameId;
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = startNum + (targetNum - startNum) * ease;
+      setDisplayValue(formatValue(current, parts.decimals, parts.prefix, parts.suffix));
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
+      } else {
+        setDisplayValue(formatValue(targetNum, parts.decimals, parts.prefix, parts.suffix));
+      }
+    };
+
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [value, duration]);
+
+  return <>{displayValue}</>;
+}
+
+AnimatedNumber.propTypes = {
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  duration: PropTypes.number,
+};
 
 function DetailedStatisticsCard({
   bgColor = "white",
@@ -13,19 +101,20 @@ function DetailedStatisticsCard({
   icon = { color: "info", component: null },
   direction = "right",
   loading = false,
+  delay = 0,
 }) {
   const [controller] = useArgonController();
   const { darkMode } = controller || {};
   const isWhite = bgColor === "white";
 
   const gradientColors = {
-    primary: "linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)",
-    secondary: "linear-gradient(310deg, #627594 0%, #a8b8d8 100%)",
-    info: "linear-gradient(310deg, #1171ef 0%, #0b6a78 100%)",
-    success: "linear-gradient(310deg, #0b5d3b 0%, #0e6a68 100%)",
-    warning: "linear-gradient(310deg, #fb6340 0%, #fbb140 100%)",
-    error: "linear-gradient(310deg, #f5365c 0%, #f56036 100%)",
-    dark: "linear-gradient(310deg, #212529 0%, #212229 100%)",
+    primary: "#16a34a",
+    secondary: "#475569",
+    info: "#0284c7",
+    success: "#16a34a",
+    warning: "#d97706",
+    error: "#dc2626",
+    dark: "#0f172a",
   };
 
   const badgeColorsLight = {
@@ -44,8 +133,11 @@ function DetailedStatisticsCard({
     secondary: { bg: "rgba(255, 255, 255, 0.08)", text: "#94a3b8" },
   };
 
-  const badgeColors = darkMode ? badgeColorsDark : badgeColorsLight;
-  const currentBadge = badgeColors[percentage?.color] || badgeColors.secondary;
+  const currentBadge = darkMode
+    ? badgeColorsDark[percentage.color] || badgeColorsDark.secondary
+    : badgeColorsLight[percentage.color] || badgeColorsLight.secondary;
+
+  const delaySec = typeof delay === "number" ? `${delay}s` : (delay || "0s");
 
   const iconBox = icon && (
     <Box
@@ -76,11 +168,20 @@ function DetailedStatisticsCard({
         borderRadius: "16px",
         border: darkMode ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid #edf2f7",
         boxShadow: darkMode ? "0 8px 24px rgba(0, 0, 0, 0.35)" : "0 4px 20px 0 rgba(0, 0, 0, 0.05)",
-        backgroundColor: isWhite ? (darkMode ? "#111c44" : "#ffffff") : bgColor,
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        backgroundColor: isWhite ? (darkMode ? "#0f172a" : "#ffffff") : bgColor,
+        transition: "transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease, border-color 0.18s ease",
+        animation: `statCardEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) ${delaySec} both`,
+        "@keyframes statCardEnter": {
+          from: { opacity: 0, transform: "translateY(6px)" },
+          to: { opacity: 1, transform: "translateY(0)" },
+        },
+        "@media (prefers-reduced-motion: reduce)": {
+          animation: "none",
+        },
         "&:hover": {
-          transform: "translateY(-3px)",
-          boxShadow: darkMode ? "0 16px 36px rgba(0, 0, 0, 0.5)" : "0 10px 25px 0 rgba(0, 0, 0, 0.08)",
+          transform: "translateY(-2px)",
+          borderColor: darkMode ? "rgba(34, 197, 94, 0.35)" : "#16a34a",
+          boxShadow: darkMode ? "0 12px 28px rgba(0, 0, 0, 0.45)" : "0 8px 20px 0 rgba(0, 0, 0, 0.08)",
         },
       }}
     >
@@ -119,12 +220,7 @@ function DetailedStatisticsCard({
                   width: "55%",
                   borderRadius: "6px",
                   bgcolor: darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
-                  animation: "pulse 1.2s ease-in-out infinite",
                   my: 0.5,
-                  "@keyframes pulse": {
-                    "0%, 100%": { opacity: 0.4 },
-                    "50%": { opacity: 0.85 },
-                  },
                 }}
               />
             ) : (
@@ -139,7 +235,7 @@ function DetailedStatisticsCard({
                   letterSpacing: "-0.5px",
                 }}
               >
-                {count}
+                <AnimatedNumber value={count} />
               </Typography>
             )}
           </Box>
@@ -155,11 +251,6 @@ function DetailedStatisticsCard({
                 width: "60%",
                 borderRadius: "4px",
                 bgcolor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
-                animation: "pulse 1.2s ease-in-out infinite",
-                "@keyframes pulse": {
-                  "0%, 100%": { opacity: 0.4 },
-                  "50%": { opacity: 0.85 },
-                },
               }}
             />
           </Box>
@@ -176,19 +267,21 @@ function DetailedStatisticsCard({
                   backgroundColor: currentBadge.bg,
                   color: currentBadge.text,
                   display: "inline-block",
-                  lineHeight: 1.4,
                 }}
               >
-                {percentage.count}
+                <AnimatedNumber value={percentage.count} />
               </Box>
             )}
+
             {percentage.text && (
               <Typography
+                variant="button"
                 sx={{
                   fontFamily: '"Open Sans", sans-serif',
-                  fontSize: "12px",
-                  color: isWhite ? (darkMode ? "#94a3b8" : "#8392ab") : "rgba(255, 255, 255, 0.8)",
+                  fontSize: "11px",
                   fontWeight: 500,
+                  color: isWhite ? (darkMode ? "#94a3b8" : "#8392ab") : "rgba(255, 255, 255, 0.75)",
+                  lineHeight: 1.4,
                 }}
               >
                 {percentage.text}
@@ -202,20 +295,38 @@ function DetailedStatisticsCard({
 }
 
 DetailedStatisticsCard.propTypes = {
-  loading: PropTypes.bool,
   bgColor: PropTypes.string,
   title: PropTypes.string.isRequired,
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   percentage: PropTypes.shape({
-    color: PropTypes.string,
+    color: PropTypes.oneOf([
+      "primary",
+      "secondary",
+      "info",
+      "success",
+      "warning",
+      "error",
+      "dark",
+      "white",
+    ]),
     count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     text: PropTypes.string,
   }),
   icon: PropTypes.shape({
-    color: PropTypes.string,
+    color: PropTypes.oneOf([
+      "primary",
+      "secondary",
+      "info",
+      "success",
+      "warning",
+      "error",
+      "dark",
+    ]),
     component: PropTypes.node.isRequired,
-  }).isRequired,
+  }),
   direction: PropTypes.oneOf(["right", "left"]),
+  loading: PropTypes.bool,
+  delay: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };
 
 export default DetailedStatisticsCard;

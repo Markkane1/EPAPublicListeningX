@@ -40,7 +40,7 @@ function Footer({ company, links }) {
           target="_blank"
           rel="noopener noreferrer"
           sx={{
-            color: "#5e72e4",
+            color: "#16a34a",
             fontWeight: 600,
             textDecoration: "none",
             "&:hover": { textDecoration: "underline" },
@@ -76,7 +76,7 @@ function Footer({ company, links }) {
                 textDecoration: "none",
                 fontFamily: '"Open Sans", sans-serif',
                 transition: "color 0.15s ease",
-                "&:hover": { color: "#5e72e4", textDecoration: "underline" },
+                "&:hover": { color: "#16a34a", textDecoration: "underline" },
               }}
             >
               {link.name}

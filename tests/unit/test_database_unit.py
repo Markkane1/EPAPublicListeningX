@@ -319,3 +319,42 @@ class TestDatabaseUnit:
         ok, err = database.verify_turnstile_token("")
         assert ok is False
         assert "missing" in err.lower()
+
+    def test_posts_chronological_sorting_with_mixed_date_formats(self, temp_db):
+        """Verify posts with Twitter date formats sort chronologically (e.g. Friday Nov 06 before Wed Nov 04)."""
+        posts = [
+            {
+                "id": "post_wed_4",
+                "text": "Wednesday smog report",
+                "authorUsername": "reporter_wed",
+                "createdAt": "Wed Nov 04 19:17:03 +0000 2026",
+            },
+            {
+                "id": "post_fri_6",
+                "text": "Friday latest alert",
+                "authorUsername": "reporter_fri",
+                "createdAt": "Fri Nov 06 04:52:58 +0000 2026",
+            },
+            {
+                "id": "post_thu_5",
+                "text": "Thursday alert",
+                "authorUsername": "reporter_thu",
+                "createdAt": "Thu Nov 05 18:22:10 +0000 2026",
+            },
+        ]
+        database.save_posts_batch(posts)
+
+        # Ensure normalized in database
+        with database.get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, created_at FROM posts WHERE id IN ('post_wed_4', 'post_fri_6', 'post_thu_5')")
+            mapping = dict(cursor.fetchall())
+            assert mapping["post_wed_4"] == "2026-11-04T19:17:03Z"
+            assert mapping["post_thu_5"] == "2026-11-05T18:22:10Z"
+            assert mapping["post_fri_6"] == "2026-11-06T04:52:58Z"
+
+        # Verify newest sort returns Friday Nov 6 first
+        results = database.get_all_posts(sort_by="newest", sort_order="desc", limit=10)
+        returned_ids = [p["id"] for p in results if p["id"] in mapping]
+        assert returned_ids == ["post_fri_6", "post_thu_5", "post_wed_4"]
+

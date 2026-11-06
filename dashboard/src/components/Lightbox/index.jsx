@@ -10,9 +10,10 @@ import ArgonTypography from 'components/ArgonTypography';
 import { isVideoUrl } from '../../utils/media';
 
 function Lightbox({ images, activeIndex, onClose, onPrev, onNext }) {
-  if (!images || images.length === 0 || activeIndex === null) return null;
+  const isOpen = Boolean(images && images.length > 0 && activeIndex !== null);
 
   useEffect(() => {
+    if (!isOpen) return undefined;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft' && images.length > 1) onPrev();
@@ -20,7 +21,9 @@ function Lightbox({ images, activeIndex, onClose, onPrev, onNext }) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeIndex, images.length, onClose, onPrev, onNext]);
+  }, [isOpen, images?.length, onClose, onPrev, onNext]);
+
+  if (!isOpen) return null;
 
   const currentImg = images[activeIndex];
 
@@ -32,8 +35,7 @@ function Lightbox({ images, activeIndex, onClose, onPrev, onNext }) {
       PaperProps={{
         sx: {
           backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(8px)',
-          boxShadow: 'none',
+                    boxShadow: 'none',
           overflow: 'hidden',
           borderRadius: 3,
           m: 2,
@@ -85,6 +87,7 @@ function Lightbox({ images, activeIndex, onClose, onPrev, onNext }) {
           <video
             key={currentImg}
             src={currentImg}
+            referrerPolicy="no-referrer"
             controls
             autoPlay
             playsInline
@@ -101,6 +104,7 @@ function Lightbox({ images, activeIndex, onClose, onPrev, onNext }) {
           <img
             src={currentImg}
             alt={`Post attachment ${activeIndex + 1}`}
+            referrerPolicy="no-referrer"
             style={{
               maxWidth: '100%',
               maxHeight: '75vh',

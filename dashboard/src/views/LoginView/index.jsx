@@ -79,38 +79,13 @@ export default function LoginView() {
         position: 'relative',
         p: { xs: 2, sm: 3 },
         background: darkMode
-          ? 'linear-gradient(310deg, #0b1437 0%, #111c44 60%, #1a1f37 100%)'
-          : 'linear-gradient(310deg, #0f172a 0%, #1e1e38 55%, #5e72e4 100%)',
+          ? 'linear-gradient(180deg, #090e15 0%, #0f172a 100%)'
+          : 'linear-gradient(180deg, #090e15 0%, #0f172a 60%, #064e3b 100%)',
         overflow: 'auto'
       }}
     >
       
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '10%',
-          left: '15%',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(130, 94, 228, 0.22) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          pointerEvents: 'none'
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: '10%',
-          right: '15%',
-          width: '380px',
-          height: '380px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(94, 114, 228, 0.25) 0%, transparent 70%)',
-          filter: 'blur(50px)',
-          pointerEvents: 'none'
-        }}
-      />
+      
 
       <Card
         sx={{
@@ -120,27 +95,41 @@ export default function LoginView() {
           borderRadius: '20px',
           boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
           border: '1px solid rgba(255, 255, 255, 0.12)',
-          backgroundColor: darkMode ? '#111c44' : 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          position: 'relative',
+          backgroundColor: darkMode ? '#0f172a' : 'rgba(255, 255, 255, 0.98)',
+                    position: 'relative',
           zIndex: 1
         }}
       >
         
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Box
-            component="img"
-            src="/logo-epa-mark.png"
-            alt="EPA Punjab"
             sx={{
-              width: '64px',
-              height: '64px',
+              width: '72px',
+              height: '72px',
               mx: 'auto',
-              mb: 1.5,
-              borderRadius: '12px',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.1)'
+              mb: 1.75,
+              borderRadius: '16px',
+              p: 1,
+              backgroundColor: '#ffffff',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'scale(1.04)' }
             }}
-          />
+          >
+            <Box
+              component="img"
+              src="/logo-epa-mark.png"
+              alt="EPA Punjab"
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </Box>
           <Typography
             variant="h4"
             sx={{
@@ -190,7 +179,7 @@ export default function LoginView() {
                     <PersonRoundedIcon sx={{ fontSize: '19px', color: '#94a3b8' }} />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '10px', fontSize: '13.5px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
+                sx: { borderRadius: '10px', fontSize: '13.5px', backgroundColor: darkMode ? '#090e15' : '#f8fafc', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
               }}
             />
           </Box>
@@ -232,7 +221,7 @@ export default function LoginView() {
                     </IconButton>
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '10px', fontSize: '13.5px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
+                sx: { borderRadius: '10px', fontSize: '13.5px', backgroundColor: darkMode ? '#090e15' : '#f8fafc', color: darkMode ? '#ffffff' : '#1e293b', '& .MuiOutlinedInput-notchedOutline': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : undefined } }
               }}
             />
           </Box>
@@ -244,7 +233,7 @@ export default function LoginView() {
                   size="small"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#5e72e4' } }}
+                  sx={{ color: '#94a3b8', '&.Mui-checked': { color: '#16a34a' } }}
                 />
               }
               label={
@@ -286,13 +275,13 @@ export default function LoginView() {
               fontSize: '14px',
               fontWeight: 700,
               textTransform: 'none',
-              background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
               color: '#ffffff',
-              boxShadow: '0 6px 18px rgba(94, 114, 228, 0.35)',
+              boxShadow: '0 6px 18px rgba(22, 163, 74, 0.35)',
               transition: 'all 0.2s ease',
               '&:hover': {
-                background: 'linear-gradient(310deg, #4b5fcc 0%, #5e72e4 100%)',
-                boxShadow: '0 8px 22px rgba(94, 114, 228, 0.45)',
+                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                boxShadow: '0 8px 22px rgba(22, 163, 74, 0.45)',
                 transform: 'translateY(-1px)'
               }
             }}

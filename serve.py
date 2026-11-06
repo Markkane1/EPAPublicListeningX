@@ -75,6 +75,19 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 
 class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            pass
+
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            self.close_connection = True
     def __init__(self, *args, **kwargs):
         serve_dir = DIST_DIR if os.path.exists(DIST_DIR) else (PORTAL_DIR if os.path.exists(PORTAL_DIR) else ROOT_DIR)
         super().__init__(*args, directory=serve_dir, **kwargs)
@@ -107,7 +120,7 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("X-XSS-Protection", "1; mode=block")
-        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
         self.send_header(
             "Content-Security-Policy",
@@ -178,6 +191,9 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
             payload = gzip.compress(payload, compresslevel=6)
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         self._set_cors_headers()
         self._set_security_headers()
         if use_gzip:
@@ -452,6 +468,16 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json(stats)
                     return
 
+                elif path == '/api/noise/taxonomy':
+                    taxonomy_dto = service.get_taxonomy_service()
+                    self.send_json(taxonomy_dto)
+                    return
+
+                elif path == '/api/classifier/status':
+                    status_dto = service.get_classifier_status_service()
+                    self.send_json(status_dto)
+                    return
+
                 # --- Learned rules (requires auth + noise.manage) ---
                 elif path == '/api/learned-rules':
                     user, err_resp = self._check_permission("noise.manage")
@@ -700,12 +726,17 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 post_id = body.get('postId')
                 reason = body.get('reason')
-                category = body.get('category', 'MANUAL_EXCLUDED')
+                category = body.get('category', 'GOVT_BUREAUCRATIC_PR')
+                phrase_patterns = body.get('phrasePatterns') or body.get('phrase_patterns') or []
+                confidence = float(body.get('confidence', 1.0))
                 remove_rules = bool(body.get('removeAssociatedRules', True))
                 res = service.exclude_post_service(
                     post_id=post_id,
                     reason=reason,
                     category=category,
+                    phrase_patterns=phrase_patterns,
+                    confidence=confidence,
+                    curator_user_id=user.get('id') if user else None,
                     remove_associated_rules=remove_rules
                 )
                 self.send_json(res)
@@ -724,6 +755,32 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     post_id=post_id, text=text, author=author, category=category, reason=reason
                 )
                 self.send_json(candidates)
+
+            elif path == '/api/noise/exclusion-candidates':
+                user, err_resp = self._check_permission("posts.exclude")
+                if err_resp:
+                    self.send_json(err_resp[0], status=err_resp[1])
+                    return
+                post_id = body.get('postId')
+                text = body.get('text', '')
+                category = body.get('category', '')
+                candidates = service.extract_exclusion_candidates_service(
+                    post_id=post_id, text=text, category=category
+                )
+                self.send_json(candidates)
+
+            elif path == '/api/classifier/train':
+                user, err_resp = self._check_permission("noise.manage")
+                if err_resp:
+                    self.send_json(err_resp[0], status=err_resp[1])
+                    return
+                res = service.train_classifier_service()
+                self.send_json(res)
+
+            elif path == '/api/classifier/predict':
+                text = body.get('text', '')
+                res = service.predict_classifier_service(text=text)
+                self.send_json(res)
 
             # ----- Learned rules (requires auth + noise.manage) -----
             elif path == '/api/learned-rules':

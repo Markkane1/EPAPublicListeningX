@@ -1,0 +1,40 @@
+{
+  "originalRequest": "i do not need the logo desing, or branding, this is the logo that i want to use everywhere.",
+  "subject": "EPA Punjab Social Listening, the existing Chrome extension for collecting posts, users, and trends from an X page.",
+  "pageType": "dashboard",
+  "scope": "Focused update of the existing extension interface only: toolbar popup, on-page panel, minimized control, and extension icon slots. No new website, no new logo, and no new brand system.",
+  "primaryGoal": "Make the supplied official EPA mark the only logo a person sees in the tool.",
+  "audience": "EPA Punjab staff monitoring public conversation on X.",
+  "offer": "A local listening panel that counts posts, users, and trends from the open X page and exports them.",
+  "primaryAction": "Auto-scroll the open X page, then export the selected tally.",
+  "creativeControl": "The supplied logo is fixed and must be used as-is. No new logo or branding. The existing panel layout and controls stay.",
+  "requiredContent": [
+    "Popup header: the supplied logo, the green EPA wordmark with the leaf, the Urdu line ادارہ تحفظ ماحول، حکومت پنجاب, and the line An ISO Certified Agency, shown as the artwork rather than retyped or redrawn.",
+    "Popup, on X: title Collected, the page kind, the posts/users/trends tally, ready or scrolling status, Auto-scroll, export of the selected tally as CSV, JSON, or Excel, and Open panel.",
+    "Popup, off X: the same logo and a prompt to open a search, a profile, or Explore on X.",
+    "On-page panel: the same logo in the header, drag, minimize, and close, the same tally and status, Auto-scroll and Preview, Speed and Stop at, export, and Clear for the selected tally.",
+    "Minimized control: the EPA wordmark taken from the same artwork, plus the live count.",
+    "Extension icons: the EPA wordmark from the same artwork at the toolbar sizes, not a new symbol.",
+    "Preview: the collected rows in a table with plain column names, dashes for missing values, a filter, and a note that export includes every row. No second logo treatment."
+  ],
+  "constraints": [
+    "Do not design a new logo.",
+    "Do not create a new brand system, palette, or type treatment for the agency.",
+    "Use the attached logo file as the mark. Do not redraw, recolor, or restack its lettering.",
+    "Keep the current listening-panel jobs, labels, and layout.",
+    "The full lockup includes Urdu and the ISO line, so small icon slots use only the EPA wordmark cropped from that same artwork."
+  ],
+  "brandInputs": [
+    "Supplied logo, attached image: green EPA wordmark with a leaf in the lettering, Urdu line ادارہ تحفظ ماحول، حکومت پنجاب, and An ISO Certified Agency, on white.",
+    "Current interface, popup.css and overlay.css: light grey sheet, near-black text and primary button, blue only on the active count, Geist for UI text. The present icons/icon48.png is a different blue mark and is the asset this logo replaces."
+  ],
+  "assumptions": [
+    "Everywhere means every product mark in this extension, not a marketing site.",
+    "The full lockup is used in the popup and panel headers, where there is width. Icon-sized slots use the EPA wordmark cropped from the same file, because the Urdu and ISO lines cannot stay readable at 16 pixels.",
+    "The green of the logo does not replace the current interface colors. The user declined a branding pass.",
+    "The Urdu and ISO lines stay inside the logo image and are not recreated as separate text.",
+    "The listening flow already in the extension remains the product: collect on the open X page, then preview or export."
+  ],
+  "unresolved": [],
+  "explicitAnswers": []
+}

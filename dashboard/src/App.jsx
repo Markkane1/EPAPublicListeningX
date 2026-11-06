@@ -6,7 +6,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 
 import theme from 'assets/theme';
 import themeDark from 'assets/theme-dark';
@@ -35,7 +34,9 @@ const RolesView = lazy(() => import('./views/RolesView'));
 
 import Lightbox from './components/Lightbox';
 import IngestModal from './components/IngestModal';
+import ExcludeModal from './components/ExcludeModal';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { getRoutes } from './routes';
 import { getSettings, getStats, ingestPostsBatch, excludePost, invalidateApiCache } from './services/api';
 
@@ -68,8 +69,7 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    window.scrollTo(0, 0);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -103,6 +103,20 @@ function AppContent() {
       cancelled = true;
     };
   }, [isAuthenticated, dataRevision]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    // Prewarm lazy route chunks so page transitions are instant
+    import('./views/DashboardView');
+    import('./views/SearchView');
+    import('./views/PostsView');
+    import('./views/AnalyticsView');
+    import('./views/AuditView');
+    import('./views/NoiseView');
+    import('./views/SettingsView');
+    import('./views/UsersView');
+    import('./views/RolesView');
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!canIngest) return undefined;
@@ -172,20 +186,33 @@ function AppContent() {
     });
   };
 
-  const handleExcludeFromVerified = async (post) => {
-    const author = post.authorUsername ? `@${post.authorUsername}` : 'this post';
-    if (!window.confirm(`Are you sure you want to exclude ${author} from Verified Feed and return it to Noise Pool?`)) return;
+  const [excludeModalState, setExcludeModalState] = useState({ open: false, post: null, isExcluding: false });
+
+  const handleExcludeFromVerified = (post) => {
+    setExcludeModalState({ open: true, post, isExcluding: false });
+  };
+
+  const handleConfirmExcludeFromVerified = async (payload) => {
+    setExcludeModalState((prev) => ({ ...prev, isExcluding: true }));
     try {
-      const pid = post.id || post.clean_id;
-      await excludePost({ postId: pid, reason: 'Manually excluded by operator from verified feed' });
+      await excludePost({
+        postId: payload.postId,
+        category: payload.category || 'GOVT_BUREAUCRATIC_PR',
+        reason: payload.reason || 'Manually excluded by operator',
+        phrasePatterns: payload.phrasePatterns || [],
+        confidence: payload.confidence || 1.0,
+        removeAssociatedRules: true
+      });
       bumpData();
       setSnackbar({
         open: true,
-        message: `Post ${author} moved to Noise Pool.`,
+        message: `Post excluded as ${payload.category} (${(payload.phrasePatterns || []).length} phrase rule(s) learned). Author remains unblocked.`,
         severity: 'info',
       });
+      setExcludeModalState({ open: false, post: null, isExcluding: false });
     } catch (e) {
       setSnackbar({ open: true, message: `Failed to exclude: ${e.message}`, severity: 'error' });
+      setExcludeModalState((prev) => ({ ...prev, isExcluding: false }));
     }
   };
 
@@ -195,7 +222,7 @@ function AppContent() {
     return (
       <ThemeProvider theme={darkMode ? themeDark : theme}>
         <CssBaseline />
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: darkMode ? '#0b1437' : '#f8f9fa' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: darkMode ? '#090e15' : '#f8f9fa' }}>
           <p style={{ fontWeight: 600, fontSize: '14px', color: '#64748b' }}>Verifying secure session...</p>
         </div>
       </ThemeProvider>
@@ -239,29 +266,36 @@ function AppContent() {
           fallback={
             <Box
               sx={{
-                p: 4,
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: '12px',
-                backgroundColor: darkMode ? '#111c44' : '#ffffff',
-                border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
-                minHeight: '280px',
-                justifyContent: 'center',
-                alignItems: 'center',
+                width: '100%',
+                height: '3px',
+                overflow: 'hidden',
+                position: 'relative',
+                borderRadius: '2px',
+                mb: 1.5,
               }}
             >
-              <Typography sx={{ fontWeight: 600, fontSize: '14px', color: '#64748b' }}>
-                Loading view...
-              </Typography>
+              <Box
+                sx={{
+                  width: '35%',
+                  height: '100%',
+                  backgroundColor: '#16a34a',
+                  borderRadius: '2px',
+                  animation: 'topLoader 0.7s ease-in-out infinite alternate',
+                  '@keyframes topLoader': {
+                    from: { transform: 'translateX(-40%)' },
+                    to: { transform: 'translateX(240%)' },
+                  },
+                }}
+              />
             </Box>
           }
         >
           <Box
             key={location.pathname}
             sx={{
-              animation: 'viewFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+              animation: 'viewFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both',
               '@keyframes viewFadeIn': {
-                from: { opacity: 0, transform: 'translateY(4px)' },
+                from: { opacity: 0, transform: 'translateY(5px)' },
                 to: { opacity: 1, transform: 'translateY(0)' },
               },
               '@media (prefers-reduced-motion: reduce)': {
@@ -346,7 +380,9 @@ function AppContent() {
                 path="/analytics"
                 element={
                   <ProtectedRoute requiredPermission="analytics.view" moduleName="Analytics & Charts">
-                    <AnalyticsView dataRevision={dataRevision} />
+                    <ErrorBoundary componentName="Analytics & Charts">
+                      <AnalyticsView dataRevision={dataRevision} />
+                    </ErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -364,26 +400,28 @@ function AppContent() {
                 path="/noise"
                 element={
                   <ProtectedRoute requiredPermission="noise.view" moduleName="Noise & Learning Engine">
-                    <NoiseView
-                      dataRevision={dataRevision}
-                      onPostRestored={(restoredPost) => {
-                        bumpData();
-                        setSnackbar({
-                          open: true,
-                          message: `Post @${restoredPost.authorUsername || ''} restored and added to Verified Feed!`,
-                          severity: 'success'
-                        });
-                      }}
-                      onPostExcluded={(excludedId, authorUsername) => {
-                        bumpData();
-                        setSnackbar({
-                          open: true,
-                          message: `Post ${authorUsername ? `@${authorUsername}` : ''} re-excluded as noise and removed from Verified Feed.`,
-                          severity: 'info'
-                        });
-                      }}
-                      onImageClick={handleOpenLightbox}
-                    />
+                    <ErrorBoundary componentName="Noise & Learning Engine">
+                      <NoiseView
+                        dataRevision={dataRevision}
+                        onPostRestored={(restoredPost) => {
+                          bumpData();
+                          setSnackbar({
+                            open: true,
+                            message: `Post @${restoredPost.authorUsername || ''} restored and added to Verified Feed!`,
+                            severity: 'success'
+                          });
+                        }}
+                        onPostExcluded={(excludedId, authorUsername) => {
+                          bumpData();
+                          setSnackbar({
+                            open: true,
+                            message: `Post ${authorUsername ? `@${authorUsername}` : ''} re-excluded as noise and removed from Verified Feed.`,
+                            severity: 'info'
+                          });
+                        }}
+                        onImageClick={handleOpenLightbox}
+                      />
+                    </ErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -472,6 +510,14 @@ function AppContent() {
               onIngestSuccess={handleIngestSuccess}
             />
           )}
+
+          <ExcludeModal
+            open={excludeModalState.open}
+            post={excludeModalState.post}
+            onClose={() => setExcludeModalState({ open: false, post: null, isExcluding: false })}
+            onConfirm={handleConfirmExcludeFromVerified}
+            isExcluding={excludeModalState.isExcluding}
+          />
 
       <Snackbar
         open={snackbar.open}

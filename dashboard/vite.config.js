@@ -21,6 +21,16 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            // Silently swallow aborted/reset client requests during HMR navigation
+            if (err.code === 'ECONNRESET' || err.code === 'ECONNABORTED') return;
+            if (res && !res.headersSent && typeof res.writeHead === 'function') {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Proxy error', message: err.message }));
+            }
+          });
+        },
       },
     },
   },

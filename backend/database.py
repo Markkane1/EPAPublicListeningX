@@ -85,6 +85,25 @@ def _sql_post_date(value):
     return dt.strftime("%Y-%m-%d") if dt else None
 
 
+def _sql_post_iso(value):
+    """Normalize any date string (Twitter format or ISO) to uniform ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)."""
+    if not value or not isinstance(value, str):
+        return None
+    val = value.strip()
+    if not val:
+        return None
+    # Fast path if already standard 20-character UTC ISO
+    if len(val) == 20 and val[10] == "T" and val[19] == "Z":
+        return val
+    # Fast path for X/Twitter format: "Wed Nov 04 19:17:03 +0000 2026"
+    if len(val) == 30 and val[3] == " " and val[7] == " " and val[19:26] == " +0000":
+        m = _X_MONTH_MAP.get(val[4:7])
+        if m:
+            return f"{val[-4:]}-{m}-{val[8:10]}T{val[11:19]}Z"
+    dt = parse_post_datetime(val)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ") if dt else val
+
+
 def _sql_post_karachi_hour(value):
     dt = parse_post_datetime(value)
     if dt is None:
@@ -99,6 +118,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA busy_timeout=10000;")
     conn.create_function("post_date", 1, _sql_post_date)
+    conn.create_function("post_iso", 1, _sql_post_iso)
     conn.create_function("post_karachi_hour", 1, _sql_post_karachi_hour)
     try:
         yield conn
@@ -533,6 +553,25 @@ def init_db():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_learned_rules_active ON learned_rules(is_active)")
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS curation_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id TEXT NOT NULL,
+                post_text TEXT NOT NULL,
+                author_username TEXT,
+                label INTEGER NOT NULL,
+                category TEXT NOT NULL,
+                reason TEXT,
+                trigger_tokens TEXT,
+                confidence REAL DEFAULT 1.0,
+                curator_user_id INTEGER,
+                created_at TEXT
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_curation_label ON curation_feedback(label)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_curation_category ON curation_feedback(category)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_curation_post ON curation_feedback(post_id)")
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS query_versions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 version_tag TEXT NOT NULL,
@@ -748,6 +787,13 @@ def init_db():
                         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                     """, (u["username"], u["email"], pwd_hash, salt_hex, u["full_name"], u["avatar"], role_row["id"], now_iso, now_iso))
 
+        # Ensure created_at in posts and noise_posts is normalized to standard ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+        try:
+            cursor.execute("UPDATE posts SET created_at = post_iso(created_at) WHERE created_at IS NOT NULL AND post_iso(created_at) IS NOT NULL AND post_iso(created_at) != created_at")
+            cursor.execute("UPDATE noise_posts SET created_at = post_iso(created_at) WHERE created_at IS NOT NULL AND post_iso(created_at) IS NOT NULL AND post_iso(created_at) != created_at")
+        except Exception as e:
+            print(f"[!] Warning: Could not normalize timestamps: {e}")
+
         _replace_lowercase_or_query(cursor)
         conn.commit()
     ensure_admin_credentials()
@@ -901,6 +947,8 @@ def get_all_posts(search=None, city=None, severity=None, category=None, sort_by=
         query += f" ORDER BY media_count {dir_sql}, created_at DESC"
     elif sort_by == "oldest":
         query += " ORDER BY created_at ASC, id ASC"
+    elif sort_by in ("newest", "latest"):
+        query += f" ORDER BY created_at {dir_sql}, id {dir_sql}"
     else:
         query += f" ORDER BY created_at {dir_sql}, id {dir_sql}"
 
@@ -990,7 +1038,7 @@ def save_posts_batch(posts_list, source="file", conn=None):
                 p.get("type", "Post"),
                 p.get("postUrl") or f"https://x.com/{p.get('authorUsername')}/status/{pid}",
                 p.get("text", ""),
-                p.get("createdAt") or now_iso,
+                _sql_post_iso(p.get("createdAt") or p.get("created_at") or now_iso) or now_iso,
                 p.get("language"),
                 likes,
                 retweets,
@@ -1258,7 +1306,7 @@ def save_noise_posts_batch(noise_list, conn=None):
                 (p.get("author_username") or p.get("authorUsername") or "").strip().replace('@', ''),
                 p.get("author_name") or p.get("authorName") or "",
                 p.get("text") or "",
-                p.get("created_at") or p.get("createdAt") or now_iso,
+                _sql_post_iso(p.get("created_at") or p.get("createdAt") or now_iso) or now_iso,
                 p.get("post_url") or p.get("postUrl") or f"https://x.com/{p.get('authorUsername')}/status/{pid}",
                 media_str,
                 int(p.get("likes") or 0),
@@ -1326,6 +1374,8 @@ def get_noise_posts(search=None, category=None, status="EXCLUDED", sort_by="newe
         query += " ORDER BY created_at ASC"
     elif sort_by in ("recently_ingested", "ingested"):
         query += f" ORDER BY ingested_at {dir_sql}, created_at DESC"
+    elif sort_by in ("newest", "latest"):
+        query += f" ORDER BY created_at {dir_sql}"
     else:  # 'newest' or default: sort by latest posts first!
         query += f" ORDER BY created_at {dir_sql}"
 
@@ -1509,6 +1559,26 @@ def restore_noise_post(post_id: str, learned_rules_to_add: list = None):
                     )
                     added_rules.append(rule_record)
 
+        try:
+            cursor.execute("""
+                INSERT INTO curation_feedback (
+                    post_id, post_text, author_username, label, category, reason, trigger_tokens, confidence, curator_user_id, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                str(post_id),
+                row["text"],
+                row["author_username"],
+                1,
+                enriched.get("category", "CITIZEN_GROUND_TRUTH"),
+                f"Restored from {row['exclusion_category']}",
+                json.dumps([r.get("rule_value") for r in (learned_rules_to_add or []) if r.get("rule_value")]),
+                1.0,
+                None,
+                now_iso
+            ))
+        except Exception:
+            pass
+
         conn.commit()
 
         return {
@@ -1518,13 +1588,15 @@ def restore_noise_post(post_id: str, learned_rules_to_add: list = None):
             "message": f"Post {post_id} restored and {len(added_rules)} rule(s) learned."
         }
 
-def exclude_post_as_noise(post_id: str, reason: str = None, category: str = "MANUAL_EXCLUDED", remove_associated_rules: bool = True):
+def exclude_post_as_noise(post_id: str, reason: str = None, category: str = "GOVT_BUREAUCRATIC_PR", phrase_patterns: list = None, confidence: float = 1.0, curator_user_id: int = None, remove_associated_rules: bool = True):
     """
     Excludes a post (re-excludes a restored post or excludes any post from verified clean posts) and returns it to noise:
     1. Removes post from 'posts' table.
     2. Updates or inserts row in 'noise_posts' with status = 'EXCLUDED' and restored_at = NULL.
-    3. Revokes any learned rules linked to source_post_id = post_id if remove_associated_rules is True.
-    4. Logs entry in 'audit_logs'.
+    3. Adds negative phrase patterns to 'learned_rules' if provided (WITHOUT blocking author handle).
+    4. Logs entry in 'curation_feedback' for Tier-1 classifier and active learning.
+    5. Revokes any learned rules linked to source_post_id = post_id if remove_associated_rules is True.
+    6. Logs entry in 'audit_logs'.
     """
     now_iso = datetime.now(timezone.utc).isoformat()
     pid = str(post_id).strip()
@@ -1549,9 +1621,9 @@ def exclude_post_as_noise(post_id: str, reason: str = None, category: str = "MAN
             post_text = noise_row["text"] or ""
             cursor.execute("""
                 UPDATE noise_posts 
-                SET status = 'EXCLUDED', restored_at = NULL, exclusion_reason = ?
+                SET status = 'EXCLUDED', restored_at = NULL, exclusion_category = ?, exclusion_reason = ?
                 WHERE id = ?
-            """, (final_reason, pid))
+            """, (category, final_reason, pid))
         elif post_row:
             author_user = post_row["author_username"] or ""
             post_text = post_row["text"] or ""
@@ -1591,11 +1663,48 @@ def exclude_post_as_noise(post_id: str, reason: str = None, category: str = "MAN
                 now_iso
             ))
 
+        # 1. Revoke prior learned rules if this post was previously restored
         removed_rules_count = 0
         if remove_associated_rules:
             cursor.execute("SELECT COUNT(*) FROM learned_rules WHERE source_post_id = ?", (pid,))
             removed_rules_count = cursor.fetchone()[0]
             cursor.execute("DELETE FROM learned_rules WHERE source_post_id = ?", (pid,))
+
+        # 2. Add new phrase-based learned rules (does NOT block author)
+        added_phrase_rules = []
+        if phrase_patterns and isinstance(phrase_patterns, list):
+            for ph in phrase_patterns:
+                clean_ph = str(ph).strip()
+                if len(clean_ph) >= 3:
+                    r_rec = add_learned_rule(
+                        rule_type="negative_phrase",
+                        rule_value=clean_ph,
+                        source_post_id=pid,
+                        description=f"Negative phrase learned from exclusion of post {pid} ({category})",
+                        conn=conn
+                    )
+                    added_phrase_rules.append(r_rec)
+
+        # 3. Log into curation feedback for ML and audit learning
+        try:
+            cursor.execute("""
+                INSERT INTO curation_feedback (
+                    post_id, post_text, author_username, label, category, reason, trigger_tokens, confidence, curator_user_id, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                pid,
+                post_text,
+                author_user,
+                0,
+                category,
+                final_reason,
+                json.dumps(phrase_patterns or []),
+                float(confidence or 1.0),
+                curator_user_id,
+                now_iso
+            ))
+        except Exception:
+            pass
 
         cursor.execute("""
             INSERT INTO audit_logs (
@@ -1607,7 +1716,7 @@ def exclude_post_as_noise(post_id: str, reason: str = None, category: str = "MAN
             author_user,
             "RE_EXCLUDED_AS_NOISE",
             category,
-            f"{final_reason} (reverted from verified feed; {removed_rules_count} associated rule(s) revoked)",
+            f"{final_reason} (reverted from verified feed; {removed_rules_count} associated rule(s) revoked, {len(added_phrase_rules)} negative phrase(s) learned)",
             post_text,
             now_iso
         ))
@@ -1617,8 +1726,10 @@ def exclude_post_as_noise(post_id: str, reason: str = None, category: str = "MAN
         return {
             "success": True,
             "postId": pid,
+            "category": category,
+            "learnedPhraseRules": added_phrase_rules,
             "removedRulesCount": removed_rules_count,
-            "message": f"Post {pid} successfully re-excluded as noise and removed from verified feed."
+            "message": f"Post {pid} successfully excluded as {category} ({len(added_phrase_rules)} phrase rule(s) learned)."
         }
 
 def get_learned_rules():
@@ -1652,7 +1763,8 @@ def get_active_learned_rules():
             "geo_keywords": [],
             "author_whitelist": set(),
             "off_topic_exceptions": [],
-            "indian_exceptions": []
+            "indian_exceptions": [],
+            "negative_phrases": []
         }
         for r in rows:
             rtype = r["rule_type"]
@@ -1667,6 +1779,8 @@ def get_active_learned_rules():
                 active["off_topic_exceptions"].append(val)
             elif rtype == "indian_exception":
                 active["indian_exceptions"].append(val)
+            elif rtype == "negative_phrase":
+                active["negative_phrases"].append(val.lower())
         return active
 
 def add_learned_rule(rule_type: str, rule_value: str, source_post_id: str = None, description: str = None, conn=None):
@@ -1865,10 +1979,17 @@ def get_db_stats(date=None, time_of_day=None):
             "restoredPostsCount": restored_posts_count,
             "learnedRulesCount": learned_rules_count,
             "cityCounts": city_counts,
+            "cities": city_counts,
+            "city_distribution": city_counts,
             "categoryCounts": category_counts,
+            "categories": category_counts,
             "severityCounts": severity_counts,
             "sentimentCounts": sentiment_counts,
+            "sentiments": sentiment_counts,
+            "sentiment_distribution": sentiment_counts,
             "aqiBucketCounts": aqi_bucket_counts,
+            "aqi_distribution": aqi_bucket_counts,
+            "aqiBuckets": aqi_bucket_counts,
             "dateCounts": date_counts,
             "auditStatusCounts": audit_status_counts,
             "dbPath": "[protected]"

@@ -348,8 +348,7 @@
     return { cleanList, auditList };
   }
 
-  function init() {
-    
+  async function init() {
     if (Array.isArray(window.EPA_POSTS_DATA)) {
       state.cleanedPosts = window.EPA_POSTS_DATA;
     } else if (Array.isArray(window.PRELOADED_CLEANED_POSTS)) {
@@ -359,18 +358,167 @@
       state.auditLog = window.PRELOADED_AUDIT_LOG;
     }
 
+    // Auto-fetch cleaned posts if not preloaded in window
+    if (!state.cleanedPosts || state.cleanedPosts.length === 0) {
+      try {
+        const res = await fetch("data/cleaned_epa_posts.json")
+          .catch(() => fetch("../data/cleaned_epa_posts.json"))
+          .catch(() => fetch("/data/cleaned_epa_posts.json"));
+        if (res && res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            state.cleanedPosts = data;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not auto-fetch cleaned_epa_posts.json:", err);
+      }
+    }
+    if (!state.auditLog || state.auditLog.length === 0) {
+      try {
+        const res = await fetch("data/cleaning_audit.json")
+          .catch(() => fetch("../data/cleaning_audit.json"))
+          .catch(() => fetch("/data/cleaning_audit.json"));
+        if (res && res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            state.auditLog = data;
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
     setupEventListeners();
     updateKpiMetrics();
     renderMainContent();
   }
 
-  function setupEventListeners() {
-    
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2600);
+  }
+
+  function resetFiltersToDefault() {
+    state.filters = {
+      search: "",
+      city: "all",
+      severity: "all",
+      category: "all",
+      sentiment: "all",
+      media: "all",
+      sort: "newest"
+    };
     const searchInput = document.getElementById("search-input");
+    if (searchInput) searchInput.value = "";
+    const clearBtn = document.getElementById("clear-search-btn");
+    if (clearBtn) clearBtn.style.display = "none";
+    setSelectValue("city-filter", "all");
+    setSelectValue("severity-filter", "all");
+    setSelectValue("category-filter", "all");
+    setSelectValue("sentiment-filter", "all");
+    setSelectValue("media-filter", "all");
+    setSelectValue("sort-filter", "newest");
+  }
+
+  function setSelectValue(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+
+  function setupEventListeners() {
+    const searchInput = document.getElementById("search-input");
+    const clearSearchBtn = document.getElementById("clear-search-btn");
     if (searchInput) {
       searchInput.addEventListener("input", function (e) {
         state.filters.search = e.target.value.toLowerCase().trim();
+        if (clearSearchBtn) {
+          clearSearchBtn.style.display = e.target.value ? "block" : "none";
+        }
         renderMainContent();
+      });
+    }
+    if (clearSearchBtn && searchInput) {
+      clearSearchBtn.addEventListener("click", function () {
+        searchInput.value = "";
+        clearSearchBtn.style.display = "none";
+        state.filters.search = "";
+        renderMainContent();
+        searchInput.focus();
+      });
+    }
+
+    // Keyboard shortcut '/' to focus search
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "/" && document.activeElement !== searchInput && !e.ctrlKey && !e.metaKey) {
+        if (searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+        }
+      }
+    });
+
+    // Copy query button
+    const copyBtn = document.getElementById("copy-query-btn");
+    const queryCode = document.getElementById("active-query-text");
+    if (copyBtn && queryCode) {
+      copyBtn.addEventListener("click", function () {
+        const text = queryCode.textContent.trim();
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(function () {
+            showToast("Active query copied to clipboard!");
+            const label = document.getElementById("copy-query-label");
+            if (label) {
+              label.textContent = "Copied!";
+              setTimeout(function () { label.textContent = "Copy"; }, 2000);
+            }
+          });
+        }
+      });
+    }
+
+    // Preset filter chips
+    document.querySelectorAll(".preset-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        document.querySelectorAll(".preset-chip").forEach(function (c) { c.classList.remove("active"); });
+        this.classList.add("active");
+        const preset = this.getAttribute("data-preset");
+        resetFiltersToDefault();
+        if (preset === "lahore") {
+          state.filters.city = "Lahore";
+          setSelectValue("city-filter", "Lahore");
+        } else if (preset === "hazardous") {
+          state.filters.severity = "hazardous";
+          setSelectValue("severity-filter", "hazardous");
+        } else if (preset === "media") {
+          state.filters.media = "media_only";
+          setSelectValue("media-filter", "media_only");
+        } else if (preset === "stubble") {
+          state.filters.category = "Agricultural Stubble Burning";
+          setSelectValue("category-filter", "Agricultural Stubble Burning");
+        } else if (preset === "government") {
+          state.filters.category = "Government & Enforcement Action";
+          setSelectValue("category-filter", "Government & Enforcement Action");
+        } else if (preset === "health") {
+          state.filters.category = "Public Health Alert";
+          setSelectValue("category-filter", "Public Health Alert");
+        }
+        renderMainContent();
+      });
+    });
+
+    // Reset filters button
+    const resetBtn = document.getElementById("reset-filters-btn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        resetFiltersToDefault();
+        document.querySelectorAll(".preset-chip").forEach(function (c) { c.classList.remove("active"); });
+        renderMainContent();
+        showToast("Filters reset to default");
       });
     }
 
@@ -486,7 +634,7 @@
         updateKpiMetrics();
         renderMainContent();
 
-        alert(`✅ Ingestion & Deduplication Complete!\n\n• Ingested: ${rawJson.length} posts\n• Verified Clean: ${cleanList.length} posts\n• Duplicates Eliminated: ${mergedCount}\n• Noise/Indian Excluded: ${removedCount}`);
+        showToast(`Ingestion complete: ${cleanList.length} verified posts, ${mergedCount} duplicates consolidated, ${removedCount} noise excluded.`);
       } catch (err) {
         alert("Failed to parse JSON file: " + err.message);
       }
@@ -517,12 +665,12 @@
     const cityNames = Object.keys(cityMap);
     const topCity = cityNames.sort((a, b) => cityMap[b] - cityMap[a])[0] || "—";
 
-    setElementText("kpi-total-scraped", totalScraped);
-    setElementText("kpi-clean-posts", cleanCount);
-    setElementText("kpi-duplicates-merged", dupCount);
-    setElementText("kpi-peak-aqi", peakAqi);
-    setElementText("kpi-avg-aqi", avgAqi);
-    setElementText("kpi-top-city", topCity);
+    animateKpiNumber("kpi-total-scraped", totalScraped);
+    animateKpiNumber("kpi-clean-posts", cleanCount);
+    animateKpiNumber("kpi-duplicates-merged", dupCount);
+    animateKpiNumber("kpi-peak-aqi", peakAqi);
+    animateKpiNumber("kpi-avg-aqi", avgAqi);
+    animateKpiText("kpi-top-city", topCity);
     setAqiBadge("kpi-peak-badge", hasAqi, typeof peakAqi === "number" && peakAqi >= 301);
     setAqiBadge("kpi-avg-badge", hasAqi, typeof avgAqi === "string" && Number(avgAqi) >= 301);
   }
@@ -542,6 +690,75 @@
     }
     el.textContent = "Recorded";
     el.className = "kpi-badge kpi-badge-info";
+  }
+
+  const animatedKpiValues = {};
+
+  function animateKpiNumber(id, target, duration = 750) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (target === "—" || target === null || target === undefined || isNaN(Number(target))) {
+      animateKpiText(id, String(target || "—"));
+      return;
+    }
+
+    const targetNum = Number(target);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = targetNum.toLocaleString();
+      animatedKpiValues[id] = targetNum;
+      return;
+    }
+
+    const startNum = animatedKpiValues[id] !== undefined ? animatedKpiValues[id] : 0;
+    if (startNum === targetNum) {
+      el.textContent = targetNum.toLocaleString();
+      return;
+    }
+
+    const startTime = performance.now();
+    const diff = targetNum - startNum;
+    const isDecimal = String(target).includes(".");
+
+    function step(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic: 1 - (1 - progress)^3
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = startNum + diff * ease;
+      el.textContent = isDecimal ? current.toFixed(1) : Math.round(current).toLocaleString();
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        animatedKpiValues[id] = targetNum;
+        el.textContent = isDecimal ? targetNum.toFixed(1) : targetNum.toLocaleString();
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function animateKpiText(id, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const currentStr = el.textContent.trim();
+    const targetStr = String(text).trim();
+    if (currentStr === targetStr) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = targetStr;
+      return;
+    }
+
+    el.style.transition = 'opacity 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    el.style.opacity = '0.2';
+    el.style.transform = 'translateY(2px)';
+    setTimeout(() => {
+      el.textContent = targetStr;
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, 140);
   }
 
   function setElementText(id, text) {
@@ -606,20 +823,27 @@
     const tableView = document.getElementById("table-view");
     const analyticsView = document.getElementById("analytics-view");
 
+    [cardsView, tableView, analyticsView].forEach(v => {
+      if (v) v.classList.remove("view-fade-in");
+    });
+
     if (state.currentView === "cards") {
       cardsView.style.display = "grid";
       tableView.style.display = "none";
       analyticsView.style.display = "none";
+      cardsView.classList.add("view-fade-in");
       renderPostCards();
     } else if (state.currentView === "table") {
       cardsView.style.display = "none";
       tableView.style.display = "block";
       analyticsView.style.display = "none";
+      tableView.classList.add("view-fade-in");
       renderAuditTable();
     } else if (state.currentView === "analytics") {
       cardsView.style.display = "none";
       tableView.style.display = "none";
       analyticsView.style.display = "block";
+      analyticsView.classList.add("view-fade-in");
       renderAnalyticsCharts();
     }
   }
@@ -637,7 +861,9 @@
     if (posts.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1;">
-          <div class="empty-state-icon">🔍</div>
+          <div class="empty-state-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </div>
           <h3>No matching posts found</h3>
           <p>Try broadening your search term or adjusting filters.</p>
         </div>
@@ -683,7 +909,7 @@
               <div class="author-info">
                 <div class="author-name-row">
                   <span class="author-name" title="${escapeHtml(p.authorName)}">${escapeHtml(p.authorName || p.authorUsername)}</span>
-                  ${p.authorVerified ? `<span class="verified-icon" title="Verified Account">✓</span>` : ""}
+                  ${p.authorVerified ? `<span class="verified-icon" title="Verified Account"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:var(--brand-emerald);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></span>` : ""}
                 </div>
                 <div class="author-handle">@${escapeHtml(p.authorUsername)}</div>
               </div>
@@ -696,12 +922,17 @@
             </a>
           </div>
 
-          <!-- Badges -->
-          <div class="badge-row">
-            <span class="pill-badge pill-city">📍 ${escapeHtml(p.city_detected)}</span>
-            ${p.aqi_value ? `<span class="pill-badge ${severityBadgeClass}">⚠️ AQI ${p.aqi_value} • ${p.severity}</span>` : (p.severity_code === "hazardous" ? `<span class="pill-badge pill-aqi-hazardous">⚠️ ${p.severity}</span>` : "")}
-            <span class="pill-badge pill-category">${escapeHtml(p.category)}</span>
-            <span class="pill-badge pill-sentiment">${escapeHtml(p.sentiment)}</span>
+          <!-- Editorial Meta Row -->
+          <div class="post-meta-line">
+            <span class="post-meta-location">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px; vertical-align:middle;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              ${escapeHtml(p.city_detected)}
+            </span>
+            <span class="meta-dot">•</span>
+            <span class="post-meta-category">${escapeHtml(p.category)}</span>
+            <span class="meta-dot">•</span>
+            <span class="post-meta-sentiment">${escapeHtml(p.sentiment)}</span>
+            ${p.aqi_value ? `<span class="pill-badge ${severityBadgeClass}" style="margin-left: auto;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:3px; vertical-align:middle;"><polygon points="12 2 22 20 2 20 12 2"></polygon><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> AQI ${p.aqi_value} • ${p.severity}</span>` : (p.severity_code === "hazardous" ? `<span class="pill-badge pill-aqi-hazardous" style="margin-left: auto;">Hazardous Alert</span>` : "")}
           </div>
 
           <!-- Body Text -->
@@ -714,11 +945,24 @@
         <!-- Footer Metrics -->
         <div class="post-footer">
           <div class="post-timestamp" title="${escapeHtml(p.createdAt)}">${formattedDate}</div>
-          <div style="display: flex; gap: 0.85rem;">
-            <span class="metric-item" title="Likes">❤️ ${formatNumber(p.likes)}</span>
-            <span class="metric-item" title="Reposts">🔁 ${formatNumber(p.retweets)}</span>
-            <span class="metric-item" title="Replies">💬 ${formatNumber(p.replies)}</span>
-            ${p.views ? `<span class="metric-item" title="Views">👁️ ${formatNumber(p.views)}</span>` : ""}
+          <div style="display: flex; gap: 0.85rem; align-items: center;">
+            <span class="metric-item" title="Likes">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+              <span>${formatNumber(p.likes)}</span>
+            </span>
+            <span class="metric-item" title="Reposts">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+              <span>${formatNumber(p.retweets)}</span>
+            </span>
+            <span class="metric-item" title="Replies">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <span>${formatNumber(p.replies)}</span>
+            </span>
+            ${p.views ? `
+            <span class="metric-item" title="Views">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>${formatNumber(p.views)}</span>
+            </span>` : ""}
           </div>
         </div>
       </div>
@@ -795,9 +1039,9 @@
       <div class="audit-table-card">
         <div class="table-tabs">
           <button class="table-tab ${state.activeTableTab === 'all' ? 'active' : ''}" data-tab="all">All Records (${totalCount})</button>
-          <button class="table-tab ${state.activeTableTab === 'kept' ? 'active' : ''}" data-tab="kept">✅ Clean & Validated (${keptCount})</button>
-          <button class="table-tab ${state.activeTableTab === 'duplicates' ? 'active' : ''}" data-tab="duplicates">⚠️ Eliminated Duplicates (${dupCount})</button>
-          <button class="table-tab ${state.activeTableTab === 'removed' ? 'active' : ''}" data-tab="removed">🚫 Excluded Noise (${remCount})</button>
+          <button class="table-tab ${state.activeTableTab === 'kept' ? 'active' : ''}" data-tab="kept">Clean & Validated (${keptCount})</button>
+          <button class="table-tab ${state.activeTableTab === 'duplicates' ? 'active' : ''}" data-tab="duplicates">Consolidated Duplicates (${dupCount})</button>
+          <button class="table-tab ${state.activeTableTab === 'removed' ? 'active' : ''}" data-tab="removed">Excluded Noise (${remCount})</button>
         </div>
         <div class="table-responsive">
           <table class="audit-table">
@@ -826,7 +1070,7 @@
                   <td><div style="font-size: 0.75rem; color: #cbd5e1;">${escapeHtml(r.reason || r.category || '')}</div></td>
                   <td><div style="max-height: 48px; overflow: hidden; text-overflow: ellipsis; font-size: 0.775rem;">${escapeHtml(r.text || '')}</div></td>
                   <td>
-                    ${r.id ? `<a href="https://x.com/${r.author}/status/${r.id}" target="_blank" rel="noopener noreferrer" class="post-link-btn" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;">Link ↗</a>` : '-'}
+                    ${r.id ? `<a href="https://x.com/${r.author}/status/${r.id}" target="_blank" rel="noopener noreferrer" class="post-link-btn" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><span>Link</span> <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>` : '-'}
                   </td>
                 </tr>
               `).join("")}
@@ -917,13 +1161,13 @@
             <tbody>
               ${state.cleanedPosts.slice().sort((a, b) => b.total_engagement - a.total_engagement).slice(0, 8).map(p => `
                 <tr>
-                  <td><strong>@${escapeHtml(p.authorUsername)}</strong> ${p.authorVerified ? '✓' : ''}</td>
-                  <td>📍 ${escapeHtml(p.city_detected)}</td>
+                  <td><strong>@${escapeHtml(p.authorUsername)}</strong> ${p.authorVerified ? '<span class="verified-icon" title="Verified Account" style="margin-left:3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:var(--brand-emerald);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></span>' : ''}</td>
+                  <td>${escapeHtml(p.city_detected)}</td>
                   <td><div style="font-size: 0.8rem; max-width: 480px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.text)}</div></td>
-                  <td>❤️ ${p.likes}</td>
-                  <td>🔁 ${p.retweets}</td>
+                  <td>${p.likes}</td>
+                  <td>${p.retweets}</td>
                   <td><strong>${p.total_engagement}</strong></td>
-                  <td><a href="${p.postUrl}" target="_blank" rel="noopener noreferrer" class="post-link-btn">View on X ↗</a></td>
+                  <td><a href="${p.postUrl}" target="_blank" rel="noopener noreferrer" class="post-link-btn"><span>View on X</span> <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></td>
                 </tr>
               `).join("")}
             </tbody>
@@ -957,7 +1201,7 @@
           labels: Object.keys(counts),
           datasets: [{
             data: Object.values(counts),
-            backgroundColor: ["#7e22ce", "#b91c1c", "#ea580c", "#ca8a04", "#0284c7"],
+            backgroundColor: ["#881337", "#b91c1c", "#ea580c", "#ca8a04", "#16a34a"],
             borderWidth: 0
           }]
         },

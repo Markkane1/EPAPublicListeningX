@@ -212,7 +212,7 @@ function SearchView({
     <Box sx={{ py: 1.5, maxWidth: '1000px', mx: 'auto' }}>
       <Box
         sx={{
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           borderRadius: '20px',
           p: { xs: 2, sm: 3 },
           border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
@@ -237,7 +237,7 @@ function SearchView({
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
               }}
             >
-              𝕏
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-label="X"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </Box>
             <Box>
               <Typography
@@ -300,10 +300,10 @@ function SearchView({
                     borderRadius: '9999px',
                     px: 1.8,
                     py: 0.4,
-                    backgroundColor: searchMode === 'live' ? '#5e72e4' : 'transparent',
+                    backgroundColor: searchMode === 'live' ? '#16a34a' : 'transparent',
                     color: searchMode === 'live' ? '#ffffff' : '#64748b',
-                    boxShadow: searchMode === 'live' ? '0 2px 6px rgba(94, 114, 228, 0.35)' : 'none',
-                    '&:hover': { backgroundColor: searchMode === 'live' ? '#4b5fcc' : 'transparent' },
+                    boxShadow: searchMode === 'live' ? '0 2px 6px rgba(22, 163, 74, 0.35)' : 'none',
+                    '&:hover': { backgroundColor: searchMode === 'live' ? '#15803d' : 'transparent' },
                   }}
                 >
                   Live X.com API
@@ -361,8 +361,8 @@ function SearchView({
             transition: 'all 0.2s ease',
             '&:focus-within': {
               backgroundColor: darkMode ? '#0f172a' : '#ffffff',
-              borderColor: '#5e72e4',
-              boxShadow: '0 0 0 3px rgba(94, 114, 228, 0.15)',
+              borderColor: '#16a34a',
+              boxShadow: '0 0 0 3px rgba(22, 163, 74, 0.15)',
             },
           }}
         >
@@ -486,7 +486,7 @@ function SearchView({
                       height: '4px',
                       width: '48px',
                       borderRadius: '9999px',
-                      backgroundColor: '#5e72e4',
+                      backgroundColor: '#16a34a',
                     }}
                   />
                 )}
@@ -559,7 +559,7 @@ function SearchView({
                       borderRadius: '6px',
                       p: 0.6,
                       backgroundColor: viewMode === 'feed' ? (darkMode ? '#334155' : '#ffffff') : 'transparent',
-                      color: viewMode === 'feed' ? '#5e72e4' : '#64748b',
+                      color: viewMode === 'feed' ? '#16a34a' : '#64748b',
                       boxShadow: viewMode === 'feed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                     }}
                   >
@@ -574,7 +574,7 @@ function SearchView({
                       borderRadius: '6px',
                       p: 0.6,
                       backgroundColor: viewMode === 'grid' ? (darkMode ? '#334155' : '#ffffff') : 'transparent',
-                      color: viewMode === 'grid' ? '#5e72e4' : '#64748b',
+                      color: viewMode === 'grid' ? '#16a34a' : '#64748b',
                       boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                     }}
                   >
@@ -621,7 +621,7 @@ function SearchView({
                 textAlign: 'center',
                 py: 6,
                 px: 2,
-                backgroundColor: darkMode ? '#111c44' : '#ffffff',
+                backgroundColor: darkMode ? '#0f172a' : '#ffffff',
                 borderRadius: '16px',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
               }}
@@ -641,13 +641,13 @@ function SearchView({
             sx={{
               p: 2.5,
               borderRadius: '16px',
-              backgroundColor: darkMode ? '#111c44' : '#ffffff',
+              backgroundColor: darkMode ? '#0f172a' : '#ffffff',
               border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
               boxShadow: 'none',
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <TrendingUpRoundedIcon sx={{ color: '#5e72e4', fontSize: '20px' }} />
+              <TrendingUpRoundedIcon sx={{ color: '#16a34a', fontSize: '20px' }} />
               <Typography sx={{ fontFamily: '"Open Sans", sans-serif', fontWeight: 800, fontSize: '16px', color: darkMode ? '#ffffff' : '#0f1419' }}>
                 Trending in Punjab Environmental Pulse
               </Typography>
@@ -664,24 +664,24 @@ function SearchView({
                   p: 1.5,
                   mb: 1.5,
                   borderRadius: '12px',
-                  backgroundColor: 'rgba(94, 114, 228, 0.08)',
-                  border: '1px solid rgba(94, 114, 228, 0.25)',
+                  backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                  border: '1px solid rgba(22, 163, 74, 0.25)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  '&:hover': { backgroundColor: 'rgba(94, 114, 228, 0.12)' },
+                  '&:hover': { backgroundColor: 'rgba(22, 163, 74, 0.12)' },
                 }}
               >
                 <Box>
-                  <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#5e72e4', textTransform: 'uppercase' }}>
+                  <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase' }}>
                     Active Official Query • {savedQueries[0].version || 'v1.1'}
                   </Typography>
                   <Typography sx={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ffffff' : '#0f1419', mt: 0.3 }}>
                     Official Punjab EPA Air Quality Criteria
                   </Typography>
                 </Box>
-                <AutoAwesomeRoundedIcon sx={{ color: '#5e72e4', fontSize: '20px' }} />
+                <AutoAwesomeRoundedIcon sx={{ color: '#16a34a', fontSize: '20px' }} />
               </Box>
             )}
 
@@ -727,7 +727,7 @@ function SearchView({
             sx={{
               p: 2.5,
               borderRadius: '16px',
-              backgroundColor: darkMode ? '#111c44' : '#ffffff',
+              backgroundColor: darkMode ? '#0f172a' : '#ffffff',
               border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
               boxShadow: 'none',
               height: 'fit-content',
@@ -765,12 +765,12 @@ function SearchView({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     '&:hover': {
-                      borderColor: '#5e72e4',
+                      borderColor: '#16a34a',
                     },
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: '#5e72e4' }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: '#16a34a' }}>
                       {op.label}
                     </Typography>
                     <Typography sx={{ fontSize: '11px', color: '#64748b' }}>
@@ -797,8 +797,8 @@ function SearchView({
                   borderColor: darkMode ? 'rgba(255,255,255,0.2)' : '#cbd5e1',
                   py: 0.8,
                   '&:hover': {
-                    borderColor: '#5e72e4',
-                    backgroundColor: 'rgba(94, 114, 228, 0.06)',
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.06)',
                   },
                 }}
               >

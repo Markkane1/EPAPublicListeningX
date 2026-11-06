@@ -5,6 +5,11 @@ import shutil
 import subprocess
 import zipfile
 
+# Chrome/Edge refuse unpacked extensions that contain "_" names
+# (e.g. Python's __pycache__). Never write bytecode next to the extension.
+sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -28,10 +33,19 @@ def find_browser():
             return p
     return None
 
+def remove_pycache(root):
+    """Chrome cannot load an unpacked extension that contains __pycache__."""
+    for dirpath, dirnames, _filenames in os.walk(root):
+        if "__pycache__" in dirnames:
+            shutil.rmtree(os.path.join(dirpath, "__pycache__"), ignore_errors=True)
+            dirnames.remove("__pycache__")
+
 def build():
     print("=" * 60)
     print("  EPA X Scrapper — Extension Packaging Engine")
     print("=" * 60)
+
+    remove_pycache(SCRAPPER_DIR)
 
     if not os.path.exists(MANIFEST_PATH):
         print(f"Error: manifest.json not found at {MANIFEST_PATH}")

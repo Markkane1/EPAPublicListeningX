@@ -42,8 +42,8 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
           boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
           textAlign: 'center',
           border: darkMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fee2e2',
-          backgroundColor: darkMode ? '#111c44' : '#ffffff',
-          background: darkMode ? '#111c44' : 'linear-gradient(180deg, #ffffff 0%, #fffbfb 100%)'
+          backgroundColor: darkMode ? '#0f172a' : '#ffffff',
+          background: darkMode ? '#0f172a' : 'linear-gradient(180deg, #ffffff 0%, #fffbfb 100%)'
         }}
       >
         <Box
@@ -91,7 +91,7 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
           sx={{
             p: 2,
             mb: 3,
-            backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+            backgroundColor: darkMode ? '#090e15' : '#f8fafc',
             border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             borderRadius: '12px',
             textAlign: 'left'
@@ -176,11 +176,11 @@ export default function AccessDeniedView({ requiredPermission, moduleName = 'thi
               fontWeight: 600,
               fontSize: '13px',
               px: 2.5,
-              background: 'linear-gradient(310deg, #5e72e4 0%, #825ee4 100%)',
+              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
               color: '#ffffff',
-              boxShadow: '0 4px 12px rgba(94, 114, 228, 0.25)',
+              boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
               '&:hover': {
-                background: 'linear-gradient(310deg, #4b5fcc 0%, #6f4ecc 100%)'
+                background: '#15803d'
               }
             }}
           >

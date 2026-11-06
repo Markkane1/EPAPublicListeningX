@@ -47,8 +47,7 @@ function DashboardLayout({ children }) {
         sx={{
           zIndex: 1250,
           backgroundColor: "rgba(15, 23, 42, 0.4)",
-          backdropFilter: "blur(2px)",
-          display: { xs: "block", lg: "none" },
+                    display: { xs: "block", lg: "none" },
         }}
       />
 
@@ -61,7 +60,7 @@ function DashboardLayout({ children }) {
           height: "180px",
           background: darkMode
             ? "linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0) 100%)"
-            : "linear-gradient(180deg, rgba(94, 114, 228, 0.08) 0%, rgba(248, 249, 250, 0) 100%)",
+            : "linear-gradient(180deg, rgba(22, 163, 74, 0.08) 0%, rgba(248, 249, 250, 0) 100%)",
           zIndex: 0,
           pointerEvents: "none",
         }}

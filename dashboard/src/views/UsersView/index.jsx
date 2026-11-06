@@ -361,7 +361,7 @@ export default function UsersView() {
           mb: 3,
           borderRadius: '16px',
           boxShadow: '0 8px 26px rgba(0,0,0,0.04)',
-          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           alignItems: { xs: 'flex-start', md: 'center' },
@@ -380,7 +380,7 @@ export default function UsersView() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#5e72e4',
+              color: '#16a34a',
               boxShadow: 'none',
               flexShrink: 0
             }}
@@ -440,7 +440,7 @@ export default function UsersView() {
               onClick={handleOpenCreate}
               startIcon={<PersonAddRoundedIcon sx={{ fontSize: '19px !important' }} />}
               sx={{
-                backgroundColor: '#5e72e4',
+                backgroundColor: '#16a34a',
                 color: '#ffffff',
                 borderRadius: '8px',
                 textTransform: 'none',
@@ -451,7 +451,7 @@ export default function UsersView() {
                 boxShadow: 'none',
                 transition: 'all 0.15s ease',
                 '&:hover': {
-                  backgroundColor: '#4b5fcc',
+                  backgroundColor: '#15803d',
                   boxShadow: 'none'
                 }
               }}
@@ -469,7 +469,7 @@ export default function UsersView() {
           mb: 3
         }}
       >
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -478,7 +478,7 @@ export default function UsersView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -500,7 +500,7 @@ export default function UsersView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -509,7 +509,7 @@ export default function UsersView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -531,7 +531,7 @@ export default function UsersView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -540,7 +540,7 @@ export default function UsersView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -562,7 +562,7 @@ export default function UsersView() {
           </Box>
         </Card>
 
-        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
+        <Card sx={{ p: 2.2, borderRadius: '14px', border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff', boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8 }}>
             <Box
               sx={{
@@ -571,7 +571,7 @@ export default function UsersView() {
                 borderRadius: '12px',
                 backgroundColor: darkMode ? '#1e293b' : '#f8fafc',
                 border: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e2e8f0',
-                color: '#5e72e4',
+                color: '#16a34a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -598,7 +598,7 @@ export default function UsersView() {
           p: 2,
           mb: 3,
           borderRadius: '14px',
-          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#111c44' : '#ffffff',
+          border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #f1f5f9', backgroundColor: darkMode ? '#0f172a' : '#ffffff',
           boxShadow: '0 4px 18px rgba(0,0,0,0.02)',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
@@ -627,7 +627,7 @@ export default function UsersView() {
                   </IconButton>
                 </InputAdornment>
               ),
-              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }
+              sx: { borderRadius: '10px', fontSize: '13px', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }
             }}
           />
         </Box>
@@ -642,7 +642,7 @@ export default function UsersView() {
               <Select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}
+                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}
               >
                 <MenuItem value="all">All Roles ({roles.length})</MenuItem>
                 {roles.map((r) => (
@@ -662,7 +662,7 @@ export default function UsersView() {
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}
+                sx={{ borderRadius: '10px', fontSize: '12.5px', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}
               >
                 <MenuItem value="all">All Status</MenuItem>
                 <MenuItem value="1">Active Only</MenuItem>
@@ -692,7 +692,7 @@ export default function UsersView() {
       >
         <TableContainer sx={{ overflowX: 'auto', display: { xs: 'none', md: 'block' } }}>
           <Table sx={{ minWidth: 780 }}>
-            <TableHead sx={{ backgroundColor: darkMode ? '#0b1437' : '#f8fafc', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
+            <TableHead sx={{ backgroundColor: darkMode ? '#090e15' : '#f8fafc', borderBottom: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
               <TableRow>
                 <TableCell sx={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', py: 1.8 }}>
                   Operator Identity
@@ -719,7 +719,7 @@ export default function UsersView() {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                    <CircularProgress size={36} sx={{ color: '#5e72e4', mb: 1.5 }} />
+                    <CircularProgress size={36} sx={{ color: '#16a34a', mb: 1.5 }} />
                     <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#64748b' }}>
                       Retrieving operator directory...
                     </Typography>
@@ -748,7 +748,7 @@ export default function UsersView() {
                       key={u.id}
                       hover
                       sx={{
-                        '&:hover': { backgroundColor: darkMode ? '#0b1437' : '#f8fafc' },
+                        '&:hover': { backgroundColor: darkMode ? '#090e15' : '#f8fafc' },
                         transition: 'background-color 0.15s ease'
                       }}
                     >
@@ -884,9 +884,9 @@ export default function UsersView() {
                                 onClick={() => handleOpenEdit(u)}
                                 sx={{
                                   color: '#64748b',
-                                  backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                                  backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                                   border: '1px solid #e2e8f0',
-                                  '&:hover': { color: '#5e72e4', backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }
+                                  '&:hover': { color: '#16a34a', backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }
                                 }}
                               >
                                 <EditRoundedIcon sx={{ fontSize: '16px' }} />
@@ -910,7 +910,7 @@ export default function UsersView() {
                                   onClick={() => handleOpenDelete(u)}
                                   sx={{
                                     color: '#94a3b8',
-                                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                                     border: '1px solid #e2e8f0',
                                     '&:hover': { color: '#ef4444', backgroundColor: '#fef2f2', borderColor: '#fecaca' },
                                     '&.Mui-disabled': { opacity: 0.35 }
@@ -952,7 +952,7 @@ export default function UsersView() {
                   sx={{
                     p: 2,
                     borderRadius: '14px',
-                    backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                    backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                     border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1087,13 +1087,13 @@ export default function UsersView() {
                             fontWeight: 700,
                             textTransform: 'none',
                             borderRadius: '8px',
-                            color: '#5e72e4',
-                            borderColor: darkMode ? 'rgba(94, 114, 228, 0.4)' : '#cbd5e1',
+                            color: '#16a34a',
+                            borderColor: darkMode ? 'rgba(22, 163, 74, 0.4)' : '#cbd5e1',
                             minHeight: '36px',
                             px: 1.5,
                             '&:hover': {
-                              borderColor: '#5e72e4',
-                              backgroundColor: 'rgba(94, 114, 228, 0.08)'
+                              borderColor: '#16a34a',
+                              backgroundColor: 'rgba(22, 163, 74, 0.08)'
                             }
                           }}
                         >
@@ -1155,8 +1155,7 @@ export default function UsersView() {
                 height: 46,
                 borderRadius: '12px',
                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
+                                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#ffffff'
@@ -1345,7 +1344,7 @@ export default function UsersView() {
               sx={{
                 p: 1.5,
                 borderRadius: '12px',
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 border: '1px solid #e2e8f0',
                 display: 'flex',
                 alignItems: 'center',
@@ -1370,7 +1369,7 @@ export default function UsersView() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2.5, px: 3, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
+        <DialogActions sx={{ p: 2.5, px: 3, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}>
           <Button
             onClick={() => setCreateModalOpen(false)}
             sx={{ textTransform: 'none', color: '#64748b', fontWeight: 700 }}
@@ -1382,7 +1381,7 @@ export default function UsersView() {
             onClick={handleCreateSubmit}
             disabled={actionLoading}
             sx={{
-              backgroundColor: '#5e72e4',
+              backgroundColor: '#16a34a',
               color: '#ffffff',
               textTransform: 'none',
               fontWeight: 600,
@@ -1391,7 +1390,7 @@ export default function UsersView() {
               px: 3,
               boxShadow: 'none',
               '&:hover': {
-                backgroundColor: '#4b5fcc',
+                backgroundColor: '#15803d',
                 boxShadow: 'none'
               }
             }}
@@ -1430,8 +1429,7 @@ export default function UsersView() {
                 height: 46,
                 borderRadius: '12px',
                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
+                                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#ffffff'
@@ -1609,7 +1607,7 @@ export default function UsersView() {
               sx={{
                 p: 1.5,
                 borderRadius: '12px',
-                backgroundColor: darkMode ? '#0b1437' : '#f8fafc',
+                backgroundColor: darkMode ? '#090e15' : '#f8fafc',
                 border: '1px solid #e2e8f0',
                 display: 'flex',
                 alignItems: 'center',
@@ -1634,7 +1632,7 @@ export default function UsersView() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2.5, px: 3, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', backgroundColor: darkMode ? '#0b1437' : '#f8fafc' }}>
+        <DialogActions sx={{ p: 2.5, px: 3, borderTop: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', backgroundColor: darkMode ? '#090e15' : '#f8fafc' }}>
           <Button
             onClick={() => setEditModalOpen(false)}
             sx={{ textTransform: 'none', color: '#64748b', fontWeight: 700 }}
@@ -1646,7 +1644,7 @@ export default function UsersView() {
             onClick={handleEditSubmit}
             disabled={actionLoading}
             sx={{
-              backgroundColor: '#5e72e4',
+              backgroundColor: '#16a34a',
               color: '#ffffff',
               textTransform: 'none',
               fontWeight: 600,
@@ -1655,7 +1653,7 @@ export default function UsersView() {
               px: 3,
               boxShadow: 'none',
               '&:hover': {
-                backgroundColor: '#4b5fcc',
+                backgroundColor: '#15803d',
                 boxShadow: 'none'
               }
             }}
@@ -1669,7 +1667,7 @@ export default function UsersView() {
         onClose={() => !actionLoading && setDeleteModalOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '18px', backgroundColor: darkMode ? '#111c44' : '#ffffff', border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none', color: darkMode ? '#ffffff' : 'inherit', p: 1 } }}
+        PaperProps={{ sx: { borderRadius: '18px', backgroundColor: darkMode ? '#0f172a' : '#ffffff', border: darkMode ? '1px solid rgba(255, 255, 255, 0.12)' : 'none', color: darkMode ? '#ffffff' : 'inherit', p: 1 } }}
       >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 1 }}>
           <WarningAmberRoundedIcon sx={{ color: '#ef4444' }} />
@@ -1681,7 +1679,7 @@ export default function UsersView() {
             <strong>@{activeUser?.username}</strong> ({activeUser?.fullName || 'No display name'})?
           </Typography>
           <Typography sx={{ fontSize: '12px', color: '#64748b', mt: 1.5, backgroundColor: '#fef2f2', p: 1.5, borderRadius: '8px', border: '1px solid #fee2e2' }}>
-            ⚠️ All active login sessions for this account will be terminated immediately.
+            All active login sessions for this account will be terminated immediately.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 1 }}>

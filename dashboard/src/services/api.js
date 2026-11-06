@@ -459,11 +459,11 @@ export async function restoreNoisePost(postId, learnedRules = []) {
   return await resp.json();
 }
 
-export async function excludePost({ postId, reason = '', category = 'MANUAL_EXCLUDED', removeAssociatedRules = true }) {
+export async function excludePost({ postId, reason = '', category = 'GOVT_BUREAUCRATIC_PR', phrasePatterns = [], confidence = 1.0, removeAssociatedRules = true }) {
   const resp = await authFetch(`${API_BASE}/noise/exclude`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ postId, reason, category, removeAssociatedRules })
+    body: JSON.stringify({ postId, reason, category, phrasePatterns, confidence, removeAssociatedRules })
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
@@ -480,6 +480,50 @@ export async function extractNoiseCandidates({ postId, text = '', author = '', c
     body: JSON.stringify({ postId, text, author, category, reason })
   });
   if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+  return await resp.json();
+}
+
+export async function extractExclusionCandidates({ postId, text = '', category = '' }) {
+  const resp = await authFetch(`${API_BASE}/noise/exclusion-candidates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ postId, text, category })
+  });
+  if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+  return await resp.json();
+}
+
+export async function getTaxonomy() {
+  const resp = await authFetch(`${API_BASE}/noise/taxonomy`);
+  if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+  return await resp.json();
+}
+
+export async function getClassifierStatus() {
+  const resp = await authFetch(`${API_BASE}/classifier/status`);
+  if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+  return await resp.json();
+}
+
+export async function trainClassifier() {
+  const resp = await authFetch(`${API_BASE}/classifier/train`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || `Training failed: HTTP ${resp.status}`);
+  }
+  return await resp.json();
+}
+
+export async function predictClassifier({ text }) {
+  const resp = await authFetch(`${API_BASE}/classifier/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  });
+  if (!resp.ok) throw new Error(`Prediction failed: HTTP ${resp.status}`);
   return await resp.json();
 }
 
