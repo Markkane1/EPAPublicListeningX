@@ -374,6 +374,33 @@ function DashboardNavbar({ isMini = false, dataSource = "file", stats = null }) 
                 </Box>
               </Box>
 
+              <Tooltip title="Sign out / Exit console" arrow>
+                <Button
+                  onClick={handleLogout}
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  startIcon={<LogoutRoundedIcon sx={{ fontSize: "16px !important" }} />}
+                  sx={{
+                    borderRadius: "20px",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    px: 1.5,
+                    py: 0.4,
+                    borderColor: darkMode ? "rgba(239, 68, 68, 0.4)" : "#fecaca",
+                    color: "#ef4444",
+                    backgroundColor: darkMode ? "rgba(239, 68, 68, 0.1)" : "rgba(239, 68, 68, 0.05)",
+                    "&:hover": {
+                      borderColor: "#ef4444",
+                      backgroundColor: darkMode ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.12)",
+                    }
+                  }}
+                >
+                  Sign Out
+                </Button>
+              </Tooltip>
+
               <Menu
                 anchorEl={userMenuAnchor}
                 open={Boolean(userMenuAnchor)}

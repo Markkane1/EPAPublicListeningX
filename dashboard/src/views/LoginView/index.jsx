@@ -27,17 +27,94 @@ export default function LoginView() {
   const { darkMode } = controller;
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { user, isAuthenticated, login, logout } = useAuth();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const from = location.state?.from?.pathname || '/dashboard';
+
+  if (isAuthenticated && user) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100vw',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 2, sm: 3 },
+          background: darkMode
+            ? 'linear-gradient(180deg, #090e15 0%, #0f172a 100%)'
+            : 'linear-gradient(180deg, #090e15 0%, #0f172a 60%, #064e3b 100%)',
+        }}
+      >
+        <Card
+          sx={{
+            maxWidth: '460px',
+            width: '100%',
+            p: { xs: 3, sm: 4.5 },
+            borderRadius: '20px',
+            textAlign: 'center',
+            backgroundColor: darkMode ? '#0f172a' : 'rgba(255, 255, 255, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+          }}
+        >
+          <Box sx={{ mb: 2 }}>
+            <Box
+              component="img"
+              src="/logo-epa-mark.png"
+              alt="EPA Punjab"
+              sx={{ height: 48, width: 'auto', display: 'inline-block' }}
+            />
+          </Box>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: darkMode ? '#f8fafc' : '#0f172a', mb: 0.8 }}>
+            Active Session Detected
+          </Typography>
+          <Typography sx={{ fontSize: '13.5px', color: '#64748b', mb: 3 }}>
+            You are signed in as <strong>{user.fullName || user.username}</strong> (@{user.username})
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/dashboard')}
+              sx={{
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                py: 1.2,
+                borderRadius: '10px',
+                textTransform: 'none',
+              }}
+            >
+              Continue to Dashboard
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={async () => {
+                await logout();
+              }}
+              sx={{
+                fontWeight: 700,
+                py: 1.2,
+                borderRadius: '10px',
+                textTransform: 'none',
+              }}
+            >
+              Sign Out / Switch Account
+            </Button>
+          </Box>
+        </Card>
+      </Box>
+    );
+  }
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -58,7 +135,7 @@ export default function LoginView() {
 
     setLoading(true);
     try {
-      await login(username.trim(), password, turnstileToken);
+      await login(username.trim(), password, turnstileToken, rememberMe);
       navigate(from, { replace: true });
     } catch (err) {
       setErrorMsg(err.message || 'Login failed. Please check your credentials.');

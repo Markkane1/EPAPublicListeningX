@@ -85,7 +85,7 @@ export const allRoutes = [
 ];
 
 export const getRoutes = (user) => {
-  if (!user) return allRoutes;
+  if (!user) return [];
 
   if (user.role?.name === "super_admin") {
     return allRoutes;

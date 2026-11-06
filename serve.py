@@ -89,7 +89,7 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
         except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
             self.close_connection = True
     def __init__(self, *args, **kwargs):
-        serve_dir = DIST_DIR if os.path.exists(DIST_DIR) else (PORTAL_DIR if os.path.exists(PORTAL_DIR) else ROOT_DIR)
+        serve_dir = DIST_DIR if os.path.exists(DIST_DIR) else ROOT_DIR
         super().__init__(*args, directory=serve_dir, **kwargs)
 
     # -----------------------------------------------------------------------
@@ -469,11 +469,19 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                     return
 
                 elif path == '/api/noise/taxonomy':
+                    user, err_resp = self._check_permission("noise.view")
+                    if err_resp:
+                        self.send_json(err_resp[0], status=err_resp[1])
+                        return
                     taxonomy_dto = service.get_taxonomy_service()
                     self.send_json(taxonomy_dto)
                     return
 
                 elif path == '/api/classifier/status':
+                    user, err_resp = self._check_permission("noise.view")
+                    if err_resp:
+                        self.send_json(err_resp[0], status=err_resp[1])
+                        return
                     status_dto = service.get_classifier_status_service()
                     self.send_json(status_dto)
                     return
@@ -533,6 +541,21 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 # Do NOT expose internal exception details to callers
                 self.send_json({"error": "An internal server error occurred.", "success": False}, status=500)
+                return
+
+        # Security gate: Protect any portal subpath from unauthenticated inspection
+        if path == '/portal' or path.startswith('/portal/'):
+            token = self._get_bearer_token()
+            user = None
+            if token:
+                try:
+                    user = service.auth_me_service(token)
+                except Exception:
+                    user = None
+            if not user:
+                self.send_response(302)
+                self.send_header('Location', '/login')
+                self.end_headers()
                 return
 
         translated = self.translate_path(self.path)
@@ -778,6 +801,10 @@ class SPAServerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(res)
 
             elif path == '/api/classifier/predict':
+                user, err_resp = self._check_permission("posts.view")
+                if err_resp:
+                    self.send_json(err_resp[0], status=err_resp[1])
+                    return
                 text = body.get('text', '')
                 res = service.predict_classifier_service(text=text)
                 self.send_json(res)

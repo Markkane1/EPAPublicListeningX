@@ -4,29 +4,37 @@ const TOKEN_KEY = 'epa_auth_token';
 
 export function getAuthToken() {
   try {
-    return localStorage.getItem(TOKEN_KEY) || null;
+    return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null;
   } catch {
     return null;
   }
 }
 
-export function setAuthToken(token) {
+export function setAuthToken(token, rememberMe = false) {
   try {
     if (token) {
-      localStorage.setItem(TOKEN_KEY, token);
+      if (rememberMe) {
+        localStorage.setItem(TOKEN_KEY, token);
+        sessionStorage.removeItem(TOKEN_KEY);
+      } else {
+        sessionStorage.setItem(TOKEN_KEY, token);
+        localStorage.removeItem(TOKEN_KEY);
+      }
     } else {
+      sessionStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(TOKEN_KEY);
     }
   } catch (e) {
-    console.warn('localStorage error:', e);
+    console.warn('Storage write error:', e);
   }
 }
 
 export function clearAuthToken() {
   try {
+    sessionStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
   } catch (e) {
-    console.warn('localStorage error:', e);
+    console.warn('Storage clear error:', e);
   }
   invalidateApiCache();
 }
@@ -109,10 +117,16 @@ export async function authFetch(url, options = {}) {
   }
 
   const response = await fetch(url, { ...options, headers });
+  if (response.status === 401) {
+    clearAuthToken();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('epa:auth-expired'));
+    }
+  }
   return response;
 }
 
-export async function loginUser({ username, password, turnstileToken }) {
+export async function loginUser({ username, password, turnstileToken, rememberMe = false }) {
   const resp = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -123,7 +137,7 @@ export async function loginUser({ username, password, turnstileToken }) {
     throw new Error(data.error || `Login failed (HTTP ${resp.status})`);
   }
   if (data.token) {
-    setAuthToken(data.token);
+    setAuthToken(data.token, rememberMe);
   }
   return data;
 }

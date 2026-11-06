@@ -84,12 +84,12 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const login = useCallback(async (username, password, turnstileToken) => {
+  const login = useCallback(async (username, password, turnstileToken, rememberMe = false) => {
     setIsLoading(true);
     try {
-      const res = await loginUser({ username, password, turnstileToken });
+      const res = await loginUser({ username, password, turnstileToken, rememberMe });
       if (res && res.token) {
-        setAuthToken(res.token);
+        setAuthToken(res.token, rememberMe);
         setUser(res.user);
         setTokenState(res.token);
       }

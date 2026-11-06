@@ -305,8 +305,8 @@ function AppContent() {
           >
             <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={<LoginView />} />
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
               
               <Route
                 path="/dashboard"
